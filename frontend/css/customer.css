@@ -1,0 +1,479 @@
+/* ==========================================================================
+   월계생활 - 손님 앱 (첫 화면 / 내 주변 가게 화면)
+   ========================================================================== */
+
+.customer-shell {
+  display: flex;
+  flex-direction: column;
+}
+
+.screen-stack {
+  position: relative;
+  flex: 1;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+@media (min-width: 600px) {
+  .screen-stack {
+    min-height: 100dvh;
+  }
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+#screen-home {
+  transform: translateY(0);
+  z-index: 2;
+}
+
+#screen-nearby {
+  transform: translateY(100%);
+  z-index: 1;
+}
+
+.screen-stack.is-nearby #screen-home {
+  transform: translateY(-100%);
+}
+
+.screen-stack.is-nearby #screen-nearby {
+  transform: translateY(0);
+  z-index: 2;
+}
+
+/* --- 당김 핸들 (pull indicator) --- */
+
+.pull-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: var(--space-2) 0 var(--space-1);
+  color: var(--color-text-muted);
+  touch-action: none;
+  user-select: none;
+}
+
+.pull-indicator--top {
+  background: var(--color-surface-alt);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pull-indicator--bottom {
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  margin-top: auto;
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+}
+
+.pull-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-text-faint);
+}
+
+.pull-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 2px var(--space-3) 4px;
+}
+
+.pull-hint .icon {
+  width: 0.95em;
+  height: 0.95em;
+}
+
+/* --- Screen 1: 홈 --- */
+
+.home-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  display: flex;
+  flex-direction: column;
+}
+
+.home-tagline {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-5);
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  text-align: left;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.category-card:hover,
+.category-card:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(74, 50, 34, 0.14);
+}
+
+.category-card:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.category-card .cat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  color: var(--color-primary);
+  font-size: 1.3rem;
+}
+
+.category-card .cat-label {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.category-card .cat-desc {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  white-space: pre-line;
+  line-height: 1.35;
+}
+
+.cta-bottom {
+  margin-top: auto;
+}
+
+.cta-bottom .icon {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+/* --- Screen 2: 내 주변 가게 --- */
+
+.nearby-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-5) var(--space-4);
+}
+
+.filter-tabs {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+  margin-bottom: var(--space-4);
+  scrollbar-width: none;
+}
+
+.filter-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.filter-chip .icon {
+  width: 0.95em;
+  height: 0.95em;
+}
+
+.filter-chip.is-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.map-placeholder {
+  position: relative;
+  height: 190px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: var(--space-4);
+  background:
+    linear-gradient(120deg, rgba(220, 234, 247, 0.55) 0%, transparent 55%),
+    var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+}
+
+.map-placeholder svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.map-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.map-pin .pin-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(45deg);
+  background: var(--color-primary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.map-pin .pin-badge .icon {
+  transform: rotate(-45deg);
+  width: 0.85em;
+  height: 0.85em;
+  color: var(--color-on-primary);
+}
+
+.map-pin .pin-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.list-header .count {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.sort-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-pill);
+  padding: 3px;
+}
+
+.sort-btn {
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.sort-btn.is-active {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sort-btn .icon {
+  width: 0.85em;
+  height: 0.85em;
+}
+
+.store-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.store-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.store-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.store-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.store-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 3px;
+}
+
+.store-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.store-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.store-meta .icon {
+  width: 0.85em;
+  height: 0.85em;
+}
+
+.store-like {
+  flex-shrink: 0;
+  font-size: 1.15rem;
+  color: var(--color-text-faint);
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.store-like.is-active {
+  color: var(--color-like);
+}
+
+.store-like.is-active .icon {
+  fill: currentColor;
+}
+
+.store-like:active {
+  transform: scale(1.15);
+}
+
+.owner-link-row {
+  text-align: center;
+  padding: var(--space-3) 0;
+  font-size: 0.78rem;
+  color: var(--color-text-faint);
+}
+
+.owner-link-row a {
+  color: var(--color-text-muted);
+  text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------
+   반응형: 태블릿 / PC
+   -------------------------------------------------------------------- */
+
+@media (min-width: 600px) {
+  .category-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* 태블릿 가로 / PC: 지도-리스트 2단(split) 레이아웃 + 카테고리 3열 유지 */
+@media (min-width: 1024px) {
+  .home-body {
+    padding: var(--space-6) var(--space-6) var(--space-5);
+  }
+
+  .category-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+  }
+
+  .category-card {
+    padding: var(--space-5);
+  }
+
+  .nearby-body {
+    padding: var(--space-6);
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: var(--space-6);
+    overflow: hidden;
+  }
+
+  .nearby-body .section-title {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .nearby-body .section-subtitle {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .nearby-body .filter-tabs {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .map-placeholder {
+    grid-column: 1;
+    grid-row: 4;
+    height: 100%;
+    min-height: 360px;
+    margin-bottom: 0;
+  }
+
+  .list-panel {
+    grid-column: 2;
+    grid-row: 4;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .store-list {
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+}
