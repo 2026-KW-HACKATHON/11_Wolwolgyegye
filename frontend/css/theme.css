@@ -32,9 +32,23 @@
   --color-tag-space-bg: #e3ecdc;
   --color-tag-space-text: #4f7a3a;
 
+  /* Category card backgrounds (동네 소식형 카드 배색) */
+  --color-cat-space-bg: #f3e3d2;
+  --color-cat-class-bg: #f6d7de;
+  --color-cat-roulette-bg: #ece0c3;
+  --color-cat-sale-bg: #e2795c;
+  --color-cat-coupon-bg: #f8f0dd;
+  --color-cat-partner-bg: #d7e3c7;
+
+  /* 소셜 로그인 브랜드 색상 */
+  --color-provider-naver: #03c75a;
+  --color-provider-kakao: #fee500;
+  --color-provider-kakao-text: #3c1e1e;
+
   /* Feedback */
   --color-danger: #b23b3b;
   --color-like: #c96a6a;
+  --color-pin: #c0392b;
 
   /* Elevation */
   --shadow-card: 0 2px 10px rgba(74, 50, 34, 0.08);

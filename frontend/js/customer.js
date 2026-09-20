@@ -11,6 +11,12 @@
   var STORES = window.WOL.STORES;
   var NEIGHBORHOOD = window.WOL.NEIGHBORHOOD;
 
+  var STORE_THUMB_BG = {
+    coffee: "linear-gradient(145deg, var(--color-cat-space-bg), var(--color-cat-sale-bg))",
+    bread: "linear-gradient(145deg, var(--color-cat-sale-bg), var(--color-cat-coupon-bg))",
+    sofa: "linear-gradient(145deg, var(--color-cat-partner-bg), var(--color-cat-class-bg))"
+  };
+
   var state = {
     filter: "all",
     sort: "distance", // distance | name
@@ -36,12 +42,14 @@
     if (!grid) return;
     grid.innerHTML = CATEGORIES.map(function (cat) {
       return (
-        '<button class="card category-card" type="button" data-toast="' +
+        '<button class="category-card cat-bg-' + cat.bg + '" type="button" data-toast="' +
         cat.label +
         ' 준비 중이에요">' +
         '<span class="cat-icon">' + ICONS[cat.icon] + "</span>" +
+        '<span class="cat-bottom">' +
         '<span class="cat-label">' + cat.label + "</span>" +
-        '<span class="cat-desc">' + cat.desc + "</span>" +
+        '<span class="cat-chevron">' + ICONS.chevronRight + "</span>" +
+        "</span>" +
         "</button>"
       );
     }).join("");
@@ -51,7 +59,7 @@
     var wrap = document.getElementById("filter-tabs");
     if (!wrap) return;
     wrap.innerHTML = NEARBY_FILTERS.map(function (f) {
-      var icon = f.key === "class" ? ICONS.palette : f.key === "roulette" ? ICONS.wheel : f.key === "sale" ? ICONS.tag : "";
+      var icon = f.key === "all" ? ICONS.pin : f.key === "class" ? ICONS.paletteColor : f.key === "roulette" ? ICONS.rouletteColor : f.key === "sale" ? ICONS.tagColor : "";
       return (
         '<button class="filter-chip' + (f.key === state.filter ? " is-active" : "") + '" type="button" data-filter="' +
         f.key + '">' + icon + "<span>" + f.label + "</span></button>"
@@ -109,9 +117,10 @@
         return '<span class="tag tag--' + t.type + '">' + t.label + "</span>";
       }).join("");
       var liked = !!state.likes[store.id];
+      var thumbBg = STORE_THUMB_BG[store.icon] || "var(--color-surface-alt)";
       return (
         '<li class="card store-item">' +
-        '<div class="store-thumb">' + ICONS[store.icon] + "</div>" +
+        '<div class="store-thumb" style="background:' + thumbBg + '">' + ICONS[store.icon] + "</div>" +
         '<div class="store-info">' +
         '<div class="store-name-row"><span class="store-name">' + store.name + "</span>" + tags + "</div>" +
         '<div class="store-meta">' + ICONS.pin + "<span>" + store.distance + " · " + store.address + "</span></div>" +
