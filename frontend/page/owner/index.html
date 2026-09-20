@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>월계생활 사장님</title>
+  <meta name="description" content="가게 소식과 혜택을 관리하는 월계생활 사장님 앱" />
+  <link rel="stylesheet" href="../../css/theme.css" />
+  <link rel="stylesheet" href="../../css/base.css" />
+  <link rel="stylesheet" href="../../css/owner.css" />
+</head>
+<body>
+  <div class="app-shell owner-shell">
+    <header class="app-header">
+      <div class="brand">월계생활 사장님</div>
+      <div class="header-actions">
+        <div class="auth-slot" data-auth-slot></div>
+        <button class="icon-btn" type="button" data-toast="설정 화면은 준비 중이에요" aria-label="설정">⚙</button>
+      </div>
+    </header>
+
+    <div class="owner-body">
+      <div class="owner-hero">
+        <div class="owner-hero-text">
+          <h1 class="owner-heading">새 소식을<br />알려보세요</h1>
+          <span class="owner-hero-tag">좋은 동네, 함께해요</span>
+        </div>
+        <div class="owner-hero-art" aria-hidden="true">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M4 9.5 5 4h14l1 5.5"/><path d="M4 9.5a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0"/><path d="M5 10v9.5a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>
+        </div>
+      </div>
+
+      <button class="btn-primary owner-cta" type="button" data-toast="클래스 등록 화면은 준비 중이에요">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        <span>클래스 등록</span>
+        <svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+
+      <div class="owner-menu-grid" id="owner-menu-grid"></div>
+    </div>
+
+    <p class="owner-link-row">손님이신가요? <a href="../customer/index.html">손님 앱으로 이동</a></p>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="modal-overlay" id="auth-modal-overlay" hidden>
+    <div class="modal card auth-modal">
+      <button class="modal-close" type="button" aria-label="닫기">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <h3 class="auth-modal-title">로그인</h3>
+      <p class="auth-modal-sub">사장님 계정으로 가게를 관리해보세요</p>
+
+      <div class="auth-provider-list">
+        <button class="auth-provider-btn provider-naver" type="button" data-provider="네이버">네이버로 시작하기</button>
+        <button class="auth-provider-btn provider-kakao" type="button" data-provider="카카오">카카오로 시작하기</button>
+        <button class="auth-provider-btn provider-google" type="button" data-provider="구글">구글로 시작하기</button>
+      </div>
+
+      <div class="auth-divider"><span>또는</span></div>
+
+      <form class="auth-name-form">
+        <input class="auth-name-input" type="text" placeholder="닉네임을 입력해주세요" maxlength="12" autocomplete="off" />
+        <button class="btn-primary" type="submit">이 이름으로 시작하기</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="../../js/data.js"></script>
+  <script src="../../js/auth.js"></script>
+  <script src="../../js/owner.js"></script>
+</body>
+</html>

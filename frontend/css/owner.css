@@ -1,0 +1,156 @@
+/* ==========================================================================
+   월계생활 - 사장님 앱 (별도 앱)
+   ========================================================================== */
+
+.owner-shell {
+  display: flex;
+  flex-direction: column;
+}
+
+.owner-body {
+  flex: 1;
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+}
+
+.owner-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.owner-hero-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.owner-heading {
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.3;
+  margin: 0 0 var(--space-2);
+}
+
+.owner-hero-tag {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-cat-partner-bg);
+  color: var(--color-text);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.owner-hero-art {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  flex-shrink: 0;
+  border-radius: var(--radius-lg);
+  background: var(--color-cat-sale-bg);
+  color: var(--color-text);
+  font-size: 2rem;
+}
+
+.owner-cta {
+  margin-bottom: var(--space-5);
+}
+
+.owner-cta .icon {
+  width: 1.2em;
+  height: 1.2em;
+}
+
+.owner-menu-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+}
+
+.owner-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  text-align: left;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.owner-menu-item:hover,
+.owner-menu-item:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(74, 50, 34, 0.14);
+}
+
+.owner-menu-item:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.owner-menu-item.is-wide {
+  grid-column: 1 / -1;
+}
+
+.owner-menu-item .menu-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  color: var(--color-primary);
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.owner-menu-item .menu-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.owner-menu-item .menu-label {
+  display: block;
+  font-weight: 700;
+  font-size: 0.98rem;
+  margin-bottom: 2px;
+}
+
+.owner-menu-item .menu-desc {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  white-space: pre-line;
+  line-height: 1.35;
+}
+
+.owner-menu-item .menu-chevron {
+  color: var(--color-text-faint);
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------
+   반응형: 태블릿 / PC
+   -------------------------------------------------------------------- */
+
+@media (min-width: 1024px) {
+  .owner-body {
+    padding: var(--space-6);
+  }
+
+  .owner-cta {
+    max-width: 360px;
+  }
+
+  .owner-menu-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
+  }
+
+  .owner-menu-item.is-wide {
+    grid-column: 1 / -1;
+  }
+}

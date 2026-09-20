@@ -1,0 +1,424 @@
+/* ==========================================================================
+   월계생활 - 공통 베이스
+   Code.md 1항: 내용은 같게, 구현 방식은 화면 크기/입력 방식에 맞춰 다르게.
+   아래 breakpoint는 모바일 세로/가로, 태블릿 세로/가로, PC 5가지를 고려한다.
+   ========================================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+.icon {
+  width: 1em;
+  height: 1em;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------
+   앱 쉘 : 모바일 기준 세로 스크롤 카드, 태블릿/PC는 중앙 정렬 + 여백 확장
+   -------------------------------------------------------------------- */
+
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  margin: 0 auto;
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-header);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-header);
+}
+
+.app-header .brand {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.app-header .location {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 400;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.auth-btn {
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-on-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.auth-btn:hover,
+.auth-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.auth-user {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px 3px 3px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.14);
+  max-width: 140px;
+}
+
+.auth-user-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--color-on-primary);
+  color: var(--color-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.auth-user-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-on-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- 로그인 모달 --- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: rgba(43, 31, 23, 0.45);
+  z-index: 100;
+}
+
+.modal-overlay[hidden] {
+  display: none;
+}
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  padding: var(--space-5);
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  color: var(--color-text-muted);
+}
+
+.modal-close:hover {
+  background: var(--color-surface-alt);
+}
+
+.auth-modal-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.auth-modal-sub {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-4);
+}
+
+.auth-provider-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.auth-provider-btn {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.provider-naver {
+  background: var(--color-provider-naver);
+  color: #ffffff;
+}
+
+.provider-kakao {
+  background: var(--color-provider-kakao);
+  color: var(--color-provider-kakao-text);
+}
+
+.provider-google {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-faint);
+  font-size: 0.75rem;
+  margin-bottom: var(--space-4);
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.auth-name-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.auth-name-input {
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  color: var(--color-on-primary);
+  font-size: 1.25rem;
+  transition: background 0.15s ease;
+}
+
+.icon-btn:hover,
+.icon-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.section-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 var(--space-1);
+}
+
+.section-subtitle {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-4);
+}
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-4);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 700;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-dark);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tag--coupon {
+  background: var(--color-tag-coupon-bg);
+  color: var(--color-tag-coupon-text);
+}
+
+.tag--discount {
+  background: var(--color-tag-discount-bg);
+  color: var(--color-tag-discount-text);
+}
+
+.tag--partner {
+  background: var(--color-tag-partner-bg);
+  color: var(--color-tag-partner-text);
+}
+
+.tag--space {
+  background: var(--color-tag-space-bg);
+  color: var(--color-tag-space-text);
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-6);
+  transform: translate(-50%, 12px);
+  background: var(--color-header-dark);
+  color: var(--color-on-primary);
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  font-size: 0.82rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-float);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 50;
+  white-space: nowrap;
+}
+
+.toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* --------------------------------------------------------------------
+   반응형 breakpoints
+   mobile portrait(기본) / mobile landscape / tablet portrait /
+   tablet landscape / PC 순서로 확장
+   -------------------------------------------------------------------- */
+
+/* 모바일 가로모드: 낮은 뷰포트 높이에서 헤더/여백 축소 */
+@media (max-width: 767px) and (orientation: landscape) {
+  .app-header {
+    padding: var(--space-2) var(--space-4);
+  }
+}
+
+/* 태블릿 세로모드 이상: 앱 쉘에 카드 형태의 여백을 주고 폭 제한 */
+@media (min-width: 600px) {
+  body {
+    background: var(--color-surface-alt);
+  }
+
+  .app-shell {
+    max-width: var(--tablet-max-width);
+    min-height: 100dvh;
+    box-shadow: var(--shadow-float);
+  }
+}
+
+/* 태블릿 가로모드 / PC: 더 넓은 폭 활용, 2단 레이아웃 허용 */
+@media (min-width: 1024px) {
+  .app-shell {
+    max-width: var(--desktop-max-width);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-top: var(--space-6);
+    margin-bottom: var(--space-6);
+    min-height: calc(100vh - var(--space-6) * 2);
+  }
+}
