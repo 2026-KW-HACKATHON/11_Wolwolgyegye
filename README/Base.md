@@ -39,11 +39,47 @@
 ---
 3. Tree
 
-- 트리구조를 적어둔 목차이며, 지속적인 수정 요망.
+- 트리구조를 적어둔 목차이며, 지속적인 수정 요망. 
 ```
 - Code
+    ├─ index.html
+    ├─ package.json
+    ├─ tsconfig.json
+    ├─ vite.config.ts
+    └─ src/
+        ├─ main.tsx
+        ├─ global.css
+        ├─ vite-env.d.ts
+        ├─ app/
+        │  ├─ App.tsx
+        │  ├─ router.tsx
+        │  └─ providers/
+        │     ├─ AuthProvider.tsx
+        │     └─ LayoutModeProvider.tsx
+        ├─ core/
+        │  ├─ device/      layoutMode.ts, useLayoutModeDetector.ts, LayoutModeContext.ts
+        │  ├─ auth/        authTypes.ts, AuthContext.ts, useAuthStatus.ts
+        │  ├─ router/      useActivePath.ts
+        │  └─ categories/  categoryTypes.ts, categories.ts, enabledCategories.ts, useVisibleCategories.ts
+        ├─ layout/
+        │  ├─ AppShell/          AppShell.tsx, AppShell.css
+        │  ├─ Splash/            Splash.tsx, Splash.css
+        │  ├─ PageHeader/        PageHeader.tsx, PageHeader.css
+        │  ├─ HelpPopup/         HelpPopup.tsx, HelpPopup.css
+        │  ├─ KeepAlivePages/    KeepAlivePages.tsx, PageActiveContext.ts
+        │  └─ navigation/
+        │     ├─ Navigation.tsx
+        │     ├─ handlers/           navHandlers.ts, desktopHandlers.ts, touchHandlers.ts, useNavHandlers.ts
+        │     ├─ shared/             NavItem.tsx/.css, SwipeStrip.tsx/.css, navTypes.ts, icons.ts
+        │     ├─ compact/            CompactNav.tsx/.css
+        │     ├─ compact-landscape/  CompactLandscapeNav.tsx/.css
+        │     └─ desktop/            DesktopNav.tsx/.css
+        └─ features/
+            ├─ pageRegistry.ts
+            └─ recommend / space-rental / oneday-class / roulette / closing-sale
+                / coupon / partner-stores / login / settings   (각 폴더에 Page.tsx + index.ts)
 - README
-    - Base.md
+    └─ Base.md
 ```
 ---
 4. Image
