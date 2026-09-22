@@ -34,6 +34,14 @@
   border-right: 1px solid #e5e7eb;
 }
 
+.compact-landscape-nav .compact-landscape-nav__fixed--start .nav-item {
+  color: #7a2333;
+}
+
+.compact-landscape-nav .compact-landscape-nav__fixed--start .nav-item.is-active {
+  color: #451017;
+}
+
 .compact-landscape-nav .compact-landscape-nav__fixed--settings {
   border-left: 1px solid #e5e7eb;
 }

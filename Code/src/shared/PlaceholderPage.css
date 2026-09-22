@@ -1,0 +1,37 @@
+.placeholder-page {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3, 12px);
+  max-width: 420px;
+  margin: var(--space-6, 32px) auto 0;
+  padding: var(--space-5, 24px);
+  background: var(--color-surface, #fff);
+  border-radius: var(--radius-lg, 22px);
+  box-shadow: var(--shadow-card, 0 2px 10px rgba(0, 0, 0, 0.08));
+  text-align: left;
+}
+
+.placeholder-page__badge {
+  display: inline-flex;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--color-surface-alt, #f3ece3);
+  color: var(--color-text-muted, #8a7b6e);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.placeholder-page__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--color-text, #2b1f17);
+}
+
+.placeholder-page__body {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-text-muted, #8a7b6e);
+}

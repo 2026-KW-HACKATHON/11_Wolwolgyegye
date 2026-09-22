@@ -1,0 +1,78 @@
+/* ==========================================================================
+   월계생활 디자인 토큰
+   develop 브랜치 frontend/css/theme.css 를 그대로 이식.
+   색상은 하드코딩하지 않고 변수로 선언해 추후 설정 화면에서 테마를 바꿀 수 있게 한다.
+   ========================================================================== */
+
+:root {
+  --color-bg: #faf6f0;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f3ece3;
+  --color-header: #4a3222;
+  --color-header-dark: #37241a;
+
+  --color-primary: #4a3222;
+  --color-primary-dark: #37241a;
+  --color-primary-light: #6b4a34;
+  --color-on-primary: #faf6f0;
+
+  --color-text: #2b1f17;
+  --color-text-muted: #8a7b6e;
+  --color-text-faint: #b7a998;
+  --color-border: #e7dfd4;
+
+  --color-tag-coupon-bg: #fbe7c6;
+  --color-tag-coupon-text: #9c6b12;
+  --color-tag-discount-bg: #fbd9d9;
+  --color-tag-discount-text: #b23b3b;
+  --color-tag-partner-bg: #dceaf7;
+  --color-tag-partner-text: #2e6da4;
+  --color-tag-space-bg: #e3ecdc;
+  --color-tag-space-text: #4f7a3a;
+
+  --color-cat-space-bg: #f3e3d2;
+  --color-cat-class-bg: #f6d7de;
+  --color-cat-roulette-bg: #ece0c3;
+  --color-cat-sale-bg: #e2795c;
+  --color-cat-coupon-bg: #f8f0dd;
+  --color-cat-partner-bg: #d7e3c7;
+
+  --color-provider-naver: #03c75a;
+  --color-provider-kakao: #fee500;
+  --color-provider-kakao-text: #3c1e1e;
+
+  --color-danger: #b23b3b;
+  --color-like: #c96a6a;
+  --color-pin: #c0392b;
+
+  --shadow-card: 0 2px 10px rgba(74, 50, 34, 0.08);
+  --shadow-header: 0 2px 8px rgba(74, 50, 34, 0.15);
+  --shadow-float: 0 8px 24px rgba(74, 50, 34, 0.18);
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+}
+
+[data-theme='dark'] {
+  --color-bg: #1c1611;
+  --color-surface: #2a221b;
+  --color-surface-alt: #332a22;
+  --color-header: #241a13;
+  --color-header-dark: #17110c;
+
+  --color-text: #f3ece3;
+  --color-text-muted: #b7a998;
+  --color-text-faint: #8a7b6e;
+  --color-border: #3d3227;
+
+  --color-on-primary: #f3ece3;
+}

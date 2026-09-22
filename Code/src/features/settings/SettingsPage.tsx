@@ -1,3 +1,6 @@
-export default function RecommendPage() {
-  return <div>추천 페이지 연결됨</div>;
+import { SETTINGS_PAGE } from '../../core/categories/categories';
+import PlaceholderPage from '../../shared/PlaceholderPage';
+
+export default function SettingsPage() {
+  return <PlaceholderPage page={SETTINGS_PAGE} />;
 }
