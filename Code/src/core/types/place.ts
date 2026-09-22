@@ -1,12 +1,14 @@
 /**
- * 가게(장소) 데이터 규격.
+ * 가게(장소) 공통 데이터 규격.
  *
  * 설계 원칙:
- * - "가게 공통 정보"와 "카테고리별 상세 데이터"를 분리한다.
- * - 공통 정보(위치, 주소, 영업시간 등)는 지도/목록에 여러 카테고리가 함께 표시될 때 쓰는 최소 필드다.
- * - 카테고리별 상세(메뉴, 마감세일 상품, 대여 공간, 클래스, 쿠폰 정책)는 카테고리마다 모양이 달라서
- *   각자 다른 타입으로 따로 정의하고, Store 에는 "그 카테고리를 지원할 때만 값이 있는" 선택 필드로 붙인다.
- * - 실제 DB(Supabase/Postgres) 연동 시 supabase/schema.sql 이 이 타입들을 SQL 표로 옮긴 것이 된다.
+ * - 여기 있는 필드는 "여러 카테고리가 한 지도/목록에 함께 표시될 때" 쓰는 최소 공통 필드다.
+ * - 카테고리별 상세 데이터(메뉴, 마감세일 상품, 대여 공간, 클래스, 쿠폰 정책)는 여기 두지 않고
+ *   각 features/<카테고리>/types.ts 에서 따로 정의한다. 그 상세 데이터의 각 항목은 storeId 로
+ *   이 Store 를 참조한다 (관계형 DB의 외래키와 같은 개념).
+ * - 이 파일은 여러 팀원이 공유하는 "고정 규격"이라, 기존 필드는 바꾸지 않고 필요한 필드는 추가만 한다.
+ * - 실제 DB(Supabase/Postgres) 연동 시 이 Store 는 stores 테이블이 되고,
+ *   각 카테고리 상세는 store_id 외래키를 가진 별도 테이블이 된다.
  */
 
 /** 위도/경도 좌표. 카카오맵 등 지도 API가 쓰는 형식이며, 화면 픽셀 좌표가 아니다. */
@@ -33,86 +35,6 @@ export type CategorySupport = Partial<
   >
 >;
 
-/** 제휴 가게가 파는 메뉴 하나 (이름 + 가격) */
-export interface MenuItem {
-  id: string;
-  name: string;
-  /** 원 단위 정수 */
-  price: number;
-}
-
-/** '제휴 가게' 카테고리 상세: 어디와 제휴 중인지 + 메뉴 목록 */
-export interface PartnerStoreDetail {
-  /** 제휴를 맺은 대상(다른 가게/브랜드 등) 목록 */
-  partnerWith: string[];
-  items: MenuItem[];
-}
-
-/** 마감세일 중인 상품 하나. 할인가는 저장하지 않고 원가 x (1 - 할인률) 로 계산해서 쓴다 */
-export interface ClosingSaleItem {
-  id: string;
-  name: string;
-  /** 원 단위 정수 */
-  originalPrice: number;
-  /** 0 ~ 1 사이 소수. 예: 0.3 = 30% 할인 */
-  discountRate: number;
-}
-
-/** '마감세일' 카테고리 상세 */
-export interface ClosingSaleDetail {
-  items: ClosingSaleItem[];
-}
-
-/** 대여 가능한 공간 하나 */
-export interface SpaceRentalSpace {
-  id: string;
-  name: string;
-  /** 시간당 대여료 (원) */
-  pricePerHour: number;
-  /** 대여 가능 시간대. 골격 단계라 단순 문자열 목록으로 둔다 (예: "10:00-12:00") */
-  timeSlots: string[];
-}
-
-/** '공간 대여' 카테고리 상세 */
-export interface SpaceRentalDetail {
-  spaces: SpaceRentalSpace[];
-}
-
-/** 개설된 원데이클래스 하나 */
-export interface OnedayClassItem {
-  id: string;
-  name: string;
-  /** 골격 단계라 자유 문자열/ISO 문자열로 둔다. 예: "2026-10-04T14:00:00" */
-  datetime: string;
-  /** 정원 (명) */
-  capacity: number;
-  /** 참가비 (원) */
-  fee: number;
-}
-
-/** '원데이클래스' 카테고리 상세 */
-export interface OnedayClassDetail {
-  classes: OnedayClassItem[];
-}
-
-/**
- * '쿠폰제' 카테고리 상세: 가게의 쿠폰 정책만 담는다.
- * "이 손님이 몇 번 찍었는지"(사용자별 스탬프 개수)는 로그인한 사용자 한 명 한 명에게 딸린
- * 완전히 다른 데이터라서 여기 포함하지 않는다. 로그인 연동 단계에서 별도 표로 설계한다.
- */
-export interface CouponDetail {
-  /** 혜택을 받기까지 채워야 하는 방문(도장) 횟수 */
-  requiredStamps: number;
-  /** 혜택 내용 (예: "음료 1잔 무료") */
-  reward: string;
-}
-
-/**
- * '룰렛' 카테고리는 별도 상세 타입이 없다.
- * 룰렛에 포함할 항목은 그 가게가 이미 가진 다른 카테고리의 항목(메뉴 등)을 화면에서 골라 구성하므로
- * 여기 새로 저장할 데이터가 없다.
- */
-
 export interface Store {
   id: string;
   name: string;
@@ -130,15 +52,4 @@ export interface Store {
   phone: string;
 
   supports: CategorySupport;
-
-  /** supports['partner-stores'] 가 true 일 때만 값이 있다 */
-  partnerStoreDetail?: PartnerStoreDetail;
-  /** supports['closing-sale'] 가 true 일 때만 값이 있다 */
-  closingSaleDetail?: ClosingSaleDetail;
-  /** supports['space-rental'] 가 true 일 때만 값이 있다 */
-  spaceRentalDetail?: SpaceRentalDetail;
-  /** supports['oneday-class'] 가 true 일 때만 값이 있다 */
-  onedayClassDetail?: OnedayClassDetail;
-  /** supports['coupon'] 가 true 일 때만 값이 있다 */
-  couponDetail?: CouponDetail;
 }
