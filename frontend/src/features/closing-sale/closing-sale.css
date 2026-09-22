@@ -1,0 +1,317 @@
+/* ==========================================================================
+   마감세일 화면 (손님용 - 지금 할인 중인 동네 가게를 마감 임박순으로 보여준다)
+   세일 등록은 사장님 전용 화면(/owner)에서 하므로 이 화면에는 등록 버튼이 없다.
+   ========================================================================== */
+
+.cs-page {
+  color: var(--color-text, #2b1f17);
+}
+
+/* --- 상단 배너 --- */
+
+.cs-hero {
+  position: relative;
+  padding: var(--space-5, 24px);
+  margin-bottom: var(--space-5, 24px);
+  border-radius: var(--radius-lg, 22px);
+  background: linear-gradient(115deg, #f0762c 0%, #e2795c 55%, #d9534f 100%);
+  color: #fff;
+  overflow: hidden;
+}
+
+.cs-hero-badge {
+  position: relative;
+  display: inline-flex;
+  padding: 6px 13px;
+  border-radius: var(--radius-pill, 999px);
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 0.75rem;
+  font-weight: 700;
+  z-index: 1;
+}
+
+.cs-hero-heading {
+  position: relative;
+  margin: var(--space-3, 12px) 0 var(--space-2, 8px);
+  max-width: 22ch;
+  font-size: 1.5rem;
+  line-height: 1.34;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  z-index: 1;
+}
+
+.cs-hero-heading em {
+  font-style: normal;
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 5px;
+}
+
+.cs-hero-sub {
+  position: relative;
+  margin: 0;
+  font-size: 0.88rem;
+  opacity: 0.92;
+  z-index: 1;
+}
+
+/* 배너 오른쪽에 크게 깔리는 % 장식 */
+.cs-hero-mark {
+  position: absolute;
+  right: -10px;
+  bottom: -46px;
+  font-size: 9rem;
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+}
+
+/* --- 목록 머리 --- */
+
+.cs-list-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3, 12px);
+  margin-bottom: var(--space-4, 16px);
+}
+
+.cs-list-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.cs-list-sub {
+  margin: 4px 0 0;
+  color: var(--color-text-muted, #8a7b6e);
+  font-size: 0.83rem;
+}
+
+.cs-list-sub b {
+  color: var(--color-tag-discount-text, #b23b3b);
+}
+
+.cs-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  flex-shrink: 0;
+}
+
+.cs-sort-label {
+  color: var(--color-text-muted, #8a7b6e);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.cs-sort-select {
+  padding: 9px 13px;
+  border: 1px solid var(--color-border, #e7dfd4);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--color-surface, #fff);
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* --- 세일 카드 --- */
+
+.cs-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3, 12px);
+  list-style: none;
+}
+
+.cs-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface, #fff);
+  border-radius: var(--radius-lg, 22px);
+  box-shadow: var(--shadow-card, 0 2px 10px rgba(74, 50, 34, 0.08));
+  overflow: hidden;
+}
+
+/* 카드 상단 색 띠. 색은 데이터의 tone 값이 고른다. */
+.cs-card-top {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4, 16px);
+  min-height: 130px;
+  padding: var(--space-4, 16px);
+  background: linear-gradient(150deg, var(--cs-tone-a) 0%, var(--cs-tone-b) 100%);
+  color: #fff;
+}
+
+.cs-tone-orange {
+  --cs-tone-a: #f4763a;
+  --cs-tone-b: #e04b4b;
+}
+
+.cs-tone-blue {
+  --cs-tone-a: #3d9bf0;
+  --cs-tone-b: #2f6fd0;
+}
+
+.cs-tone-purple {
+  --cs-tone-a: #9a6fe0;
+  --cs-tone-b: #7b4fd0;
+}
+
+.cs-tone-green {
+  --cs-tone-a: #5cb27a;
+  --cs-tone-b: #3d8a5c;
+}
+
+.cs-tone-pink {
+  --cs-tone-a: #ef7fa2;
+  --cs-tone-b: #d65078;
+}
+
+.cs-countdown {
+  padding: 5px 11px;
+  border-radius: var(--radius-pill, 999px);
+  background: rgba(255, 255, 255, 0.24);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.cs-countdown.is-urgent {
+  background: #fff;
+  color: var(--color-tag-discount-text, #b23b3b);
+  animation: cs-blink 1.6s ease-in-out infinite;
+}
+
+@keyframes cs-blink {
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.cs-discount {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.cs-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding: var(--space-4, 16px);
+}
+
+.cs-card-meta {
+  margin: 0;
+  color: var(--color-text-muted, #8a7b6e);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.cs-card-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.cs-card-desc {
+  margin: 0;
+  color: var(--color-text-muted, #8a7b6e);
+  font-size: 0.83rem;
+}
+
+.cs-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2, 8px);
+  align-self: stretch;
+  margin-top: 6px;
+  padding-top: var(--space-3, 12px);
+  border-top: 1px solid var(--color-border, #e7dfd4);
+  font-size: 0.8rem;
+}
+
+.cs-like {
+  color: var(--color-text-muted, #8a7b6e);
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.cs-like.is-on {
+  color: var(--color-like, #c96a6a);
+  font-weight: 700;
+}
+
+.cs-close-time {
+  color: var(--color-tag-discount-text, #b23b3b);
+  font-weight: 800;
+}
+
+.cs-empty {
+  margin: 0;
+  padding: var(--space-5, 24px);
+  background: var(--color-surface-alt, #f3ece3);
+  border-radius: var(--radius-lg, 22px);
+  color: var(--color-text-muted, #8a7b6e);
+  font-size: 0.85rem;
+}
+
+/* --- 아래 안내 --- */
+
+.cs-tip {
+  margin: var(--space-5, 24px) 0 0;
+  padding: var(--space-4, 16px) var(--space-5, 24px);
+  background: var(--color-tag-coupon-bg, #fbe7c6);
+  color: var(--color-tag-coupon-text, #9c6b12);
+  border-radius: var(--radius-md, 14px);
+  font-size: 0.83rem;
+}
+
+.cs-map-link {
+  display: block;
+  margin: var(--space-4, 16px) auto 0;
+  padding: 10px 18px;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--color-surface-alt, #f3ece3);
+  color: var(--color-primary, #4a3222);
+  font-size: 0.83rem;
+  font-weight: 700;
+}
+
+@media (min-width: 720px) {
+  .cs-hero {
+    padding: var(--space-6, 32px);
+  }
+
+  .cs-hero-heading {
+    font-size: 2rem;
+  }
+
+  .cs-hero-mark {
+    right: 24px;
+    bottom: -70px;
+    font-size: 13rem;
+  }
+
+  .cs-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .cs-card-top {
+    min-height: 150px;
+  }
+
+  .cs-discount {
+    font-size: 2.3rem;
+  }
+}
