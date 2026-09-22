@@ -37,7 +37,7 @@ export const CATEGORIES: Category[] = [
     path: '/roulette',
     icon: '◎',
     isFixed: false,
-    help: '룰렛을 돌려 혜택을 받는 화면입니다. (임시 안내 문구)',
+    help: '룰렛을 돌려 오늘 먹을 메뉴를 정하고, 그 메뉴를 파는 가까운 가게를 추천받는 화면입니다.',
   },
   {
     id: 'closing-sale',
