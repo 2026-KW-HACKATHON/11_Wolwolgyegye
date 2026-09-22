@@ -1,0 +1,25 @@
+/* 공통 기본 모양. 모드별 세부 조정은 각 네비게이션 폴더의 CSS 에서 덮어쓴다. */
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.nav-item__icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.nav-item__label {
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.nav-item.is-active {
+  color: #2563eb;
+  font-weight: 700;
+}

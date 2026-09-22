@@ -1,0 +1,109 @@
+.desktop-nav {
+  flex: 0 0 auto;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* 1행: 홈페이지 헤더 */
+.desktop-nav__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 24px;
+}
+
+.desktop-nav__brand {
+  font-size: 20px;
+  font-weight: 800;
+  color: #7a2333;
+  letter-spacing: 1px;
+}
+
+.desktop-nav__utils {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.desktop-nav .desktop-nav__util {
+  flex-direction: row;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+}
+
+.desktop-nav .desktop-nav__util .nav-item__icon {
+  font-size: 16px;
+}
+
+.desktop-nav .desktop-nav__util .nav-item__label {
+  font-size: 14px;
+}
+
+.desktop-nav .desktop-nav__util:hover {
+  background: #f3f4f6;
+}
+
+/* 2행: 카테고리 행 (고정, 스와이프 없음) */
+.desktop-nav__row {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  height: 48px;
+  padding: 0 24px;
+  overflow-x: auto;
+  border-top: 1px solid #f3f4f6;
+  scrollbar-width: none;
+}
+
+.desktop-nav__row::-webkit-scrollbar {
+  display: none;
+}
+
+.desktop-nav .desktop-nav__category {
+  flex: 0 0 auto;
+  flex-direction: row;
+  gap: 6px;
+  padding: 0 16px;
+  border-bottom: 3px solid transparent;
+}
+
+.desktop-nav .desktop-nav__category .nav-item__icon {
+  font-size: 14px;
+}
+
+.desktop-nav .desktop-nav__category .nav-item__label {
+  font-size: 15px;
+}
+
+.desktop-nav .desktop-nav__category:hover {
+  color: #111827;
+}
+
+.desktop-nav .desktop-nav__category.is-active {
+  border-bottom-color: #2563eb;
+}
+
+/* 홈버튼 강조 */
+.desktop-nav .desktop-nav__category--emphasis {
+  margin-right: 12px;
+  color: #ffffff;
+  background: #7a2333;
+  font-weight: 700;
+  border-radius: 8px;
+  border-bottom-color: transparent;
+  align-self: center;
+  height: 36px;
+}
+
+.desktop-nav .desktop-nav__category--emphasis:hover {
+  color: #ffffff;
+  background: #5e1b27;
+}
+
+.desktop-nav .desktop-nav__category--emphasis.is-active {
+  color: #ffffff;
+  background: #451017;
+  border-bottom-color: transparent;
+}

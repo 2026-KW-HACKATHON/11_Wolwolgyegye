@@ -1,0 +1,63 @@
+.page-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding: 0 16px;
+  padding-top: env(safe-area-inset-top);
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.page-header[data-layout='compact-landscape'] {
+  height: 40px;
+}
+
+.page-header__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.page-header[data-layout='compact-landscape'] .page-header__title {
+  font-size: 16px;
+}
+
+/* 오른쪽 끝: 설정(톱니바퀴)이 맨 끝, 그 바로 왼쪽에 ? */
+.page-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.page-header__help {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #6b7280;
+  border-radius: 50%;
+  color: #6b7280;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.page-header__settings {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 22px;
+  line-height: 1;
+  color: #374151;
+}
+
+.page-header__settings[aria-current='page'] {
+  background: #eff6ff;
+  color: #2563eb;
+}
