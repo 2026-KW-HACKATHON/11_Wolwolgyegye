@@ -45,7 +45,7 @@ export const CATEGORIES: Category[] = [
     path: '/closing-sale',
     icon: '%',
     isFixed: false,
-    help: '영업 마감 전 할인 중인 상품을 보여주는 화면입니다. (임시 안내 문구)',
+    help: '동네 가게가 영업 마감 전에 올린 할인을 마감 임박순으로 보여주는 화면입니다. 세일 등록은 사장님 전용 화면에서 합니다.',
   },
   {
     id: 'coupon',
