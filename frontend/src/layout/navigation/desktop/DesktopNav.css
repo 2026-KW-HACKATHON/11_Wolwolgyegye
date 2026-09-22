@@ -16,7 +16,7 @@
 .desktop-nav__brand {
   font-size: 20px;
   font-weight: 800;
-  color: #2563eb;
+  color: #7a2333;
   letter-spacing: 1px;
 }
 
@@ -85,11 +85,11 @@
   border-bottom-color: #2563eb;
 }
 
-/* 추천 강조 */
+/* 홈버튼 강조 */
 .desktop-nav .desktop-nav__category--emphasis {
   margin-right: 12px;
   color: #ffffff;
-  background: #2563eb;
+  background: #7a2333;
   font-weight: 700;
   border-radius: 8px;
   border-bottom-color: transparent;
@@ -99,11 +99,11 @@
 
 .desktop-nav .desktop-nav__category--emphasis:hover {
   color: #ffffff;
-  background: #1d4ed8;
+  background: #5e1b27;
 }
 
 .desktop-nav .desktop-nav__category--emphasis.is-active {
   color: #ffffff;
-  background: #1e40af;
+  background: #451017;
   border-bottom-color: transparent;
 }

@@ -20,6 +20,14 @@
   border-right: 1px solid #e5e7eb;
 }
 
+.compact-nav .compact-nav__fixed--start .nav-item {
+  color: #7a2333;
+}
+
+.compact-nav .compact-nav__fixed--start .nav-item.is-active {
+  color: #451017;
+}
+
 .compact-nav .compact-nav__fixed--end {
   border-left: 1px solid #e5e7eb;
 }

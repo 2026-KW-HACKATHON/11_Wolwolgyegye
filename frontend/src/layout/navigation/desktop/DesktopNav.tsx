@@ -21,7 +21,7 @@ export default function DesktopNav({ startFixed, endFixed, scrollable, handlers,
           className="desktop-nav__brand"
           onClick={() => navigate(DEFAULT_LANDING_PATH)}
         >
-          동네 상권
+          월월계계
         </button>
         <div className="desktop-nav__utils">
           <NavItem

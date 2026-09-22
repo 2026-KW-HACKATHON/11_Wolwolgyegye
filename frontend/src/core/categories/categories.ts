@@ -8,7 +8,7 @@ import type { Category, PageMeta } from './categoryTypes';
 export const CATEGORIES: Category[] = [
   {
     id: 'recommend',
-    name: '추천',
+    name: '홈버튼',
     path: '/recommend',
     icon: '★',
     isFixed: true,
