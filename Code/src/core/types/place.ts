@@ -21,8 +21,8 @@ export interface GeoPoint {
  * '추천'은 가게가 스스로 켜고 끄는 값이 아니라 앱이 골라서 보여주는 목록이라 여기 포함하지 않는다.
  * 모든 키가 항상 있을 필요는 없어서 Partial 로 둔다: 없는 키는 "지원 안 함"과 같은 의미다.
  */
-export type CategorySupport = Partial
-  Record
+export type CategorySupport = Partial<
+  Record<
     | 'space-rental'
     | 'oneday-class'
     | 'roulette'
