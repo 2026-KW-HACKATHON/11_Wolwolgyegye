@@ -69,6 +69,14 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
     }
   }, [active, params, setParams]);
 
+  useEffect(() => {
+    const postId = params.get('post');
+    if (!active || !postId || loading || error) return;
+    const post = posts.find((item) => item.id === postId && item.kind === kind);
+    if (post) { setSelected(post); setDeleteConfirm(false); setDetailError(''); }
+    const next = new URLSearchParams(params); next.delete('post'); setParams(next, { replace: true });
+  }, [active, error, kind, loading, params, posts, setParams]);
+
   const visible = useMemo(() => {
     const search = query.trim().toLocaleLowerCase();
     return posts.filter((post) => {
