@@ -1,14 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchStoresByMenu } from './menuStoreSource';
-import {
-  MENUS,
-  MENU_PRESETS,
-  WHEEL_COLORS,
-  menusForPreset,
-  type MenuStore,
-  type WheelMenu,
-} from './rouletteData';
+import { MENUS, MENU_PRESETS, WHEEL_COLORS, menusForPreset } from './constants';
+import { fetchStoresByMenu } from './source';
+import type { RouletteStoreView, WheelMenu } from './types';
 import './roulette.css';
 
 const SPIN_MS = 4200;
@@ -81,7 +75,7 @@ export default function RoulettePage() {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<WheelMenu | null>(null);
-  const [stores, setStores] = useState<MenuStore[] | null>(null);
+  const [stores, setStores] = useState<RouletteStoreView[] | null>(null);
 
   const isEmpty = menus.length === 0;
   const segmentAngle = isEmpty ? 360 : 360 / menus.length;
@@ -359,11 +353,16 @@ export default function RoulettePage() {
                   </div>
                   <div className="rl-store-body">
                     <span className="rl-store-tag">{store.tagLabel}</span>
-                    <h3 className="rl-store-name">{store.name}</h3>
+                    <h3 className="rl-store-name">{store.store.name}</h3>
                     <p className="rl-store-desc">{store.desc}</p>
                     <div className="rl-store-foot">
-                      <span className="rl-store-rating">★ {store.rating}</span>
-                      <span className="rl-store-meta">리뷰 {store.reviews}</span>
+                      {store.store.rating !== undefined && (
+                        <span className="rl-store-rating">★ {store.store.rating}</span>
+                      )}
+                      {store.store.reviewCount !== undefined && (
+                        <span className="rl-store-meta">리뷰 {store.store.reviewCount}</span>
+                      )}
+                      <span className="rl-store-meta">도보 {store.walkMinutes}분</span>
                     </div>
                   </div>
                 </li>

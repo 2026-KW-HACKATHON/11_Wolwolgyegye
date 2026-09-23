@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchClosingSales } from './saleSource';
-import { SALE_SORTS, type ClosingSale, type SaleSortKey } from './closingSaleData';
+import { SALE_SORTS, toneForStore, type SaleSortKey } from './constants';
+import { formatDiscountRate } from './discount';
+import { fetchClosingSales } from './source';
+import type { ClosingSaleView } from './types';
 import './closing-sale.css';
 
 /** 남은 시간 표시를 1분마다 새로 계산한다 */
@@ -28,7 +30,7 @@ function saveLikes(ids: string[]) {
   }
 }
 
-function minutesLeft(sale: ClosingSale, now: number) {
+function minutesLeft(sale: ClosingSaleView, now: number) {
   return Math.floor((new Date(sale.closeAt).getTime() - now) / 60_000);
 }
 
@@ -41,21 +43,21 @@ function formatLeft(minutes: number) {
 }
 
 /** 마감 시각을 "18:30" 으로 */
-function formatCloseTime(sale: ClosingSale) {
+function formatCloseTime(sale: ClosingSaleView) {
   const at = new Date(sale.closeAt);
   return `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`;
 }
 
-function sortSales(sales: ClosingSale[], key: SaleSortKey) {
+function sortSales(sales: ClosingSaleView[], key: SaleSortKey) {
   const sorted = [...sales];
-  if (key === 'discount') return sorted.sort((a, b) => b.discount - a.discount);
+  if (key === 'discount') return sorted.sort((a, b) => b.discountRate - a.discountRate);
   if (key === 'near') return sorted.sort((a, b) => a.walkMinutes - b.walkMinutes);
   return sorted.sort((a, b) => a.closeAt.localeCompare(b.closeAt));
 }
 
 export default function ClosingSalePage() {
   const navigate = useNavigate();
-  const [sales, setSales] = useState<ClosingSale[] | null>(null);
+  const [sales, setSales] = useState<ClosingSaleView[] | null>(null);
   const [sort, setSort] = useState<SaleSortKey>('closing');
   const [likedIds, setLikedIds] = useState<string[]>(loadLikes);
   const [now, setNow] = useState(() => Date.now());
@@ -149,19 +151,19 @@ export default function ClosingSalePage() {
               const liked = likedIds.includes(sale.id);
 
               return (
-                <li key={sale.id} className={`cs-card cs-tone-${sale.tone}`}>
+                <li key={sale.id} className={`cs-card cs-tone-${toneForStore(sale.storeId)}`}>
                   <div className="cs-card-top">
                     <span className={`cs-countdown${urgent ? ' is-urgent' : ''}`}>
                       마감까지 {formatLeft(left)}
                     </span>
-                    <strong className="cs-discount">{sale.discount}% OFF</strong>
+                    <strong className="cs-discount">{formatDiscountRate(sale.discountRate)} OFF</strong>
                   </div>
 
                   <div className="cs-card-body">
                     <p className="cs-card-meta">
-                      {sale.category} · 도보 {sale.walkMinutes}분
+                      {sale.store.cuisineType ?? '동네 가게'} · 도보 {sale.walkMinutes}분
                     </p>
-                    <h3 className="cs-card-name">{sale.storeName}</h3>
+                    <h3 className="cs-card-name">{sale.store.name}</h3>
                     <p className="cs-card-desc">{sale.desc}</p>
 
                     <div className="cs-card-foot">
@@ -169,10 +171,10 @@ export default function ClosingSalePage() {
                         type="button"
                         className={`cs-like${liked ? ' is-on' : ''}`}
                         aria-pressed={liked}
-                        aria-label={`${sale.storeName} 관심 ${liked ? '취소' : '등록'}`}
+                        aria-label={`${sale.store.name} 관심 ${liked ? '취소' : '등록'}`}
                         onClick={() => toggleLike(sale.id)}
                       >
-                        {liked ? '♥' : '♡'} {sale.likes + (liked ? 1 : 0)}명이 관심
+                        {liked ? '♥' : '♡'} {sale.likeCount + (liked ? 1 : 0)}명이 관심
                       </button>
                       <span className="cs-close-time">{formatCloseTime(sale)} 마감</span>
                     </div>

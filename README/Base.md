@@ -41,7 +41,7 @@
 
 - 트리구조를 적어둔 목차이며, 지속적인 수정 요망. 
 ```
-- Code
+- frontend
     ├─ index.html
     ├─ package.json
     ├─ tsconfig.json
@@ -60,7 +60,11 @@
         │  ├─ device/      layoutMode.ts, useLayoutModeDetector.ts, LayoutModeContext.ts
         │  ├─ auth/        authTypes.ts, AuthContext.ts, useAuthStatus.ts
         │  ├─ router/      useActivePath.ts
-        │  └─ categories/  categoryTypes.ts, categories.ts, enabledCategories.ts, useVisibleCategories.ts
+        │  ├─ categories/  categoryTypes.ts, categories.ts, enabledCategories.ts, useVisibleCategories.ts
+        │  ├─ types/       place.ts            (가게 공통 규격 Store — 필드는 추가만)
+        │  ├─ mock/        stores.ts           (모든 카테고리가 공유하는 예시 가게 + 기준 위치)
+        │  ├─ source/      storeSource.ts      (storeId -> Store 조회, 사용자 위치)
+        │  └─ utils/       geo.ts              (거리 / 도보 시간 계산)
         ├─ layout/
         │  ├─ AppShell/          AppShell.tsx, AppShell.css
         │  ├─ Splash/            Splash.tsx, Splash.css
@@ -76,8 +80,9 @@
         │     └─ desktop/            DesktopNav.tsx/.css
         └─ features/
             ├─ pageRegistry.ts
-            └─ recommend / space-rental / oneday-class / roulette / closing-sale
-                / coupon / partner-stores / login / settings   (각 폴더에 Page.tsx + index.ts)
+            ├─ recommend / space-rental / oneday-class / roulette / closing-sale
+            │   / coupon / partner-stores / login / settings   (폴더 형식은 Code.md 4번 참고)
+            └─ owner/   사장님 화면 (/owner, AppShell 밖 독립 라우트)
 - README
     └─ Base.md
 ```
