@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { DEFAULT_LANDING_PATH } from '../../core/categories/categories';
 import Icon from '../../shared/Icon';
 import { useToast } from '../../shared/toast/ToastContext';
@@ -11,6 +11,7 @@ import './owner.css';
  */
 export default function OwnerPage() {
   const showToast = useToast();
+  const navigate = useNavigate();
 
   return (
     <div className="op-shell">
@@ -44,7 +45,7 @@ export default function OwnerPage() {
         <button
           className="op-cta"
           type="button"
-          onClick={() => showToast('클래스 등록 화면은 준비 중이에요')}
+          onClick={() => navigate('/oneday-class?compose=1')}
         >
           <Icon name="building" />
           <span>클래스 등록</span>
@@ -57,7 +58,7 @@ export default function OwnerPage() {
               key={item.key}
               type="button"
               className={`op-menu-item${item.wide ? ' is-wide' : ''}`}
-              onClick={() => showToast(`${item.label} 화면은 준비 중이에요`)}
+              onClick={() => item.key === 'space' ? navigate('/space-rental?compose=1') : showToast(`${item.label} 화면은 준비 중이에요`)}
             >
               <span className="op-menu-icon">
                 <Icon name={item.icon} />

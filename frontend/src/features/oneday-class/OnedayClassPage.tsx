@@ -1,8 +1,6 @@
-import { CATEGORIES } from '../../core/categories/categories';
-import PlaceholderPage from '../../shared/PlaceholderPage';
-
-const page = CATEGORIES.find((c) => c.id === 'oneday-class')!;
+import StoreFeedPage from '../store-feed/StoreFeedPage';
+import { fetchClassPosts } from './source';
 
 export default function OnedayClassPage() {
-  return <PlaceholderPage page={page} />;
+  return <StoreFeedPage kind="oneday-class" loadPosts={fetchClassPosts} />;
 }

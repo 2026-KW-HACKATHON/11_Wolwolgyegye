@@ -51,7 +51,7 @@ export const MOCK_STORES: Store[] = [
     thumbnailUrl: 'https://picsum.photos/seed/store-004/400/300',
     businessHours: '화-일 10:00 - 19:00 (월요일 휴무)',
     phone: '02-941-1204',
-    supports: { 'oneday-class': true },
+    supports: { 'oneday-class': true, 'space-rental': true },
   },
   {
     id: 'store-005',
@@ -62,7 +62,7 @@ export const MOCK_STORES: Store[] = [
     thumbnailUrl: 'https://picsum.photos/seed/store-005/400/300',
     businessHours: '매일 08:00 - 22:00',
     phone: '02-941-1205',
-    supports: { 'partner-stores': true, coupon: true, 'closing-sale': true },
+    supports: { 'partner-stores': true, coupon: true, 'closing-sale': true, 'space-rental': true, 'oneday-class': true },
   },
   {
     id: 'store-006',

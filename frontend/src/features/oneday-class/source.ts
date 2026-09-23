@@ -2,6 +2,8 @@ import { fetchStoresByIds } from '../../core/source/storeSource';
 import type { Store } from '../../core/types/place';
 import { MOCK_CLASSES } from './mock';
 import type { OnedayClassItem } from './types';
+import { fetchFeedPosts } from '../store-feed/feedSource';
+import type { FeedPost } from '../store-feed/types';
 
 /** 화면이 받는 모양: 원데이클래스 + 가게 공통 정보 */
 export type OnedayClassItemView = OnedayClassItem & { store: Store };
@@ -19,4 +21,9 @@ export async function fetchClasses(): Promise<OnedayClassItemView[]> {
     const store = stores.get(row.storeId);
     return store ? [{ ...row, store }] : [];
   });
+}
+
+/** 원데이클래스 피드의 조회 경계. 현재는 mock과 이 브라우저에서 만든 글을 함께 돌려준다. */
+export async function fetchClassPosts(): Promise<FeedPost[]> {
+  return fetchFeedPosts('oneday-class');
 }

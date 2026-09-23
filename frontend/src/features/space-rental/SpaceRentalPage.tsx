@@ -1,8 +1,6 @@
-import { CATEGORIES } from '../../core/categories/categories';
-import PlaceholderPage from '../../shared/PlaceholderPage';
-
-const page = CATEGORIES.find((c) => c.id === 'space-rental')!;
+import StoreFeedPage from '../store-feed/StoreFeedPage';
+import { fetchSpacePosts } from './source';
 
 export default function SpaceRentalPage() {
-  return <PlaceholderPage page={page} />;
+  return <StoreFeedPage kind="space-rental" loadPosts={fetchSpacePosts} />;
 }
