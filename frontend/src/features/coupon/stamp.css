@@ -1,0 +1,124 @@
+/* ==========================================================================
+   스탬프 화면 전용 (공통 목록 스타일은 shared/store-list/store-list.css)
+   ========================================================================== */
+
+.st-page {
+  --sl-hero-a: #f2b544;
+  --sl-hero-b: #d9772a;
+  --sl-accent: var(--color-tag-coupon-text, #9c6b12);
+}
+
+/* 카드 상단: 적립 수 + 점 막대 */
+.st-card-count { font-size: 1rem; font-weight: 700; opacity: 0.9; }
+.st-card-count b { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; opacity: 1; }
+
+.st-dots { display: flex; gap: 4px; align-self: stretch; }
+.st-dots i { flex: 1; height: 6px; border-radius: 99px; background: rgba(255, 255, 255, 0.3); }
+.st-dots i.is-on { background: #fff; }
+
+/* --- 적립판 상세 --- */
+
+.st-detail { display: grid; gap: var(--space-5, 24px); }
+
+.st-board {
+  background: var(--color-surface, #fff);
+  border-radius: var(--radius-lg, 22px);
+  box-shadow: var(--shadow-card, 0 2px 10px rgba(74, 50, 34, 0.08));
+  overflow: hidden;
+}
+
+.st-board-top {
+  position: relative;
+  padding: var(--space-5, 24px);
+  background: linear-gradient(150deg, var(--sl-tone-a) 0%, var(--sl-tone-b) 100%);
+  color: #fff;
+}
+
+.st-board-name { margin: var(--space-3, 12px) 0 4px; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+.st-board-name:focus { outline: none; }
+.st-board-meta { margin: 0; font-size: 0.83rem; opacity: 0.92; }
+
+.st-board-count {
+  position: absolute;
+  right: var(--space-5, 24px);
+  bottom: var(--space-4, 16px);
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.st-board-count b { font-size: 2.6rem; font-weight: 800; letter-spacing: -0.03em; }
+
+.st-board-body { padding: var(--space-5, 24px); }
+.st-board-status { margin: 0 0 var(--space-4, 16px); font-size: 0.95rem; font-weight: 800; }
+
+.st-slots {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-3, 12px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.st-slots li > span {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 2px dashed var(--color-text-faint, #b7a998);
+  border-radius: 50%;
+  color: var(--color-text-faint, #b7a998);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.st-slots li.is-gift > span { border-color: var(--sl-tone-b); font-size: 1.3rem; }
+
+.st-slots li.is-on > span {
+  border: 0;
+  background: linear-gradient(150deg, var(--sl-tone-a) 0%, var(--sl-tone-b) 100%);
+  color: #fff;
+  font-size: 1.3rem;
+}
+
+.st-board-foot {
+  margin: var(--space-4, 16px) 0 0;
+  padding-top: var(--space-3, 12px);
+  border-top: 1px dashed var(--color-border, #e7dfd4);
+  color: var(--color-text-muted, #8a7b6e);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.st-side { display: grid; gap: var(--space-3, 12px); align-content: start; }
+
+.st-reward {
+  display: grid;
+  gap: 6px;
+  padding: var(--space-5, 24px);
+  border-radius: var(--radius-lg, 22px);
+  background: var(--color-tag-coupon-bg, #fbe7c6);
+  color: var(--color-tag-coupon-text, #9c6b12);
+}
+
+.st-reward-label { font-size: 0.78rem; font-weight: 700; }
+.st-reward-name { color: var(--color-text, #2b1f17); font-size: 1.4rem; font-weight: 800; }
+.st-reward-sub { font-size: 0.8rem; }
+
+.st-terms {
+  padding: var(--space-4, 16px);
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface-alt, #f3ece3);
+  font-size: 0.83rem;
+}
+
+.st-terms summary { font-weight: 800; cursor: pointer; }
+.st-terms ul { margin: var(--space-2, 8px) 0 0; padding-left: 18px; color: var(--color-text-muted, #8a7b6e); line-height: 1.8; }
+
+.st-info { display: grid; gap: 4px; margin: 0; color: var(--color-text-muted, #8a7b6e); font-size: 0.8rem; }
+
+@media (min-width: 720px) {
+  .st-detail { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; }
+  .st-board-top { padding: var(--space-6, 32px); }
+  .st-board-body { padding: var(--space-6, 32px); }
+}

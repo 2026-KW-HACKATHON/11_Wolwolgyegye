@@ -5,8 +5,10 @@ import type { GeoPoint, Store } from '../types/place';
  * 카테고리별 상세 데이터는 각 features/<카테고리>/mock.ts 에 따로 있고, storeId 로 여기 있는
  * 가게와 연결된다. (id 값은 카테고리 mock 파일들과 반드시 맞춰서 써야 한다)
  *
- * - store-001 ~ 009 : 공간 대여 / 원데이클래스 / 마감세일 / 쿠폰 / 제휴 가게 예시
+ * - store-001 ~ 009 : 공간 대여 / 원데이클래스 / 마감세일 / 스탬프 / 제휴 가게 예시
  * - store-010 ~ 033 : 룰렛 메뉴별 추천 가게 예시
+ *
+ * - 스탬프(coupon)·제휴 가게 표시는 일부 가게에 예시로 켜 두었다.
  *
  * 좌표·주소·전화번호는 월계1동 주변에 흩어 놓은 예시 값이다 (실제 가게 아님).
  */
@@ -41,7 +43,7 @@ export const MOCK_STORES: Store[] = [
     thumbnailUrl: 'https://picsum.photos/seed/store-003/400/300',
     businessHours: '매일 09:00 - 23:00',
     phone: '02-941-1203',
-    supports: { 'space-rental': true, 'partner-stores': true },
+    supports: { 'space-rental': true, 'partner-stores': true, coupon: true },
   },
   {
     id: 'store-004',
@@ -73,7 +75,7 @@ export const MOCK_STORES: Store[] = [
     thumbnailUrl: 'https://picsum.photos/seed/store-006/400/300',
     businessHours: '매일 07:30 - 21:00',
     phone: '02-941-1206',
-    supports: { 'closing-sale': true },
+    supports: { 'closing-sale': true, coupon: true, 'partner-stores': true },
   },
   {
     id: 'store-007',
@@ -119,7 +121,7 @@ export const MOCK_STORES: Store[] = [
     phone: '02-942-1000',
     rating: 4.7,
     reviewCount: 286,
-    supports: { roulette: true },
+    supports: { roulette: true, 'partner-stores': true },
   },
   {
     id: 'store-011',
@@ -158,7 +160,7 @@ export const MOCK_STORES: Store[] = [
     phone: '02-942-1039',
     rating: 4.6,
     reviewCount: 198,
-    supports: { roulette: true },
+    supports: { roulette: true, coupon: true, 'partner-stores': true },
   },
   {
     id: 'store-014',
@@ -197,7 +199,7 @@ export const MOCK_STORES: Store[] = [
     phone: '02-942-1078',
     rating: 4.8,
     reviewCount: 241,
-    supports: { roulette: true },
+    supports: { roulette: true, 'partner-stores': true },
   },
   {
     id: 'store-017',
@@ -236,7 +238,7 @@ export const MOCK_STORES: Store[] = [
     phone: '02-942-1117',
     rating: 4.5,
     reviewCount: 260,
-    supports: { roulette: true },
+    supports: { roulette: true, 'partner-stores': true },
   },
   {
     id: 'store-020',
@@ -275,7 +277,7 @@ export const MOCK_STORES: Store[] = [
     phone: '02-942-1156',
     rating: 4.7,
     reviewCount: 176,
-    supports: { roulette: true },
+    supports: { roulette: true, 'partner-stores': true },
   },
   {
     id: 'store-023',
@@ -314,7 +316,7 @@ export const MOCK_STORES: Store[] = [
     phone: '02-942-1195',
     rating: 4.6,
     reviewCount: 389,
-    supports: { roulette: true },
+    supports: { roulette: true, coupon: true, 'partner-stores': true },
   },
   {
     id: 'store-026',
@@ -353,7 +355,7 @@ export const MOCK_STORES: Store[] = [
     phone: '02-942-1234',
     rating: 4.6,
     reviewCount: 152,
-    supports: { roulette: true },
+    supports: { roulette: true, 'partner-stores': true },
   },
   {
     id: 'store-029',
@@ -392,7 +394,7 @@ export const MOCK_STORES: Store[] = [
     phone: '02-942-1273',
     rating: 4.5,
     reviewCount: 412,
-    supports: { roulette: true },
+    supports: { roulette: true, coupon: true },
   },
   {
     id: 'store-032',
@@ -405,7 +407,7 @@ export const MOCK_STORES: Store[] = [
     phone: '02-942-1286',
     rating: 4.4,
     reviewCount: 265,
-    supports: { roulette: true },
+    supports: { roulette: true, 'partner-stores': true },
   },
   {
     id: 'store-033',
