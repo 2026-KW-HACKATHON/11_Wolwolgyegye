@@ -49,11 +49,11 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'coupon',
-    name: '쿠폰제',
+    name: '스탬프',
     path: '/coupon',
     icon: '◈',
     isFixed: false,
-    help: '방문 횟수를 쌓아 혜택을 받는 쿠폰 화면입니다. (임시 안내 문구)',
+    help: '가게를 골라 나의 스탬프 적립 현황을 확인해요. 가게별로 정해진 횟수를 채우면 상품을 받을 수 있어요.',
   },
   {
     id: 'partner-stores',
@@ -61,7 +61,7 @@ export const CATEGORIES: Category[] = [
     path: '/partner-stores',
     icon: '❖',
     isFixed: false,
-    help: '제휴를 맺은 동네 가게 목록을 보여주는 화면입니다. (임시 안내 문구)',
+    help: '소속 단과대학을 고르면 광운대 학생 제휴 혜택이 있는 가게를 볼 수 있어요. 제휴 내용은 각 단과대 학생회 공지를 기준으로 해요.',
   },
   {
     id: 'login',
