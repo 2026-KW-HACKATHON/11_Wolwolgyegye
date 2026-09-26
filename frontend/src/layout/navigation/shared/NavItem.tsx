@@ -2,6 +2,13 @@ import { useNavigate } from 'react-router-dom';
 import type { PageMeta } from '../../../core/categories/categoryTypes';
 import type { NavHandlers } from '../handlers/navHandlers';
 import './NavItem.css';
+import Icon from '../../../shared/Icon';
+import type { IconName } from '../../../shared/icons';
+
+const NAV_ICONS: Record<string, IconName> = {
+  recommend: 'house', 'space-rental': 'sofa', 'oneday-class': 'palette',
+  roulette: 'wheel', 'closing-sale': 'tag', coupon: 'gift', 'partner-stores': 'storefront', settings: 'gear',
+};
 
 interface NavItemProps {
   page: PageMeta;
@@ -25,9 +32,9 @@ export default function NavItem({ page, icon, active, handlers, className }: Nav
       onMouseLeave={handlers.onHoverEnd ? () => handlers.onHoverEnd?.(page) : undefined}
     >
       <span className="nav-item__icon" aria-hidden="true">
-        {icon}
+        {NAV_ICONS[page.id] ? <Icon name={NAV_ICONS[page.id]} /> : icon}
       </span>
-      <span className="nav-item__label">{page.name}</span>
+      <span className="nav-item__label">{page.id === 'recommend' ? '동네 소식' : page.name}</span>
     </button>
   );
 }
