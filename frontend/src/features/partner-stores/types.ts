@@ -7,6 +7,18 @@ import type { Store } from '../../core/types/place';
 
 /** 광운대학교 단과대학 */
 export type CollegeKey = 'eie' | 'ai' | 'eng' | 'sci' | 'hss' | 'law' | 'biz' | 'chambit';
+export type PartnerAudience = CollegeKey | 'all' | 'resident';
+export type PartnerIndustry = '전체' | '음식점' | '카페·베이커리' | '생활·문화';
+
+export interface PartnerBenefitDetails {
+  status: 'demo' | 'verified' | 'needs-check';
+  sourceUrl?: string;
+  verifiedAt?: string;
+  validUntil?: string;
+  condition?: string;
+  minimumSpend?: number;
+  stampStacking?: 'allowed' | 'not-allowed' | 'unknown';
+}
 
 export interface College {
   key: CollegeKey;
@@ -16,26 +28,31 @@ export interface College {
   name: string;
 }
 
-/** 가게 한 곳의 제휴 정보 (DB 의 partner_benefits 테이블 한 행) */
+/** 가게 한 곳의 제휴 정보. 단과대별 DB 행을 가게별로 묶어서 사용한다. */
 export interface PartnerBenefit {
   storeId: string;
   /** 단과대학별 혜택 문구. 키가 있는 단과대 학생만 혜택 대상 */
   benefits: Partial<Record<CollegeKey, string>>;
   /** 이용 조건 (예: 학생증 제시) */
   condition: string;
+  details?: Partial<Record<CollegeKey, PartnerBenefitDetails>>;
 }
 
-/** 화면이 받는 모양: 제휴 정보 + 가게 공통 정보 + 도보 시간 (source.ts 가 조합) */
+/** 제휴 정보 + 가게 정보 + 기준점 직선거리. walkMinutes는 기존 호환 필드. */
 export interface PartnerStoreView extends PartnerBenefit {
   store: Store;
   walkMinutes: number;
+  referenceDistanceMeters: number;
+  menus: PartnerStoreMenuItem[];
+  dataMode: 'demo' | 'live';
 }
 
-/** 제휴 가게가 파는 메뉴 하나 (기존 규격 유지, 아직 화면에서 쓰지 않음) */
+/** 메뉴별로 검증된 할인만 지정하며 무료 증정 혜택은 금액으로 환산하지 않는다. */
 export interface PartnerStoreMenuItem {
   id: string;
   storeId: string;
   name: string;
   /** 원 단위 정수 */
   price: number;
+  discounts?: Partial<Record<CollegeKey, { type: 'amount' | 'percent'; value: number }>>;
 }

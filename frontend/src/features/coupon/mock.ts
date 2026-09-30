@@ -1,4 +1,4 @@
-import type { MyStampProgress, StampPolicy } from './types';
+import type { MyStampProgress, StampPolicy, StampTransaction } from './types';
 
 /** storeId 는 core/mock/stores.ts 의 가게 id 와 맞춰서 쓴다 (supports.coupon 이 켜진 가게) */
 export const MOCK_STAMP_POLICIES: StampPolicy[] = [
@@ -17,4 +17,42 @@ export const MOCK_MY_STAMPS: MyStampProgress[] = [
   { storeId: 'store-013', count: 10 },
   { storeId: 'store-025', count: 5 },
   { storeId: 'store-031', count: 1 },
+];
+
+/**
+ * 예시 적립·교환 이력 (stamp_transactions 모양). 오래된 순으로 적고, 처리 후 잔액은 차례로 더해서 만든다.
+ * 마지막 잔액이 위 MOCK_MY_STAMPS 의 count 와 같아야 한다.
+ */
+function sample(storeId: string, reason: string, rows: Array<[at: string, delta?: number, why?: string]>): StampTransaction[] {
+  let balance = 0;
+  return rows.map(([at, delta = 1, why = reason], i) => {
+    balance += delta;
+    return { id: `sample-${storeId}-${i + 1}`, storeId, delta, balanceAfter: balance, reason: why, createdAt: at, origin: 'sample' };
+  });
+}
+
+export const MOCK_STAMP_HISTORY: StampTransaction[] = [
+  ...sample('store-005', '음료 구매', [
+    ['2026-07-14T08:42:00+09:00'], ['2026-07-18T13:05:00+09:00'], ['2026-07-22T08:51:00+09:00'], ['2026-07-29T15:20:00+09:00'],
+    ['2026-08-03T09:10:00+09:00'], ['2026-08-07T12:48:00+09:00'], ['2026-08-11T08:37:00+09:00'], ['2026-08-14T16:02:00+09:00'],
+    ['2026-08-19T08:55:00+09:00'], ['2026-08-21T13:30:00+09:00'],
+    ['2026-08-21T13:31:00+09:00', -10, '상품 교환 · 아메리카노 1잔'],
+    ['2026-09-01T08:40:00+09:00'], ['2026-09-04T12:15:00+09:00'], ['2026-09-09T08:47:00+09:00'], ['2026-09-15T14:22:00+09:00'],
+    ['2026-09-19T08:58:00+09:00'], ['2026-09-24T13:11:00+09:00'], ['2026-09-29T08:44:00+09:00'],
+  ]),
+  ...sample('store-006', '5,000원 이상 구매', [
+    ['2026-09-06T10:12:00+09:00'], ['2026-09-17T19:40:00+09:00'], ['2026-09-27T11:03:00+09:00'],
+  ]),
+  ...sample('store-013', '식사 이용', [
+    ['2026-08-05T12:20:00+09:00'], ['2026-08-12T12:34:00+09:00'], ['2026-08-19T18:10:00+09:00'], ['2026-08-26T12:25:00+09:00'],
+    ['2026-09-02T12:41:00+09:00'], ['2026-09-08T18:27:00+09:00'], ['2026-09-14T12:16:00+09:00'], ['2026-09-18T12:30:00+09:00'],
+    ['2026-09-23T18:45:00+09:00'], ['2026-09-28T12:22:00+09:00'],
+  ]),
+  ...sample('store-025', '식사 이용', [
+    ['2026-08-30T19:05:00+09:00'], ['2026-09-06T12:50:00+09:00'], ['2026-09-13T19:32:00+09:00'], ['2026-09-20T12:44:00+09:00', 1, '식사 이용 · 포장'],
+    ['2026-09-26T19:18:00+09:00'],
+  ]),
+  ...sample('store-031', '8,000원 이상 주문', [
+    ['2026-09-25T16:40:00+09:00'],
+  ]),
 ];

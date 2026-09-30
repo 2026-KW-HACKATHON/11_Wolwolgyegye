@@ -31,10 +31,10 @@ export const MOCK_PARTNER_BENEFITS: PartnerBenefit[] = [
   { storeId: 'store-032', condition: '학생증 제시', benefits: { hss: '튀김 1인분 서비스', law: '튀김 1인분 서비스', chambit: '500원 할인' } },
 ];
 
-/** 기존 예시 메뉴 데이터 (아직 화면에서 쓰지 않음) */
+/** 메뉴·할인 계산 모두 시연용. 문구를 파싱하지 않고 명시한 메뉴에만 할인 적용. */
 export const MOCK_PARTNER_STORE_MENU: PartnerStoreMenuItem[] = [
-  { id: 'menu-001-1', storeId: 'store-001', name: '알리오올리오', price: 12000 },
-  { id: 'menu-001-2', storeId: 'store-001', name: '리조또', price: 13000 },
-  { id: 'menu-005-1', storeId: 'store-005', name: '아메리카노', price: 4500 },
-  { id: 'menu-005-2', storeId: 'store-005', name: '카페라떼', price: 5000 },
+  { id: 'menu-001-1', storeId: 'store-001', name: '알리오올리오', price: 12000, discounts: { hss: { type: 'percent', value: 10 }, chambit: { type: 'percent', value: 10 } } },
+  { id: 'menu-001-2', storeId: 'store-001', name: '리조또', price: 13000, discounts: { hss: { type: 'percent', value: 10 }, chambit: { type: 'percent', value: 10 } } },
+  { id: 'menu-005-1', storeId: 'store-005', name: '아메리카노', price: 4500, discounts: { ai: { type: 'amount', value: 500 }, sci: { type: 'amount', value: 500 }, chambit: { type: 'amount', value: 500 } } },
+  { id: 'menu-005-2', storeId: 'store-005', name: '카페라떼', price: 5000, discounts: { ai: { type: 'amount', value: 500 }, sci: { type: 'amount', value: 500 }, chambit: { type: 'amount', value: 500 } } },
 ];
