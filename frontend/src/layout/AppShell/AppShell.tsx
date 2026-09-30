@@ -1,4 +1,5 @@
 import { useLayoutMode } from '../../core/device/LayoutModeContext';
+import { useActivePath } from '../../core/router/useActivePath';
 import KeepAlivePages from '../KeepAlivePages/KeepAlivePages';
 import Navigation from '../navigation/Navigation';
 import PageHeader from '../PageHeader/PageHeader';
@@ -13,12 +14,13 @@ import './AppShell.css';
  */
 export default function AppShell() {
   const mode = useLayoutMode();
+  const activePath = useActivePath();
   const isDesktop = mode === 'desktop';
 
   return (
     <div className="app-shell" data-layout={mode}>
       {isDesktop ? <Navigation /> : <PageHeader />}
-      <main className="app-shell__main">
+      <main className={`app-shell__main${activePath === '/recommend' ? ' app-shell__main--recommend' : ''}`}>
         <KeepAlivePages />
       </main>
       {!isDesktop && <Navigation />}

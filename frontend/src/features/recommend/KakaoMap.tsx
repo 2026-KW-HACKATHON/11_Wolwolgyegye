@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Store } from '../../core/types/place';
 import { MOCK_USER_LOCATION } from '../../core/mock/stores';
 import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
+import MapPreview from './MapPreview';
 
 interface KakaoLatLng { getLat(): number; getLng(): number }
 interface KakaoMapInstance { setCenter(position: KakaoLatLng): void; relayout(): void }
@@ -90,7 +91,7 @@ export default function KakaoMap({ stores, selectedId, onSelect }: { stores: Sto
   useEffect(() => {
     const store = stores.find((item) => item.id === selectedId);
     if (store && mapRef.current && sdkRef.current) mapRef.current.setCenter(new sdkRef.current.LatLng(store.location.lat, store.location.lng));
-  }, [selectedId, stores]);
+  }, [selectedId, stores, status]);
 
   useEffect(() => {
     if (!active || !mapRef.current || !containerRef.current) return;
@@ -101,9 +102,11 @@ export default function KakaoMap({ stores, selectedId, onSelect }: { stores: Sto
     return () => observer.disconnect();
   }, [active, status]);
 
+  if (import.meta.env.DEV && !key) return <MapPreview stores={stores} selectedId={selectedId} onSelect={onSelect} />;
+
   return <div className="rp-map-frame">
     <div ref={containerRef} className="rp-map-canvas" role="img" aria-label="월계1동 주변 가게가 표시된 카카오 지도" />
-    {status !== 'ready' && <div className="rp-map-state" role={status === 'error' ? 'alert' : 'status'}><strong>{status === 'loading' ? '동네 지도를 불러오는 중' : '지도를 표시할 수 없어요'}</strong><span>{status === 'error' ? message : '잠시만 기다려 주세요.'}</span></div>}
+    {status !== 'ready' && <div className="rp-map-state" role={status === 'error' ? 'alert' : 'status'}><strong>{status === 'loading' ? '동네 지도를 불러오는 중' : '지도를 잠시 불러오지 못했어요'}</strong><span>{status === 'error' ? '잠시 후 다시 방문해 주세요. 동네 소식은 계속 볼 수 있어요.' : '잠시만 기다려 주세요.'}</span>{import.meta.env.DEV && status === 'error' && <small>{message}</small>}</div>}
     {status === 'ready' && <button type="button" className="rp-map-recenter" onClick={() => mapRef.current?.setCenter(new sdkRef.current!.LatLng(MOCK_USER_LOCATION.lat, MOCK_USER_LOCATION.lng))} aria-label="월계1동 기준점으로 이동">◎</button>}
   </div>;
 }

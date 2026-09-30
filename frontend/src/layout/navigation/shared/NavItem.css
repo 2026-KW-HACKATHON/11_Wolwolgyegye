@@ -4,13 +4,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  color: #6b7280;
+  gap: 5px;
+  color: var(--color-text-muted);
   white-space: nowrap;
 }
 
 .nav-item__icon {
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1;
 }
 
@@ -20,6 +20,9 @@
 }
 
 .nav-item.is-active {
-  color: #2563eb;
+  color: var(--color-brand);
   font-weight: 700;
 }
+
+.nav-item__icon .icon { display: block; }
+.nav-item:focus-visible { outline: 3px solid var(--color-brand); outline-offset: -3px; border-radius: 8px; }

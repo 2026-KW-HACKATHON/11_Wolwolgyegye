@@ -4,6 +4,7 @@ import { ALL_PAGES, SETTINGS_PAGE } from '../../core/categories/categories';
 import { useLayoutMode } from '../../core/device/LayoutModeContext';
 import { useActivePath } from '../../core/router/useActivePath';
 import HelpPopup from '../HelpPopup/HelpPopup';
+import Icon from '../../shared/Icon';
 import { GEAR_GLYPH } from '../navigation/shared/icons';
 import './PageHeader.css';
 
@@ -31,8 +32,8 @@ export default function PageHeader() {
   const showActions = mode === 'compact';
 
   return (
-    <header className="page-header" data-layout={mode}>
-      <h1 className="page-header__title">{page?.name ?? ''}</h1>
+    <header className="page-header" data-layout={mode} data-home={activePath === '/recommend'}>
+      {activePath === '/recommend' ? <div className="page-header__brand"><span className="page-header__brand-mark" aria-hidden="true"><Icon name="storefront" /></span><strong>월월계계</strong><span className="page-header__tagline">가까워지는 우리 동네</span></div> : <h1 className="page-header__title">{page?.name ?? ''}</h1>}
 
       {showActions && (
         <div className="page-header__actions">

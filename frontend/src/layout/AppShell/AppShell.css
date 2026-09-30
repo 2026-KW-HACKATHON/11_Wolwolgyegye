@@ -21,3 +21,18 @@
 .app-shell[data-layout='desktop'] .app-shell__main {
   padding: 24px;
 }
+
+/* 지도 홈은 콘텐츠 슬롯 전체를 사용하고, 피드만 내부에서 스크롤한다. */
+.app-shell__main--recommend {
+  overflow: hidden;
+  padding: 0;
+}
+
+.app-shell__main--recommend > div {
+  height: 100%;
+}
+
+.app-shell[data-layout='compact-landscape'] .app-shell__main--recommend,
+.app-shell[data-layout='desktop'] .app-shell__main--recommend {
+  padding: 0;
+}

@@ -1,124 +1,659 @@
 /* ==========================================================================
-   스탬프 화면 전용 (공통 목록 스타일은 shared/store-list/store-list.css)
+   스탬프 화면 (/coupon). 홈 화면과 같은 아이보리·자주색 톤을 쓰고,
+   색은 theme.css 토큰을 이 화면 이름(--st-*)으로 한 번만 연결해서 쓴다.
    ========================================================================== */
 
 .st-page {
-  --sl-hero-a: #f2b544;
-  --sl-hero-b: #d9772a;
-  --sl-accent: var(--color-tag-coupon-text, #9c6b12);
+  --st-ink: var(--color-text, #2b1f17);
+  --st-muted: #6f655c;
+  --st-faint: var(--color-text-faint, #b7a998);
+  --st-line: var(--color-border, #e7dfd4);
+  --st-paper: var(--color-surface, #fff);
+  --st-cream: var(--color-bg, #faf6f0);
+  --st-cream-2: var(--color-surface-alt, #f3ece3);
+  --st-brand: var(--color-brand, #802d40);
+  --st-brand-soft: var(--color-brand-soft, #f6e9e9);
+  --st-seal: var(--color-brand, #802d40);
+  --st-gold: var(--color-tag-coupon-text, #9c6b12);
+  --st-gold-soft: var(--color-tag-coupon-bg, #fbe7c6);
+  --st-gold-pale: var(--color-cat-coupon-bg, #f8f0dd);
+  --st-partner: var(--color-tag-partner-text, #2e6da4);
+  --st-partner-soft: var(--color-tag-partner-bg, #dceaf7);
+  --st-like: var(--color-like, #c96a6a);
+  --st-shadow: 0 6px 22px rgba(59, 48, 42, 0.07);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-bottom: 24px;
+  color: var(--st-ink);
 }
 
-/* 카드 상단: 적립 수 + 점 막대 */
-.st-card-count { font-size: 1rem; font-weight: 700; opacity: 0.9; }
-.st-card-count b { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; opacity: 1; }
+.st-page *, .st-page *::before, .st-page *::after { box-sizing: border-box; }
+.st-page :is(button, input, select, a, summary) { font: inherit; }
+.st-page button { cursor: pointer; }
+.st-page :is(button, input, select, a, summary):focus-visible { outline: 3px solid var(--st-brand); outline-offset: 2px; }
+.st-page .icon { font-size: 1.15em; }
+.st-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
-.st-dots { display: flex; gap: 4px; align-self: stretch; }
-.st-dots i { flex: 1; height: 6px; border-radius: 99px; background: rgba(255, 255, 255, 0.3); }
-.st-dots i.is-on { background: #fff; }
-
-/* --- 적립판 상세 --- */
-
-.st-detail { display: grid; gap: var(--space-5, 24px); }
-
-.st-board {
-  background: var(--color-surface, #fff);
-  border-radius: var(--radius-lg, 22px);
-  box-shadow: var(--shadow-card, 0 2px 10px rgba(74, 50, 34, 0.08));
-  overflow: hidden;
+/* --- 버튼 --- */
+.st-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 12px 18px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition: transform 0.12s ease, background-color 0.15s ease;
 }
+.st-btn:active { transform: scale(0.98); }
+.st-btn--primary { background: var(--st-brand); color: var(--color-on-primary, #faf6f0); }
+.st-btn--line { background: var(--st-paper); border-color: var(--st-line); color: var(--st-ink); }
+.st-btn--block { width: 100%; }
 
-.st-board-top {
-  position: relative;
-  padding: var(--space-5, 24px);
-  background: linear-gradient(150deg, var(--sl-tone-a) 0%, var(--sl-tone-b) 100%);
-  color: #fff;
-}
-
-.st-board-name { margin: var(--space-3, 12px) 0 4px; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
-.st-board-name:focus { outline: none; }
-.st-board-meta { margin: 0; font-size: 0.83rem; opacity: 0.92; }
-
-.st-board-count {
-  position: absolute;
-  right: var(--space-5, 24px);
-  bottom: var(--space-4, 16px);
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.st-board-count b { font-size: 2.6rem; font-weight: 800; letter-spacing: -0.03em; }
-
-.st-board-body { padding: var(--space-5, 24px); }
-.st-board-status { margin: 0 0 var(--space-4, 16px); font-size: 0.95rem; font-weight: 800; }
-
-.st-slots {
+/* ==========================================================================
+   목록: 스탬프 지갑
+   ========================================================================== */
+.st-wallet {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--space-3, 12px);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  padding: 22px 20px 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--st-line);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--st-ink) 7%, transparent) 1px, transparent 1.5px) 0 0 / 14px 14px,
+    var(--st-cream);
 }
 
-.st-slots li > span {
+.st-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--st-brand);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.st-wallet-title {
+  margin: 10px 0 0;
+  font-size: 1.45rem;
+  line-height: 1.35;
+  font-weight: 850;
+  letter-spacing: -0.035em;
+  word-break: keep-all;
+}
+.st-wallet-title em { font-style: normal; color: var(--st-brand); }
+
+.st-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 18px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px dashed color-mix(in srgb, var(--st-ink) 18%, transparent);
+}
+.st-stats > div { padding: 0 10px; border-left: 1px solid var(--st-line); }
+.st-stats > div:first-child { padding-left: 0; border-left: 0; }
+.st-stats dt { color: var(--st-muted); font-size: 0.74rem; font-weight: 700; }
+.st-stats dd { margin: 3px 0 0; font-size: 0.85rem; font-weight: 700; }
+.st-stats dd b { font-size: 1.45rem; font-weight: 850; letter-spacing: -0.02em; }
+
+.st-spotlight {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 84px;
+  padding: 12px 14px;
+  border: 1px solid var(--st-line);
+  border-radius: 18px;
+  background: var(--st-paper);
+  color: inherit;
+  text-align: left;
+  box-shadow: var(--st-shadow);
+}
+.st-spotlight.is-ready { background: var(--st-gold-pale); border-color: color-mix(in srgb, var(--st-gold) 35%, transparent); }
+.st-spotlight-seal { width: 58px; flex-shrink: 0; color: var(--st-seal); }
+.st-spotlight-text { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.st-spotlight-text small { color: var(--st-brand); font-size: 0.74rem; font-weight: 800; }
+.st-spotlight.is-ready .st-spotlight-text small { color: var(--st-gold); }
+.st-spotlight-text strong { font-size: 1.05rem; font-weight: 850; }
+.st-spotlight-text > span { color: var(--st-muted); font-size: 0.82rem; }
+.st-spotlight-go { color: var(--st-muted); font-size: 1.2rem; }
+
+/* 검색·정렬·필터 */
+.st-toolbar { display: flex; gap: 8px; }
+.st-search {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 14px;
+  border: 1px solid var(--st-line);
+  border-radius: 999px;
+  background: var(--st-paper);
+  color: var(--st-muted);
+}
+.st-search:focus-within { border-color: var(--st-brand); }
+.st-search input { flex: 1; min-width: 0; min-height: 48px; border: 0; background: transparent; color: var(--st-ink); font-size: 0.9rem; }
+.st-search input:focus { outline: none; }
+.st-search input::placeholder { color: #857a70; }
+.st-sort select {
+  min-height: 50px;
+  padding: 0 34px 0 14px;
+  border: 1px solid var(--st-line);
+  border-radius: 999px;
+  background: var(--st-paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236f655c' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center / 16px;
+  color: var(--st-ink);
+  font-size: 0.85rem;
+  font-weight: 700;
+  appearance: none;
+  cursor: pointer;
+}
+
+.st-filters {
+  display: flex;
+  gap: 8px;
+  margin: 12px -16px 22px;
+  padding: 2px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.st-filters::-webkit-scrollbar { display: none; }
+.st-filters button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--st-line);
+  border-radius: 999px;
+  background: var(--st-paper);
+  color: var(--st-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.st-filters button span {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--st-cream-2);
+  color: var(--st-muted);
+  font-size: 0.74rem;
+  text-align: center;
+}
+.st-filters button.is-on { background: var(--st-brand); border-color: var(--st-brand); color: #fff; }
+.st-filters button.is-on span { background: rgba(255, 255, 255, 0.22); color: #fff; }
+
+.st-list-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; }
+.st-list-head h2 { margin: 0; font-size: 1.12rem; font-weight: 850; letter-spacing: -0.02em; }
+.st-list-head p { margin: 0; color: var(--st-muted); font-size: 0.88rem; }
+.st-list-head b { color: var(--st-brand); }
+
+/* 카드 */
+.st-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin: 0; padding: 0; list-style: none; }
+
+.st-item {
+  position: relative;
+  border: 1px solid var(--st-line);
+  border-radius: 20px;
+  background: var(--st-paper);
+  box-shadow: var(--st-shadow);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.st-item.is-ready {
+  border-color: color-mix(in srgb, var(--st-gold) 40%, transparent);
+  background: linear-gradient(180deg, var(--st-gold-pale) 0%, var(--st-paper) 62%);
+}
+
+.st-item-main {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  padding: 16px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.st-item-head { display: flex; align-items: center; gap: 12px; padding-right: 44px; }
+.st-avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 2px solid color-mix(in srgb, var(--st-seal) 55%, transparent);
+  border-radius: 50%;
+  background: var(--st-brand-soft);
+  color: var(--st-seal);
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+.st-avatar--lg { width: 56px; height: 56px; font-size: 1.4rem; }
+.st-item-title { display: grid; gap: 2px; min-width: 0; }
+.st-item-meta { color: var(--st-muted); font-size: 0.78rem; font-weight: 600; }
+.st-item-title strong { overflow: hidden; font-size: 1.08rem; font-weight: 850; letter-spacing: -0.02em; text-overflow: ellipsis; white-space: nowrap; }
+
+.st-meter { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 5px; }
+.st-meter i {
   display: grid;
   place-items: center;
   aspect-ratio: 1;
-  border: 2px dashed var(--color-text-faint, #b7a998);
+  border: 1.5px dashed var(--st-faint);
   border-radius: 50%;
-  color: var(--color-text-faint, #b7a998);
-  font-size: 0.9rem;
-  font-weight: 700;
+  color: var(--st-gold);
+  font-size: 0.72rem;
 }
-
-.st-slots li.is-gift > span { border-color: var(--sl-tone-b); font-size: 1.3rem; }
-
-.st-slots li.is-on > span {
+.st-meter i.is-gift { border-color: color-mix(in srgb, var(--st-gold) 60%, transparent); }
+.st-meter i.is-on {
   border: 0;
-  background: linear-gradient(150deg, var(--sl-tone-a) 0%, var(--sl-tone-b) 100%);
-  color: #fff;
-  font-size: 1.3rem;
+  background: var(--st-seal);
+  box-shadow: inset 0 0 0 2.5px var(--st-paper), inset 0 0 0 3.5px var(--st-seal);
+  opacity: 0.9;
 }
+.st-item.is-ready .st-meter i.is-on.is-gift { background: var(--st-gold); box-shadow: inset 0 0 0 2.5px var(--st-gold-pale), inset 0 0 0 3.5px var(--st-gold); }
 
-.st-board-foot {
-  margin: var(--space-4, 16px) 0 0;
-  padding-top: var(--space-3, 12px);
-  border-top: 1px dashed var(--color-border, #e7dfd4);
-  color: var(--color-text-muted, #8a7b6e);
-  font-size: 0.78rem;
+.st-item-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.st-item-count { color: var(--st-muted); font-size: 0.88rem; font-weight: 700; }
+.st-item-count b { color: var(--st-ink); font-size: 1.5rem; font-weight: 900; letter-spacing: -0.03em; }
+.st-badge {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--st-brand-soft);
+  color: var(--st-brand);
+  font-size: 0.76rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.st-badge.is-ready { background: var(--st-gold); color: #fff; }
+.st-badge.is-new { background: var(--st-cream-2); color: var(--st-muted); }
+
+.st-item-reward {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--st-line);
+  color: var(--st-gold);
+}
+.st-item-reward-text { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 8px; flex: 1; min-width: 0; }
+.st-item-reward b { color: var(--st-ink); font-size: 0.92rem; font-weight: 750; }
+.st-item-reward small { color: var(--st-muted); font-size: 0.76rem; }
+
+.st-heart {
+  position: absolute;
+  top: 12px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #8b8076;
+  font-size: 1.05rem;
+}
+.st-heart.is-on { color: var(--st-like); background: color-mix(in srgb, var(--st-like) 12%, transparent); }
+.st-heart.is-on .icon, .st-like.is-on .icon { fill: currentColor; }
+
+.st-skeleton { height: 214px; border-radius: 20px; background: linear-gradient(100deg, var(--st-cream-2) 30%, var(--st-cream) 50%, var(--st-cream-2) 70%) 0 0 / 200% 100%; animation: st-loading 1.4s infinite; }
+@keyframes st-loading { to { background-position: -200% 0; } }
+
+.st-empty {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 32px 20px;
+  border: 1px dashed var(--st-line);
+  border-radius: 20px;
+  background: var(--st-cream);
   text-align: center;
 }
+.st-empty strong { font-size: 1rem; }
+.st-empty p { margin: 0 0 10px; color: var(--st-muted); font-size: 0.88rem; }
+.st-empty .st-btn { min-height: 46px; font-size: 0.88rem; }
+.st-inline-note { margin: 0 0 12px; padding: 10px 14px; border-radius: 12px; background: var(--st-cream-2); color: var(--st-muted); font-size: 0.85rem; }
 
-.st-side { display: grid; gap: var(--space-3, 12px); align-content: start; }
+/* 이용 방법 */
+.st-how { margin-top: 28px; padding: 20px; border-radius: 22px; background: var(--st-cream); }
+.st-how h2 { margin: 0 0 14px; font-size: 1.02rem; font-weight: 850; }
+.st-how ol { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; counter-reset: st-how; }
+.st-how li { display: grid; grid-template-columns: 44px 1fr; gap: 2px 12px; align-items: center; }
+.st-how-icon { display: grid; grid-row: span 2; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--st-paper); color: var(--st-brand); font-size: 1.15rem; box-shadow: var(--st-shadow); }
+.st-how li b { font-size: 0.92rem; }
+.st-how li > span:last-child { color: var(--st-muted); font-size: 0.82rem; line-height: 1.55; }
 
+.st-demo-note { margin: 18px 0 0; color: var(--st-muted); font-size: 0.78rem; line-height: 1.6; text-align: center; }
+.st-demo-note button { min-height: 44px; margin-left: 6px; padding: 0 4px; border: 0; background: none; color: var(--st-brand); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ==========================================================================
+   가게별 적립판
+   ========================================================================== */
+.st-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-bottom: 14px;
+  padding: 0 16px 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--st-cream-2);
+  color: var(--st-ink);
+  font-size: 0.88rem;
+  font-weight: 750;
+}
+
+.st-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'card' 'actions' 'history' 'info';
+  gap: 16px;
+  align-items: start;
+}
+.st-paper { grid-area: card; }
+.st-actions { grid-area: actions; }
+.st-history { grid-area: history; }
+.st-info { grid-area: info; }
+
+/* 종이 적립판 */
+.st-paper {
+  position: relative;
+  padding: 20px 18px 16px;
+  overflow: hidden;
+  border: 1px solid var(--st-line);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--st-ink) 6%, transparent) 1px, transparent 1.5px) 0 0 / 12px 12px,
+    var(--st-cream);
+  box-shadow: var(--st-shadow);
+}
+.st-paper.is-done { border-color: color-mix(in srgb, var(--st-gold) 45%, transparent); }
+/* 양옆 펀칭 홈 */
+.st-paper::before, .st-paper::after {
+  content: '';
+  position: absolute;
+  top: 104px;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--st-line);
+  border-radius: 50%;
+  background: var(--st-paper);
+}
+.st-paper::before { left: -12px; }
+.st-paper::after { right: -12px; }
+
+.st-paper-head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
+.st-paper-title { min-width: 0; }
+.st-paper-title p { margin: 0; color: var(--st-muted); font-size: 0.8rem; font-weight: 600; }
+.st-paper-title h1 { margin: 2px 0 0; font-size: 1.45rem; font-weight: 900; letter-spacing: -0.035em; line-height: 1.25; word-break: keep-all; }
+.st-paper-title h1:focus { outline: none; }
+.st-paper-count { margin: 0; color: var(--st-muted); font-weight: 800; white-space: nowrap; }
+.st-paper-count b { color: var(--st-seal); font-size: 2.4rem; font-weight: 900; letter-spacing: -0.04em; }
+.st-paper-count span { margin-left: 2px; font-size: 1rem; }
+
+.st-paper-status {
+  margin: 18px 0 16px;
+  padding-top: 16px;
+  border-top: 1.5px dashed color-mix(in srgb, var(--st-ink) 16%, transparent);
+  font-size: 0.95rem;
+  font-weight: 750;
+}
+.st-paper-status b { color: var(--st-seal); }
+
+.st-slots { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px 8px; margin: 0; padding: 0; list-style: none; }
+.st-slots li { position: relative; display: grid; place-items: center; aspect-ratio: 1; }
+.st-slot-empty {
+  display: grid;
+  place-items: center;
+  width: 88%;
+  aspect-ratio: 1;
+  border: 2px dashed var(--st-faint);
+  border-radius: 50%;
+  color: var(--st-faint);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+.st-slots li.is-gift .st-slot-empty { border-color: var(--st-gold); background: var(--st-gold-pale); color: var(--st-gold); font-size: 1.3rem; }
+
+.st-seal { display: block; width: 100%; height: auto; color: var(--st-seal); opacity: 0.9; transform: rotate(var(--st-tilt, 0deg)); overflow: visible; }
+.st-seal--sm { width: 100%; }
+.st-slots li.is-gift .st-seal { color: var(--st-gold); }
+.st-seal.is-fresh { animation: st-press 0.62s cubic-bezier(0.2, 0.8, 0.3, 1.15) both; }
+@keyframes st-press {
+  0% { opacity: 0; transform: rotate(calc(var(--st-tilt, 0deg) - 16deg)) scale(1.9); }
+  55% { opacity: 1; transform: rotate(var(--st-tilt, 0deg)) scale(0.9); }
+  78% { transform: rotate(var(--st-tilt, 0deg)) scale(1.05); }
+  100% { opacity: 0.9; transform: rotate(var(--st-tilt, 0deg)) scale(1); }
+}
+
+.st-paper-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 6px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1.5px dashed color-mix(in srgb, var(--st-ink) 16%, transparent);
+  color: var(--st-muted);
+  font-size: 0.78rem;
+}
+
+.st-paper-ribbon {
+  position: absolute;
+  top: 14px;
+  right: -38px;
+  width: 140px;
+  padding: 5px 0;
+  background: var(--st-gold);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-align: center;
+  transform: rotate(38deg);
+}
+.st-paper.is-done .st-paper-count { visibility: hidden; }
+
+/* 선물·버튼 */
+.st-actions { display: grid; gap: 10px; }
 .st-reward {
   display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--st-gold) 25%, transparent);
+  border-radius: 20px;
+  background: var(--st-gold-pale);
+}
+.st-reward.is-ready { background: var(--st-gold-soft); }
+.st-reward-label { display: inline-flex; align-items: center; gap: 6px; color: var(--st-gold); font-size: 0.8rem; font-weight: 800; }
+.st-reward strong { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.03em; }
+.st-progress { height: 8px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--st-gold) 16%, var(--st-paper)); }
+.st-progress span { display: block; height: 100%; border-radius: inherit; background: var(--st-gold); transition: width 0.5s ease; }
+.st-reward-sub { color: #7a5a1c; font-size: 0.82rem; font-weight: 600; }
+.st-like.is-on { border-color: color-mix(in srgb, var(--st-like) 40%, transparent); color: var(--st-like); }
+
+.st-crosslink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--st-partner-soft);
+  color: var(--st-partner);
+  text-decoration: none;
+}
+.st-crosslink-icon { display: grid; flex-shrink: 0; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--st-paper); font-size: 1.1rem; }
+.st-crosslink > span:nth-child(2) { display: grid; flex: 1; gap: 2px; }
+.st-crosslink b { font-size: 0.9rem; }
+.st-crosslink small { color: color-mix(in srgb, var(--st-partner) 75%, var(--st-ink)); font-size: 0.78rem; }
+
+/* 공통 섹션 카드 */
+.st-section { padding: 18px; border: 1px solid var(--st-line); border-radius: 20px; background: var(--st-paper); }
+.st-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.st-section-head h2 { display: inline-flex; align-items: center; gap: 7px; margin: 0; font-size: 1.02rem; font-weight: 850; }
+.st-section-head h2 .icon { color: var(--st-brand); }
+.st-section-head > span { color: var(--st-muted); font-size: 0.82rem; font-weight: 700; }
+.st-muted { margin: 0; color: var(--st-muted); font-size: 0.88rem; line-height: 1.6; }
+
+/* 적립 내역 */
+.st-timeline { margin: 0; padding: 0; list-style: none; }
+.st-timeline li { position: relative; display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: start; padding: 10px 0; }
+.st-timeline li:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  top: 46px;
+  bottom: -8px;
+  left: 16px;
+  width: 2px;
+  background: var(--st-cream-2);
+}
+.st-tl-dot { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--st-brand-soft); color: var(--st-seal); font-size: 0.95rem; }
+.st-timeline li.is-redeem .st-tl-dot { background: var(--st-gold-soft); color: var(--st-gold); }
+.st-tl-body { display: grid; gap: 1px; min-width: 0; }
+.st-tl-body b { display: flex; align-items: center; gap: 6px; font-size: 0.92rem; }
+.st-tl-body em { padding: 1px 6px; border-radius: 6px; background: var(--st-cream-2); color: var(--st-muted); font-size: 0.68rem; font-style: normal; font-weight: 800; }
+.st-tl-body > span { color: var(--st-muted); font-size: 0.82rem; }
+.st-tl-body time { color: #8b8076; font-size: 0.76rem; }
+.st-tl-amount { display: grid; justify-items: end; gap: 1px; }
+.st-tl-amount b { color: var(--st-seal); font-size: 1.02rem; font-weight: 900; }
+.st-timeline li.is-redeem .st-tl-amount b { color: var(--st-gold); }
+.st-tl-amount span { color: var(--st-muted); font-size: 0.74rem; white-space: nowrap; }
+.st-more { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; min-height: 44px; margin-top: 6px; border: 0; border-radius: 12px; background: var(--st-cream); color: var(--st-ink); font-size: 0.86rem; font-weight: 750; }
+
+/* 가게 정보 */
+.st-facts { display: grid; gap: 8px; margin: 0 0 14px; }
+.st-facts > div { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; font-size: 0.88rem; line-height: 1.5; }
+.st-facts dt { color: var(--st-muted); padding-top: 1px; }
+.st-facts dd { margin: 0; }
+.st-facts small { color: var(--st-muted); font-size: 0.74rem; }
+.st-terms { margin-top: 14px; padding: 14px 16px; border-radius: 14px; background: var(--st-cream); font-size: 0.86rem; }
+.st-terms summary { min-height: 24px; font-weight: 800; cursor: pointer; }
+.st-terms ul { margin: 10px 0 0; padding-left: 18px; color: var(--st-muted); line-height: 1.75; }
+
+/* ==========================================================================
+   안내 창 (적립 코드 / 선물 교환권)
+   ========================================================================== */
+.st-sheet { display: grid; gap: 16px; }
+.st-sheet-lead { margin: 0; font-size: 1.02rem; font-weight: 800; text-align: center; }
+.st-sheet-copy { margin: 0; color: var(--st-muted); font-size: 0.88rem; line-height: 1.65; text-align: center; }
+
+.st-code { display: flex; justify-content: center; gap: 10px; }
+.st-code span {
+  padding: 12px 16px 12px 22px;
+  border: 1px solid var(--st-line);
+  border-radius: 16px;
+  background: var(--st-cream);
+  color: var(--st-ink);
+  font-size: 2.5rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2em;
+  line-height: 1.1;
+}
+.st-code-timer { display: grid; gap: 6px; justify-items: center; color: var(--st-muted); font-size: 0.8rem; }
+.st-code-bar { width: min(240px, 80%); height: 5px; overflow: hidden; border-radius: 999px; background: var(--st-cream-2); }
+.st-code-bar span { display: block; height: 100%; border-radius: inherit; background: var(--st-brand); transition: width 1s linear; }
+
+.st-steps { display: grid; gap: 8px; margin: 0; padding: 14px; border-radius: 14px; background: var(--st-cream); list-style: none; font-size: 0.86rem; }
+.st-steps li { display: flex; align-items: center; gap: 10px; }
+.st-steps b { display: grid; flex-shrink: 0; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--st-brand); color: #fff; font-size: 0.75rem; }
+
+.st-demo-box { display: grid; gap: 10px; padding: 14px; border: 1.5px dashed color-mix(in srgb, var(--st-gold) 50%, transparent); border-radius: 16px; background: var(--st-gold-pale); }
+.st-demo-box p { margin: 0; color: #6b5220; font-size: 0.82rem; line-height: 1.6; }
+.st-demo-box p b { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 6px; background: var(--st-gold); color: #fff; font-size: 0.72rem; }
+.st-demo-box .st-btn { min-height: 48px; background: var(--st-ink); }
+
+.st-voucher {
+  position: relative;
+  display: grid;
+  justify-items: center;
   gap: 6px;
-  padding: var(--space-5, 24px);
-  border-radius: var(--radius-lg, 22px);
-  background: var(--color-tag-coupon-bg, #fbe7c6);
-  color: var(--color-tag-coupon-text, #9c6b12);
+  padding: 24px 20px;
+  border: 2px dashed color-mix(in srgb, var(--st-gold) 55%, transparent);
+  border-radius: 20px;
+  background: var(--st-gold-pale);
+  text-align: center;
 }
-
-.st-reward-label { font-size: 0.78rem; font-weight: 700; }
-.st-reward-name { color: var(--color-text, #2b1f17); font-size: 1.4rem; font-weight: 800; }
-.st-reward-sub { font-size: 0.8rem; }
-
-.st-terms {
-  padding: var(--space-4, 16px);
-  border-radius: var(--radius-md, 14px);
-  background: var(--color-surface-alt, #f3ece3);
-  font-size: 0.83rem;
+.st-voucher::before, .st-voucher::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  margin-top: -12px;
+  border-radius: 50%;
+  background: var(--color-surface, #fff);
 }
+.st-voucher::before { left: -13px; }
+.st-voucher::after { right: -13px; }
+.st-voucher-store { color: var(--st-gold); font-size: 0.85rem; font-weight: 800; }
+.st-voucher strong { font-size: 1.75rem; font-weight: 900; letter-spacing: -0.03em; }
+.st-voucher-sub { color: var(--st-muted); font-size: 0.82rem; }
+.st-voucher-code { margin-top: 6px; padding: 6px 12px; border-radius: 999px; background: var(--st-paper); color: var(--st-muted); font-size: 0.8rem; }
+.st-voucher-code b { color: var(--st-ink); font-variant-numeric: tabular-nums; letter-spacing: 0.06em; }
 
-.st-terms summary { font-weight: 800; cursor: pointer; }
-.st-terms ul { margin: var(--space-2, 8px) 0 0; padding-left: 18px; color: var(--color-text-muted, #8a7b6e); line-height: 1.8; }
-
-.st-info { display: grid; gap: 4px; margin: 0; color: var(--color-text-muted, #8a7b6e); font-size: 0.8rem; }
+/* ==========================================================================
+   넓은 화면
+   ========================================================================== */
+@media (min-width: 640px) {
+  .st-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .st-how ol { grid-template-columns: repeat(3, 1fr); }
+  .st-how li { grid-template-columns: 1fr; align-items: start; }
+  .st-how-icon { grid-row: auto; margin-bottom: 6px; }
+  .st-slots { gap: 12px; }
+}
 
 @media (min-width: 720px) {
-  .st-detail { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; }
-  .st-board-top { padding: var(--space-6, 32px); }
-  .st-board-body { padding: var(--space-6, 32px); }
+  .st-filters { flex-wrap: wrap; margin: 14px 0 24px; padding: 0; overflow: visible; }
+  .st-wallet { grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); align-items: center; gap: 28px; padding: 30px 32px; }
+  .st-wallet-title { font-size: 1.9rem; }
+  .st-spotlight { min-height: 110px; padding: 16px 18px; }
+  .st-spotlight-seal { width: 72px; }
+  .st-detail {
+    grid-template-columns: minmax(0, 1.25fr) minmax(300px, 1fr);
+    grid-template-areas: 'card actions' 'card info' 'history info';
+    grid-template-rows: auto auto 1fr;
+    gap: 20px;
+  }
+  .st-paper { padding: 26px 26px 20px; }
+  .st-paper::before, .st-paper::after { top: 116px; }
+  .st-paper-title h1 { font-size: 1.7rem; }
+  .st-paper-count b { font-size: 2.9rem; }
+}
+
+@media (min-width: 1040px) {
+  .st-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* 가로로 눕힌 휴대폰처럼 세로가 짧은 화면: 상단 요약을 낮게 */
+@media (max-height: 520px) and (orientation: landscape) {
+  .st-wallet { gap: 14px; padding: 16px 20px; }
+  .st-wallet-title { margin-top: 6px; font-size: 1.3rem; }
+  .st-stats { margin-top: 10px; padding-top: 10px; }
+  .st-stats dd b { font-size: 1.2rem; }
+  .st-spotlight { min-height: 72px; padding: 10px 14px; }
+  .st-spotlight-seal { width: 52px; }
+}
+
+@media (hover: hover) {
+  .st-item:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(59, 48, 42, 0.11); }
+  .st-spotlight:hover { border-color: var(--st-brand); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .st-seal.is-fresh, .st-skeleton { animation: none; }
+  .st-item, .st-btn, .st-progress span, .st-code-bar span { transition: none; }
 }

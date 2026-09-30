@@ -5,6 +5,10 @@
    ========================================================================== */
 
 :root {
+  --color-brand: #802d40;
+  --color-brand-soft: #f6e9e9;
+  --color-neighborhood: #245c4a;
+  --color-neighborhood-soft: #e8f0e6;
   --color-bg: #faf6f0;
   --color-surface: #ffffff;
   --color-surface-alt: #f3ece3;
@@ -63,6 +67,10 @@
 }
 
 [data-theme='dark'] {
+  --color-brand: #efb0bc;
+  --color-brand-soft: #472a32;
+  --color-neighborhood: #acd7be;
+  --color-neighborhood-soft: #233c30;
   --color-bg: #1c1611;
   --color-surface: #2a221b;
   --color-surface-alt: #332a22;
