@@ -8,7 +8,7 @@
   color: var(--color-text, #2b1f17);
 }
 
-/* --- 상단 문구 + 메뉴 묶음 필터 --- */
+/* --- 상단 문구 --- */
 
 .rl-hero {
   display: flex;
@@ -42,6 +42,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2, 8px);
+  margin-bottom: var(--space-4, 16px);
 }
 
 .rl-chip {
@@ -54,6 +55,11 @@
   font-weight: 600;
 }
 
+.rl-chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .rl-chip.is-on {
   background: var(--color-primary, #4a3222);
   border-color: var(--color-primary, #4a3222);
@@ -62,11 +68,16 @@
 
 /* --- 룰렛 카드 --- */
 
+/* 모바일: 소개 → 원판(+결과) → 메뉴 편집 순서로 쌓는다 */
 .rl-card {
   position: relative;
   display: grid;
+  grid-template-areas:
+    'intro'
+    'wheel'
+    'editor';
   gap: var(--space-5, 24px);
-  padding: var(--space-5, 24px);
+  padding: var(--space-4, 16px);
   background: var(--color-surface-alt, #f3ece3);
   border-radius: var(--radius-lg, 22px);
   overflow: hidden;
@@ -86,6 +97,7 @@
 
 .rl-intro {
   position: relative;
+  grid-area: intro;
 }
 
 .rl-badge {
@@ -106,7 +118,7 @@
 
 .rl-card-desc {
   max-width: 34ch;
-  margin: 0 0 var(--space-4, 16px);
+  margin: 0;
   color: var(--color-text-muted, #8a7b6e);
   font-size: 0.88rem;
   line-height: 1.55;
@@ -115,7 +127,9 @@
 /* --- 룰렛에 올릴 메뉴 편집 --- */
 
 .rl-editor {
-  max-width: 38ch;
+  position: relative;
+  grid-area: editor;
+  scroll-margin-bottom: var(--space-4, 16px);
   padding: var(--space-3, 12px) var(--space-4, 16px);
   background: var(--color-surface, #fff);
   border-radius: var(--radius-md, 14px);
@@ -212,46 +226,30 @@
   cursor: default;
 }
 
-.rl-add-form {
-  display: flex;
-  gap: 6px;
-}
-
-.rl-add-input {
-  flex: 1;
-  min-width: 0;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border, #e7dfd4);
-  border-radius: var(--radius-pill, 999px);
-  background: var(--color-surface, #fff);
-  color: inherit;
-  font: inherit;
-  font-size: 0.82rem;
-}
-
-.rl-add-submit {
-  flex-shrink: 0;
-  padding: 8px 16px;
-  border-radius: var(--radius-pill, 999px);
-  background: var(--color-primary, #4a3222);
-  color: var(--color-on-primary, #faf6f0);
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.rl-add-submit:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
 .rl-editor-none {
   margin: 0 0 var(--space-3, 12px);
   color: var(--color-text-faint, #b7a998);
   font-size: 0.78rem;
 }
 
+.rl-editor-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 12px);
+  margin-top: var(--space-4, 16px);
+}
+
+.rl-editor-done {
+  padding: 9px 18px;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--color-primary, #4a3222);
+  color: var(--color-on-primary, #faf6f0);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .rl-editor-reset {
-  margin-top: var(--space-3, 12px);
   color: var(--color-text-muted, #8a7b6e);
   font-size: 0.75rem;
   font-weight: 600;
@@ -266,15 +264,20 @@
 /* --- 원판 --- */
 
 .rl-wheel-zone {
+  position: relative;
+  grid-area: wheel;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: var(--space-4, 16px);
+  scroll-margin-top: var(--space-4, 16px);
 }
 
+/* 좁은 화면에서도 원판이 잘리지 않도록 카드 폭에 맞춰 줄어든다 */
 .rl-wheel-frame {
   position: relative;
-  width: 290px;
-  height: 290px;
+  width: min(290px, 100%);
+  aspect-ratio: 1;
 }
 
 .rl-wheel {
@@ -367,31 +370,34 @@
   opacity: 0.7;
 }
 
-/* --- 결과 (원판 위에 떠오른다) --- */
+/* --- 결과 (원판 아래에 뜬다) --- */
 
-.rl-result-pop {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 82%;
-  padding: var(--space-4, 16px);
-  transform: translate(-50%, -50%);
+.rl-result {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  width: min(360px, 100%);
+  padding: var(--space-3, 12px) var(--space-4, 16px);
   background: var(--color-surface, #fff);
   border-radius: var(--radius-lg, 22px);
   box-shadow: var(--shadow-float, 0 8px 24px rgba(74, 50, 34, 0.18));
-  text-align: center;
   animation: rl-pop 0.24s ease-out;
-  z-index: 4;
 }
 
 @keyframes rl-pop {
   from {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.88);
+    transform: translateY(-8px) scale(0.96);
   }
 }
 
+.rl-result-text {
+  flex: 1;
+  min-width: 0;
+}
+
 .rl-result-emoji {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -403,19 +409,20 @@
 }
 
 .rl-result-label {
-  margin: var(--space-2, 8px) 0 0;
+  margin: 0;
   color: var(--color-text-muted, #8a7b6e);
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .rl-result-headline {
-  margin: 2px 0 var(--space-3, 12px);
+  margin: 2px 0 0;
   font-size: 1.05rem;
   font-weight: 800;
 }
 
 .rl-respin {
+  flex-shrink: 0;
   padding: 9px 18px;
   border-radius: var(--radius-pill, 999px);
   background: var(--color-primary, #4a3222);
@@ -568,20 +575,30 @@
     font-size: 2rem;
   }
 
-  .rl-filters {
-    justify-content: flex-end;
-    max-width: 360px;
-  }
-
+  /* 넓은 화면: 왼쪽에 소개+편집, 오른쪽에 원판 */
   .rl-card {
-    grid-template-columns: 1fr auto;
-    align-items: center;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'intro wheel'
+      'editor wheel';
+    align-items: start;
     padding: var(--space-6, 32px);
   }
 
+  .rl-editor {
+    max-width: 44ch;
+  }
+
+  /* PC에서는 화면 폭에 맞춰 원판을 크게 키운다 */
   .rl-wheel-frame {
-    width: 320px;
-    height: 320px;
+    --rl-label-scale: 1.25;
+    width: clamp(340px, 40vw, 500px);
+  }
+
+  .rl-spin {
+    width: 104px;
+    height: 104px;
+    font-size: 1.1rem;
   }
 
   .rl-store-grid {
