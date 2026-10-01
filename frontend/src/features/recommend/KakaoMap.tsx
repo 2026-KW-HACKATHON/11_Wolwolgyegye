@@ -1,18 +1,32 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Store } from '../../core/types/place';
-import { MOCK_USER_LOCATION } from '../../core/mock/stores';
+import { distanceMeters } from '../../core/utils/geo';
 import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
 import MapPreview from './MapPreview';
+import MapControls from './MapControls';
+import { clampMapLevel, WOLGYE_MAP } from './mapArea';
 
 interface KakaoLatLng { getLat(): number; getLng(): number }
-interface KakaoMapInstance { setCenter(position: KakaoLatLng): void; relayout(): void }
+interface KakaoMapInstance {
+  setCenter(position: KakaoLatLng): void;
+  getCenter(): KakaoLatLng;
+  setLevel(level: number): void;
+  getLevel(): number;
+  setMinLevel(level: number): void;
+  setMaxLevel(level: number): void;
+  setZoomable(zoomable: boolean): void;
+  relayout(): void;
+}
 interface KakaoMarkerInstance { setMap(map: KakaoMapInstance | null): void }
 interface KakaoMaps {
   load(callback: () => void): void;
   LatLng: new (lat: number, lng: number) => KakaoLatLng;
   Map: new (element: HTMLElement, options: { center: KakaoLatLng; level: number; scrollwheel: boolean }) => KakaoMapInstance;
   Marker: new (options: { position: KakaoLatLng; title: string; clickable: boolean }) => KakaoMarkerInstance;
-  event: { addListener(target: KakaoMarkerInstance, event: string, listener: () => void): void };
+  event: {
+    addListener(target: KakaoMarkerInstance | KakaoMapInstance, event: string, listener: () => void): void;
+    removeListener(target: KakaoMarkerInstance | KakaoMapInstance, event: string, listener: () => void): void;
+  };
 }
 declare global { interface Window { kakao?: { maps: KakaoMaps } } }
 
@@ -47,6 +61,8 @@ export default function KakaoMap({ stores, selectedId, onSelect }: { stores: Sto
   const onSelectRef = useRef(onSelect);
   const active = usePageActive();
   const [visible, setVisible] = useState(false);
+  const [level, setLevel] = useState<number>(WOLGYE_MAP.defaultLevel);
+  const [away, setAway] = useState(false);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(key ? 'loading' : 'error');
   const [message, setMessage] = useState(key ? '' : '지도 키가 아직 연결되지 않았어요. VITE_KAKAO_MAP_KEY를 설정해 주세요.');
 
@@ -65,7 +81,11 @@ export default function KakaoMap({ stores, selectedId, onSelect }: { stores: Sto
     void loadKakaoMaps().then((maps) => {
       if (cancelled || !containerRef.current) return;
       sdkRef.current = maps;
-      mapRef.current = new maps.Map(containerRef.current, { center: new maps.LatLng(MOCK_USER_LOCATION.lat, MOCK_USER_LOCATION.lng), level: 4, scrollwheel: false });
+      const map = new maps.Map(containerRef.current, { center: new maps.LatLng(WOLGYE_MAP.center.lat, WOLGYE_MAP.center.lng), level: WOLGYE_MAP.defaultLevel, scrollwheel: false });
+      map.setMinLevel(WOLGYE_MAP.minLevel);
+      map.setMaxLevel(WOLGYE_MAP.maxLevel);
+      map.setZoomable(true); // 휴대폰 두 손가락 확대/축소도 같은 제한을 적용한다.
+      mapRef.current = map;
       setStatus('ready');
     }).catch((error: unknown) => {
       if (cancelled) return;
@@ -79,13 +99,41 @@ export default function KakaoMap({ stores, selectedId, onSelect }: { stores: Sto
     const map = mapRef.current;
     const maps = sdkRef.current;
     if (!map || !maps || status !== 'ready') return;
+    const syncView = () => {
+      setLevel(map.getLevel());
+      const center = map.getCenter();
+      setAway(distanceMeters(WOLGYE_MAP.center, { lat: center.getLat(), lng: center.getLng() }) > WOLGYE_MAP.returnHintMeters);
+    };
+    maps.event.addListener(map, 'zoom_changed', syncView);
+    maps.event.addListener(map, 'idle', syncView);
+    syncView();
+    return () => {
+      maps.event.removeListener(map, 'zoom_changed', syncView);
+      maps.event.removeListener(map, 'idle', syncView);
+    };
+  }, [status]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const maps = sdkRef.current;
+    if (!map || !maps || status !== 'ready') return;
     markersRef.current.forEach((marker) => marker.setMap(null));
+    const listeners: Array<{ marker: KakaoMarkerInstance; click: () => void }> = [];
     markersRef.current = stores.map((store) => {
       const marker = new maps.Marker({ position: new maps.LatLng(store.location.lat, store.location.lng), title: store.name, clickable: true });
       marker.setMap(map);
-      maps.event.addListener(marker, 'click', () => onSelectRef.current(store.id));
+      const click = () => onSelectRef.current(store.id);
+      maps.event.addListener(marker, 'click', click);
+      listeners.push({ marker, click });
       return marker;
     });
+    return () => {
+      listeners.forEach(({ marker, click }) => {
+        maps.event.removeListener(marker, 'click', click);
+        marker.setMap(null);
+      });
+      markersRef.current = [];
+    };
   }, [stores, status]);
 
   useEffect(() => {
@@ -102,11 +150,29 @@ export default function KakaoMap({ stores, selectedId, onSelect }: { stores: Sto
     return () => observer.disconnect();
   }, [active, status]);
 
+  function zoom(direction: -1 | 1) {
+    const map = mapRef.current;
+    if (!map) return;
+    const next = clampMapLevel(map.getLevel() + direction);
+    map.setLevel(next);
+    setLevel(next);
+  }
+
+  function resetView() {
+    const map = mapRef.current;
+    const maps = sdkRef.current;
+    if (!map || !maps) return;
+    map.setLevel(WOLGYE_MAP.defaultLevel);
+    map.setCenter(new maps.LatLng(WOLGYE_MAP.center.lat, WOLGYE_MAP.center.lng));
+    setLevel(WOLGYE_MAP.defaultLevel);
+    setAway(false);
+  }
+
   if (import.meta.env.DEV && !key) return <MapPreview stores={stores} selectedId={selectedId} onSelect={onSelect} />;
 
   return <div className="rp-map-frame">
     <div ref={containerRef} className="rp-map-canvas" role="img" aria-label="월계1동 주변 가게가 표시된 카카오 지도" />
     {status !== 'ready' && <div className="rp-map-state" role={status === 'error' ? 'alert' : 'status'}><strong>{status === 'loading' ? '동네 지도를 불러오는 중' : '지도를 잠시 불러오지 못했어요'}</strong><span>{status === 'error' ? '잠시 후 다시 방문해 주세요. 동네 소식은 계속 볼 수 있어요.' : '잠시만 기다려 주세요.'}</span>{import.meta.env.DEV && status === 'error' && <small>{message}</small>}</div>}
-    {status === 'ready' && <button type="button" className="rp-map-recenter" onClick={() => mapRef.current?.setCenter(new sdkRef.current!.LatLng(MOCK_USER_LOCATION.lat, MOCK_USER_LOCATION.lng))} aria-label="월계1동 기준점으로 이동">◎</button>}
+    {status === 'ready' && <MapControls level={level} onZoom={zoom} onReset={resetView} away={away} />}
   </div>;
 }

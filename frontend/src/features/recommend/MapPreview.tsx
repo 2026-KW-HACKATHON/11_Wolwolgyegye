@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import type { Store } from '../../core/types/place';
 import Icon from '../../shared/Icon';
+import MapControls from './MapControls';
+import { clampMapLevel, WOLGYE_MAP } from './mapArea';
 
 const PREVIEW_POINTS = [[25, 33], [72, 36], [48, 46], [22, 56], [77, 58], [48, 68]];
 
@@ -7,11 +10,13 @@ const PREVIEW_POINTS = [[25, 33], [72, 36], [48, 46], [22, 56], [77, 58], [48, 6
 export default function MapPreview({ stores, selectedId, onSelect }: {
   stores: Store[]; selectedId: string | null; onSelect: (id: string) => void;
 }) {
+  const [level, setLevel] = useState<number>(WOLGYE_MAP.defaultLevel);
+  const scale = 1.4 ** (WOLGYE_MAP.defaultLevel - level);
   const previewStores = stores.slice(0, PREVIEW_POINTS.length);
   const selectedStore = stores.find((store) => store.id === selectedId);
   if (selectedStore && !previewStores.some((store) => store.id === selectedId)) previewStores[previewStores.length - 1] = selectedStore;
   return <div className="rp-map-preview" aria-label="예시 가게 배치 미리보기">
-    <svg className="rp-preview-drawing" viewBox="0 0 600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <svg className="rp-preview-drawing" style={{ transform: `scale(${scale})` }} viewBox="0 0 600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
       <rect width="600" height="900" fill="var(--rp-map-ground)" />
       <g fill="var(--rp-map-block)">
         <rect x="36" y="45" width="103" height="118" rx="14" /><rect x="161" y="33" width="74" height="130" rx="10" />
@@ -29,15 +34,16 @@ export default function MapPreview({ stores, selectedId, onSelect }: {
       </g>
       <path d="M-30 720Q250 685 295 900" fill="none" stroke="var(--rp-map-path)" strokeWidth="6" strokeDasharray="6 7" />
     </svg>
-    <div className="rp-preview-notice"><span /><strong>지도 배치 미리보기</strong><small>대표 예시 가게 · 실제 위치가 아니에요</small></div>
     <div className="rp-preview-pins">
       {previewStores.map((store, index) => {
-        const [left, top] = PREVIEW_POINTS[index];
+        const left = 50 + (PREVIEW_POINTS[index][0] - 50) * scale;
+        const top = 50 + (PREVIEW_POINTS[index][1] - 50) * scale;
         return <button key={store.id} type="button" className={'rp-preview-pin' + (selectedId === store.id ? ' is-selected' : '')} style={{ left: left + '%', top: top + '%' }} onClick={() => onSelect(store.id)} aria-label={store.name + ' 위치 선택'} aria-pressed={selectedId === store.id}>
           <span><Icon name={store.supports['space-rental'] ? 'house' : store.supports['oneday-class'] ? 'palette' : 'storefront'} /></span>
           {(selectedId === store.id || index === 0 || index === 2) && <strong>{store.name}</strong>}
         </button>;
       })}
     </div>
+    <MapControls level={level} onZoom={(direction) => setLevel((previous) => clampMapLevel(previous + direction))} onReset={() => setLevel(WOLGYE_MAP.defaultLevel)} preview />
   </div>;
 }
