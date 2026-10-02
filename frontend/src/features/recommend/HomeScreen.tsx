@@ -20,6 +20,8 @@ const SHORTCUTS: { id: string; label: string; icon: IconName }[] = [
   { id: 'coupon', label: '스탬프 모으기', icon: 'gift' },
 ];
 const FILTERS = [['all', '전체 소식'], ['space-rental', '공간 대여'], ['oneday-class', '원데이클래스'], ['saved', '찜한 가게']] as const;
+const HAS_SUPABASE_CONFIG = Boolean(import.meta.env.VITE_SUPABASE_URL?.trim() &&
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim());
 
 export default function HomeScreen({ onShowNearby, onShowStore }: { onShowNearby: () => void; onShowStore: (id: string) => void }) {
   const { userName } = useUserSession();
@@ -82,13 +84,13 @@ export default function HomeScreen({ onShowNearby, onShowStore }: { onShowNearby
       {error ? <div className="rp-feed-message" role="alert"><Icon name="storefront" /><strong>소식을 불러오지 못했어요</strong><p>{error}</p><button type="button" onClick={() => void reload()}>다시 시도</button></div> :
         loading ? <div className="rp-skeleton" aria-hidden="true" /> :
         visiblePosts.length === 0 ? <div className="rp-feed-message"><Icon name={filter === 'saved' ? 'heart' : 'search'} /><strong>{filter === 'saved' ? '마음에 드는 가게를 찜해 보세요' : '찾으시는 소식이 아직 없어요'}</strong><p>{filter === 'saved' ? '가게의 하트를 누르면 여기에 모아볼 수 있어요.' : '다른 검색어나 분류로 다시 찾아보세요.'}</p><button type="button" onClick={() => { setQuery(''); setFilter('all'); }}>전체 소식 보기</button></div> :
-        <div className="rp-feed-grid">{visiblePosts.map((post) => <FeedPostCard key={post.id} post={post} onShowStore={onShowStore} />)}</div>}
+        <div className="rp-feed-grid">{visiblePosts.map((post) => <FeedPostCard key={post.id} post={post} onShowStore={HAS_SUPABASE_CONFIG ? undefined : onShowStore} />)}</div>}
     </section>
     {sales.length > 0 && <section className="rp-promotions" aria-labelledby="rp-deals-title">
       <div className="rp-section-heading"><div><p className="rp-eyebrow">가까운 가게에서 알뜰하게</p><h2 id="rp-deals-title">놓치기 아쉬운 혜택</h2></div><Link to="/closing-sale">더 보기 <Icon name="chevronRight" /></Link></div>
       <div className="rp-promotion-row">{sales.slice(0, 3).map((sale) => <Link key={sale.id} to="/closing-sale" className="rp-promotion"><span className="rp-promotion-icon"><Icon name="tag" /></span><strong>{Math.round(sale.discountRate * 100)}<small>% 할인</small></strong><b>{sale.store.name}</b><p>{sale.desc}</p><span className="rp-promotion-footer">할인 내용 보기 <Icon name="chevronRight" /></span></Link>)}</div>
     </section>}
     <button className="rp-map-teaser" type="button" onClick={onShowNearby}><span className="rp-map-teaser-icon"><Icon name="compass" /></span><span><strong>이번엔 지도로 둘러볼까요?</strong><small>가까운 가게를 한눈에 찾아보세요.</small></span><Icon name="chevronRight" /></button>
-    <p className="rp-demo-note">지금은 예시 가게와 소식으로 둘러보는 중이에요.<br />직접 작성한 글과 찜은 이 브라우저에 저장돼요.</p>
+    <p className="rp-demo-note">소식과 일부 혜택은 아직 예시 데이터예요.<br />{HAS_SUPABASE_CONFIG ? '지도에는 확인 후 공개된 가게만 표시되며, 예시 소식은 지도와 연결되지 않아요.' : '지도도 예시 배치로 볼 수 있어요.'}</p>
   </div>;
 }

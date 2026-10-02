@@ -54,7 +54,19 @@ Auth/Storage HTTP 서비스는 테스트 대역이므로 **실제 로그인·파
 로컬 초기화용 `seed.sql`은 실제 가게 정보가 아니다. 운영 DB에 넣지 않는다. `tests/bootstrap.sql`은 Supabase 시스템 테이블을 흉내 내는 테스트 파일이므로 실제 Supabase에서 실행하지 않는다.
 `config.toml`의 로그인 주소는 로컬용이다. 운영 로그인 Redirect URL은 Supabase 대시보드에서 별도로 설정한다.
 
-현재 실제 Supabase 서비스에서의 검증과 원격 적용은 미실시 상태다.
+스키마의 실제 Supabase 적용은 팀이 SQL Editor에서 진행했다. 2026-10-02 공개용 키로 `stores` 비로그인 조회를 확인했으며, 공개된 실제 가게는 빠말 1곳이다. 로그인·Storage·전체 RLS는 운영 서비스에서 별도로 검증해야 한다.
+
+## 실제 월계1동 가게 후보 일괄 수집
+
+[소상공인시장진흥공단 상가(상권)정보](https://www.data.go.kr/data/15083033/fileData.do)의 최신 전국 ZIP 또는 서울 CSV를 내려받는다. 2026-06-30 배포본은 상호명·업종·주소·위경도를 제공하지만 **메뉴·가격·사진·전화번호·영업시간은 제공하지 않는다.** 원본 기준일과 현재 영업 여부가 다를 수 있다.
+
+```powershell
+python database/scripts/import_wolgye_stores.py "C:\다운로드\상가정보.zip" --out-dir database/imports
+```
+
+이 명령은 `시도명=서울특별시`, `시군구명=노원구`, `행정동명=월계1동`인 행만 골라 `wolgye1-stores-review.csv`와 `wolgye1-stores-import.sql`을 만든다. 2026-10-02 팀이 851건의 비공개 후보를 담은 SQL을 Supabase SQL Editor에서 실행했다. 실제 등록 건수는 기존 행과의 ID 충돌 가능성이 있어 운영 DB에서 별도 집계해야 한다. 생성 SQL은 동일한 상가업소번호를 다시 가져올 때 기존 DB 행을 덮어쓰지 않는다. 영업 및 정보 확인 후 필요한 가게만 별도로 공개한다. 기존 `seed.sql`의 가상 가게와 섞지 않는다.
+
+원본 ZIP/CSV는 저장소에 넣지 않는다. 이 도구는 SQL 파일만 생성하며 Supabase에 자동 접속하거나 운영 DB를 변경하지 않는다.
 
 ## 보안 규칙
 

@@ -6,7 +6,7 @@ import { findFeedStore } from '../store-feed/feedSource';
 import { formatPrice, isAvailable, type FeedPost } from '../store-feed/types';
 import FeedArtwork from './FeedArtwork';
 
-export default function FeedPostCard({ post, onShowStore }: { post: FeedPost; onShowStore: (id: string) => void }) {
+export default function FeedPostCard({ post, onShowStore }: { post: FeedPost; onShowStore?: (id: string) => void }) {
   const store = findFeedStore(post.storeId);
   const { isFavorite, toggle } = useFavoriteStores();
   const toast = useToast();
@@ -39,7 +39,7 @@ export default function FeedPostCard({ post, onShowStore }: { post: FeedPost; on
         <div className="rp-post-price"><strong>{formatPrice(post)}</strong><span>자세히 보기 <Icon name="chevronRight" /></span></div>
       </div>
     </Link>
-    {store && <button className="rp-post-location" type="button" onClick={() => onShowStore(store.id)} aria-label={store.name + ' 지도에서 보기'}>
+    {store && onShowStore && <button className="rp-post-location" type="button" onClick={() => onShowStore(store.id)} aria-label={store.name + ' 지도에서 보기'}>
       <Icon name="pin" /><span>{store.address.replace(/^서울(특별)?시?\s*노원구\s*/, '')}</span><strong>지도에서 보기</strong><Icon name="chevronRight" />
     </button>}
   </article>;

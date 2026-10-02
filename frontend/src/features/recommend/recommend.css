@@ -57,6 +57,7 @@
 .rp-map-hint { display: flex; gap: 10px; align-items: center; width: fit-content; max-width: calc(100% - 88px); border: 1px solid var(--rp-line); border-radius: 15px; padding: 12px 14px; background: var(--rp-paper); font-size: 13px; }
 .rp-map-hint > .icon { font-size: 24px; color: var(--rp-green); }
 .rp-map-hint small { display: block; margin-top: 2px; color: var(--rp-muted); font-size: 11px; }
+.rp-map-hint button { margin-top: 6px; color: var(--rp-green); font-size: 12px; font-weight: 700; text-decoration: underline; }
 .rp-map-recenter { position: absolute; z-index: 2; right: 16px; bottom: calc(var(--rp-map-peek) + 18px); width: 48px; height: 48px; border: 1px solid var(--rp-line); border-radius: 50%; background: var(--rp-paper); color: var(--rp-green); box-shadow: var(--rp-shadow); font-size: 28px; }
 .rp-selected-store { padding: 16px; border: 1px solid var(--rp-line); border-radius: 20px; background: var(--rp-paper); }
 .rp-selected-header { display: flex; align-items: center; gap: 10px; }
@@ -67,8 +68,8 @@
 .rp-selected-header button { width: 44px; height: 44px; color: var(--rp-muted); font-size: 26px; }
 .rp-selected-store p { margin: 10px 0 0; font-size: 14px; }
 .rp-selected-store .rp-selected-distance { margin-top: 3px; color: var(--rp-muted); font-size: 12px; }
-.rp-selected-actions { display: flex; gap: 8px; margin-top: 14px; }
-.rp-selected-actions a { display: flex; flex: 1; align-items: center; justify-content: center; gap: 5px; min-height: 44px; border-radius: 10px; color: var(--rp-green); background: var(--rp-green-soft); font-size: 14px; font-weight: 700; }
+.rp-selected-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.rp-selected-actions a { display: flex; flex: 1 1 130px; align-items: center; justify-content: center; gap: 5px; min-height: 44px; border-radius: 10px; color: var(--rp-green); background: var(--rp-green-soft); font-size: 14px; font-weight: 700; }
 
 /* SDK 키가 없는 로컬 환경의 명시적인 예시 지도. */
 .rp-map-preview { overflow: hidden; }
