@@ -8,12 +8,14 @@ import { clampMapLevel, WOLGYE_MAP } from './mapArea';
 
 interface KakaoLatLng { getLat(): number; getLng(): number }
 interface KakaoMapInstance {
-  setCenter(position: KakaoLatLng): void;
+  panTo(position: KakaoLatLng): void;
+  jump(position: KakaoLatLng, level: number, options?: { animate: boolean }): void;
   getCenter(): KakaoLatLng;
-  setLevel(level: number): void;
+  setLevel(level: number, options?: { animate: boolean }): void;
   getLevel(): number;
   setMinLevel(level: number): void;
   setMaxLevel(level: number): void;
+  setDraggable(draggable: boolean): void;
   setZoomable(zoomable: boolean): void;
   relayout(): void;
 }
@@ -21,7 +23,7 @@ interface KakaoMarkerInstance { setMap(map: KakaoMapInstance | null): void }
 interface KakaoMaps {
   load(callback: () => void): void;
   LatLng: new (lat: number, lng: number) => KakaoLatLng;
-  Map: new (element: HTMLElement, options: { center: KakaoLatLng; level: number; scrollwheel: boolean }) => KakaoMapInstance;
+  Map: new (element: HTMLElement, options: { center: KakaoLatLng; level: number; draggable: boolean; scrollwheel: boolean }) => KakaoMapInstance;
   Marker: new (options: { position: KakaoLatLng; title: string; clickable: boolean }) => KakaoMarkerInstance;
   event: {
     addListener(target: KakaoMarkerInstance | KakaoMapInstance, event: string, listener: () => void): void;
@@ -81,10 +83,16 @@ export default function KakaoMap({ stores, selectedId, onSelect }: { stores: Sto
     void loadKakaoMaps().then((maps) => {
       if (cancelled || !containerRef.current) return;
       sdkRef.current = maps;
-      const map = new maps.Map(containerRef.current, { center: new maps.LatLng(WOLGYE_MAP.center.lat, WOLGYE_MAP.center.lng), level: WOLGYE_MAP.defaultLevel, scrollwheel: false });
+      const map = new maps.Map(containerRef.current, {
+        center: new maps.LatLng(WOLGYE_MAP.center.lat, WOLGYE_MAP.center.lng),
+        level: WOLGYE_MAP.defaultLevel,
+        draggable: true,
+        scrollwheel: true,
+      });
       map.setMinLevel(WOLGYE_MAP.minLevel);
       map.setMaxLevel(WOLGYE_MAP.maxLevel);
-      map.setZoomable(true); // 휴대폰 두 손가락 확대/축소도 같은 제한을 적용한다.
+      map.setDraggable(true);
+      map.setZoomable(true); // 마우스 휠과 휴대폰 두 손가락 확대/축소를 허용한다.
       mapRef.current = map;
       setStatus('ready');
     }).catch((error: unknown) => {
@@ -94,6 +102,15 @@ export default function KakaoMap({ stores, selectedId, onSelect }: { stores: Sto
     });
     return () => { cancelled = true; };
   }, [visible, active]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    // KeepAlive로 화면을 숨겼다가 다시 열어도 지도 입력 상태를 확실히 복구한다.
+    map.setDraggable(active);
+    map.setZoomable(active);
+    if (active) map.relayout();
+  }, [active, status]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -138,7 +155,7 @@ export default function KakaoMap({ stores, selectedId, onSelect }: { stores: Sto
 
   useEffect(() => {
     const store = stores.find((item) => item.id === selectedId);
-    if (store && mapRef.current && sdkRef.current) mapRef.current.setCenter(new sdkRef.current.LatLng(store.location.lat, store.location.lng));
+    if (store && mapRef.current && sdkRef.current) mapRef.current.panTo(new sdkRef.current.LatLng(store.location.lat, store.location.lng));
   }, [selectedId, stores, status]);
 
   useEffect(() => {
@@ -154,7 +171,7 @@ export default function KakaoMap({ stores, selectedId, onSelect }: { stores: Sto
     const map = mapRef.current;
     if (!map) return;
     const next = clampMapLevel(map.getLevel() + direction);
-    map.setLevel(next);
+    map.setLevel(next, { animate: true });
     setLevel(next);
   }
 
@@ -162,8 +179,7 @@ export default function KakaoMap({ stores, selectedId, onSelect }: { stores: Sto
     const map = mapRef.current;
     const maps = sdkRef.current;
     if (!map || !maps) return;
-    map.setLevel(WOLGYE_MAP.defaultLevel);
-    map.setCenter(new maps.LatLng(WOLGYE_MAP.center.lat, WOLGYE_MAP.center.lng));
+    map.jump(new maps.LatLng(WOLGYE_MAP.center.lat, WOLGYE_MAP.center.lng), WOLGYE_MAP.defaultLevel, { animate: true });
     setLevel(WOLGYE_MAP.defaultLevel);
     setAway(false);
   }

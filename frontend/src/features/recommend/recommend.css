@@ -51,7 +51,13 @@
 .rp-shell button { touch-action: manipulation; }
 .rp-map-layer, .rp-nearby, .rp-map-frame, .rp-map-canvas, .rp-map-preview { position: absolute; inset: 0; width: 100%; height: 100%; }
 .rp-map-frame { background: var(--rp-map-ground); }
-.rp-map-canvas { z-index: 0; }
+.rp-map-canvas {
+  z-index: 0;
+  touch-action: none;
+  overscroll-behavior: contain;
+  user-select: none;
+  -webkit-user-select: none;
+}
 .rp-map-state { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; background: var(--rp-map-ground); font-size: 16px; }
 .rp-map-state span, .rp-map-state small { max-width: 320px; color: var(--rp-muted); font-size: 14px; }
 .rp-map-top { position: absolute; z-index: 2; top: 10px; right: 16px; left: 16px; display: flex; align-items: center; justify-content: space-between; min-height: 56px; gap: 8px; padding: 6px 12px; border: 1px solid var(--rp-line); border-radius: 16px; background: var(--rp-paper); box-shadow: var(--rp-shadow); }
@@ -91,7 +97,9 @@
 .rp-selected-actions a { display: flex; flex: 1; align-items: center; justify-content: center; gap: 5px; min-height: 44px; border-radius: 10px; color: var(--rp-green); background: var(--rp-green-soft); font-size: 14px; font-weight: 700; }
 
 /* SDK 키가 없는 로컬 환경의 명시적인 예시 지도. */
-.rp-map-preview { overflow: hidden; }
+.rp-map-preview { overflow: hidden; touch-action: none; overscroll-behavior: contain; cursor: grab; }
+.rp-map-preview:active { cursor: grabbing; }
+.rp-preview-scene { position: absolute; inset: 0; transform-origin: center; will-change: transform; }
 .rp-preview-drawing, .rp-preview-pins { position: absolute; inset: 0; width: 100%; height: 100%; }
 .rp-preview-notice { position: absolute; top: 143px; left: 20px; z-index: 1; padding: 6px 9px; border-radius: 8px; background: var(--rp-paper); color: var(--rp-muted); font-size: 11px; }
 .rp-preview-notice strong { font-size: 11px; }
