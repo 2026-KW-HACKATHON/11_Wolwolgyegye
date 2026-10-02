@@ -50,6 +50,15 @@
   transition: transform 0.12s ease, background-color 0.15s ease;
 }
 .st-btn:active { transform: scale(0.98); }
+.st-btn:disabled { cursor: wait; opacity: 0.65; }
+.st-reward-summary { display: flex; align-items: center; gap: 10px; padding: 17px 20px; margin-bottom: 20px; border: 1px solid var(--st-line); border-radius: 16px; background: var(--st-cream); }
+.st-reward-summary > span { color: var(--st-brand); }
+.st-reward-summary h1 { margin: 0; font-size: 1.1rem; font-weight: 850; line-height: 1.6; }
+.st-reward-summary em { margin-left: 4px; font-style: normal; color: var(--st-brand); }
+.st-large-goal { display: grid; gap: 12px; padding: 24px 14px; border-radius: 14px; background: var(--st-paper); text-align: center; }
+.st-large-goal b { font-size: 1.6rem; color: var(--st-brand); }
+.st-large-goal > span { color: var(--st-muted); font-size: 0.9rem; }
+.st-meter-progress { display: block; margin: 12px 0; }
 .st-btn--primary { background: var(--st-brand); color: var(--color-on-primary, #faf6f0); }
 .st-btn--line { background: var(--st-paper); border-color: var(--st-line); color: var(--st-ink); }
 .st-btn--block { width: 100%; }
@@ -244,7 +253,7 @@
 .st-item-meta { color: var(--st-muted); font-size: 0.78rem; font-weight: 600; }
 .st-item-title strong { overflow: hidden; font-size: 1.08rem; font-weight: 850; letter-spacing: -0.02em; text-overflow: ellipsis; white-space: nowrap; }
 
-.st-meter { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 5px; }
+.st-meter { display: grid; gap: 5px; }
 .st-meter i {
   display: grid;
   place-items: center;
@@ -412,8 +421,8 @@
 }
 .st-paper-status b { color: var(--st-seal); }
 
-.st-slots { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px 8px; margin: 0; padding: 0; list-style: none; }
-.st-slots li { position: relative; display: grid; place-items: center; aspect-ratio: 1; }
+.st-slots { display: grid; gap: 10px 8px; margin: 0; padding: 0; list-style: none; }
+.st-slots li { position: relative; display: grid; place-items: center; aspect-ratio: 1; width: 100%; max-width: 120px; }
 .st-slot-empty {
   display: grid;
   place-items: center;

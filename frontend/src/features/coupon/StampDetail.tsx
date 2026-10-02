@@ -8,7 +8,7 @@ import Icon from '../../shared/Icon';
 import { useFavoriteStores } from '../../shared/favorites/useFavoriteStores';
 import StoreMap, { directionText } from '../../shared/map/StoreMap';
 import Sheet from '../../shared/sheet/Sheet';
-import { HISTORY_PREVIEW, currentCycleDates, initialOf, isReady, kindOf, longDate, remainingOf, shortDate, tiltOf, withRo } from './constants';
+import { HISTORY_PREVIEW, currentCycleDates, initialOf, isReady, kindOf, longDate, remainingOf, shortDate, tiltOf, withRo, rewardsOf, progressOf, MAX_STAMP_SLOTS } from './constants';
 import { STAMP_CODE_TTL_SECONDS, issueStampCode } from './source';
 import StampSeal from './StampSeal';
 import type { StampView } from './types';
@@ -30,6 +30,7 @@ export default function StampDetail({ view: v, freshIndex, onBack, onRecord }: P
   const heading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => { if (!active) setSheet(null); }, [active]);
+  useEffect(() => { setSheet(null); }, [v.requiredStamps, v.reward, v.unit, v.condition]);
   useEffect(() => { heading.current?.focus({ preventScroll: true }); }, []);
   useEffect(() => {
     let cancelled = false;
@@ -43,10 +44,13 @@ export default function StampDetail({ view: v, freshIndex, onBack, onRecord }: P
   const fav = isFavorite(v.storeId);
   const initial = initialOf(v.store.name);
   const history = showAll ? v.history : v.history.slice(0, HISTORY_PREVIEW);
-  const percent = Math.round((v.count / v.requiredStamps) * 100);
+  const percent = progressOf(v);
+  const available = rewardsOf(v);
 
   const confirm = async (kind: 'earn' | 'redeem') => {
-    if (await onRecord(v, kind)) setSheet(null);
+    const result = await onRecord(v, kind);
+    if (result) setSheet(null);
+    return result;
   };
 
   return (
@@ -62,14 +66,14 @@ export default function StampDetail({ view: v, freshIndex, onBack, onRecord }: P
               <p>{v.store.cuisineType ?? '생활·문화'} · 도보 {v.walkMinutes}분</p>
               <h1 id="st-paper-name" ref={heading} tabIndex={-1}>{v.store.name}</h1>
             </div>
-            <p className="st-paper-count" aria-label={`${v.requiredStamps}개 중 ${v.count}개`}><b>{v.count}</b><span>/{v.requiredStamps}</span></p>
+            <p className="st-paper-count" aria-label={`보유 ${v.count}개, 선물 1개당 ${v.requiredStamps}개 필요`}><b>{v.count}</b><span>{v.count > v.requiredStamps ? '개 보유' : `/${v.requiredStamps}`}</span></p>
           </header>
 
           <p className="st-paper-status" aria-live="polite">
-            {done ? '다 모았어요! 선물을 받을 수 있어요' : v.count === 0 ? '첫 도장을 찍어보세요' : <>선물까지 <b>{remaining}개</b> 남았어요</>}
+            {done ? `선물 ${available}개를 받을 수 있어요` : v.count === 0 ? '첫 도장을 찍어보세요' : <>선물까지 <b>{remaining}개</b> 남았어요</>}
           </p>
 
-          <ol className="st-slots" aria-label={`적립판 ${v.requiredStamps}칸 중 ${v.count}칸에 도장`}>
+          {v.requiredStamps <= MAX_STAMP_SLOTS ? <ol className="st-slots" style={{ gridTemplateColumns: `repeat(${Math.min(v.requiredStamps, 5)}, minmax(0, 1fr))` }} aria-label={`적립판 ${v.requiredStamps}칸 중 ${Math.min(v.count, v.requiredStamps)}칸에 도장`}>
             {Array.from({ length: v.requiredStamps }, (_, i) => {
               const on = i < v.count;
               const gift = i === v.requiredStamps - 1;
@@ -84,7 +88,7 @@ export default function StampDetail({ view: v, freshIndex, onBack, onRecord }: P
                 </li>
               );
             })}
-          </ol>
+          </ol> : <div className="st-large-goal"><b>{v.count}개 적립</b><span>선물 1개당 {v.requiredStamps}개</span><div className="st-progress" aria-hidden="true"><span style={{ width: `${percent}%` }} /></div></div>}
 
           <footer className="st-paper-foot">
             <span>{v.unit} 1회당 1개</span>
@@ -99,11 +103,11 @@ export default function StampDetail({ view: v, freshIndex, onBack, onRecord }: P
           <div className={`st-reward${done ? ' is-ready' : ''}`}>
             <span className="st-reward-label"><Icon name="gift" />{v.requiredStamps}개 모으면 받는 선물</span>
             <strong>{v.reward}</strong>
-            <div className="st-progress" role="progressbar" aria-label="선물까지 진행률" aria-valuemin={0} aria-valuemax={v.requiredStamps} aria-valuenow={v.count}>
+            <div className="st-progress" role="progressbar" aria-label="선물까지 진행률" aria-valuemin={0} aria-valuemax={v.requiredStamps} aria-valuenow={Math.min(v.count, v.requiredStamps)} aria-valuetext={`보유 ${v.count}개, 선물 1개당 ${v.requiredStamps}개 필요`}>
               <span style={{ width: `${percent}%` }} />
             </div>
             <span className="st-reward-sub">
-              {done ? '교환권을 직원에게 보여주면 받을 수 있어요' : `${remaining}개 더 모으면 받아요`}
+              {done ? `${available}개 교환 가능 · 1회 교환 시 ${v.requiredStamps}개 차감` : `${remaining}개 더 모으면 받아요`}
               {v.redeemedTimes > 0 && ` · 지금까지 ${v.redeemedTimes}번 받았어요`}
             </span>
           </div>
@@ -196,7 +200,7 @@ export default function StampDetail({ view: v, freshIndex, onBack, onRecord }: P
               <span className="st-voucher-sub">스탬프 {v.requiredStamps}개 사용</span>
               <span className="st-voucher-code">교환 번호 <b>{v.storeId.replace(/\D/g, '').padStart(3, '0')}-{String(v.redeemedTimes + 1).padStart(2, '0')}</b></span>
             </div>
-            <p className="st-sheet-copy">직원에게 이 화면을 보여주세요. 교환이 끝나면 새 적립판이 시작돼요.</p>
+            <p className="st-sheet-copy">선물 1개 교환 시 스탬프 {v.requiredStamps}개가 차감되고, {Math.max(0, v.count - v.requiredStamps)}개가 남아요.</p>
             <DemoBox label="교환 완료 처리하기" onClick={() => confirm('redeem')}>
               실제 직원 확인 없이, 교환 후 적립판이 어떻게 바뀌는지 보여줘요.
             </DemoBox>
@@ -208,7 +212,7 @@ export default function StampDetail({ view: v, freshIndex, onBack, onRecord }: P
 }
 
 /* 직원에게 보여주는 적립 코드 (3분마다 새 번호) */
-function CodePanel({ view, onDemoConfirm }: { view: StampView; onDemoConfirm: () => void }) {
+function CodePanel({ view, onDemoConfirm }: { view: StampView; onDemoConfirm: () => Promise<boolean> }) {
   const [code, setCode] = useState(issueStampCode);
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -243,11 +247,18 @@ function CodePanel({ view, onDemoConfirm }: { view: StampView; onDemoConfirm: ()
   );
 }
 
-function DemoBox({ label, onClick, children }: { label: string; onClick: () => void; children: string }) {
+function DemoBox({ label, onClick, children }: { label: string; onClick: () => Promise<boolean>; children: string }) {
+  const [busy, setBusy] = useState(false);
+  const locked = useRef(false);
+  const run = async () => {
+    if (locked.current) return;
+    locked.current = true; setBusy(true);
+    try { await onClick(); } finally { locked.current = false; setBusy(false); }
+  };
   return (
     <div className="st-demo-box">
       <p><b>시연 모드</b>{children}</p>
-      <button type="button" className="st-btn st-btn--primary st-btn--block" onClick={onClick}>{label}</button>
+      <button type="button" className="st-btn st-btn--primary st-btn--block" disabled={busy} onClick={run}>{busy ? '처리 중…' : label}</button>
     </div>
   );
 }

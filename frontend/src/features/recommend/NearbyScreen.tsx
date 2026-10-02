@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MOCK_STORES } from '../../core/mock/stores';
+import { MOCK_STORES, MOCK_USER_LOCATION } from '../../core/mock/stores';
 import type { Store } from '../../core/types/place';
 import { distanceMeters } from '../../core/utils/geo';
 import Icon from '../../shared/Icon';
 import KakaoMap from './KakaoMap';
-import { WOLGYE_MAP } from './mapArea';
 
 type MapFilter = 'all' | 'space-rental' | 'oneday-class' | 'closing-sale';
 const FILTERS: { key: MapFilter; label: string }[] = [
@@ -17,7 +16,7 @@ const stores = MOCK_STORES.filter((store) =>
   store.supports['closing-sale'] || store.supports.coupon || store.supports['partner-stores']);
 
 function distanceLabel(store: Store) {
-  const meters = distanceMeters(WOLGYE_MAP.center, store.location);
+  const meters = distanceMeters(MOCK_USER_LOCATION, store.location);
   return meters < 1000 ? Math.round(meters / 10) * 10 + 'm' : (meters / 1000).toFixed(1) + 'km';
 }
 
@@ -35,7 +34,7 @@ export default function NearbyScreen({ selectedId, onSelect, onShowMap }: {
   return <div className="rp-nearby">
     <KakaoMap stores={visibleStores} selectedId={selectedId} onSelect={onSelect} />
     <div className="rp-map-top">
-      <div><span className="rp-location-icon"><Icon name="pin" /></span><div><strong>월계1동</strong><span>월계1동 중심 · 가까운 골목부터</span></div></div>
+      <div><span className="rp-location-icon"><Icon name="pin" /></span><div><strong>월계1동</strong><span>우리 동네에서 발견하기</span></div></div>
       <button type="button" onClick={onShowMap}>동네 지도 <Icon name="chevronRight" /></button>
     </div>
     <div className="rp-map-filters" aria-label="지도 가게 분류">{FILTERS.map((item) =>

@@ -1,7 +1,8 @@
 import { fetchStoresByIds, getUserLocation } from '../../core/source/storeSource';
 import { walkMinutes } from '../../core/utils/geo';
 import { MOCK_MY_STAMPS, MOCK_STAMP_HISTORY, MOCK_STAMP_POLICIES } from './mock';
-import type { StampTransaction, StampView } from './types';
+import type { StampPolicy, StampTransaction, StampView } from './types';
+import { isStampPolicy, validBalance } from './policy';
 
 /**
  * 스탬프 데이터를 가져오고 바꾸는 지점. 화면은 이 파일의 함수만 바라본다.
@@ -17,14 +18,27 @@ import type { StampTransaction, StampView } from './types';
  */
 
 const DEMO_KEY = 'wolwol.stamp.demo.v1';
+let unsavedDemo: StampTransaction[] | null = null;
+const recordingStores = new Set<string>();
+
+/**
+ * 사장님 설정을 읽는 연결 지점. 현재는 API 응답 모양의 예시 데이터다.
+ * 추후 인증된 서버 응답을 StampPolicy로 매핑한다. 손님 화면에는 규칙 편집 UI를 두지 않는다.
+ * 잘못된 규칙은 목록에서 제외하며 임의로 10개를 넣지 않는다.
+ */
+export async function fetchStampPolicies(): Promise<StampPolicy[]> {
+  return MOCK_STAMP_POLICIES.filter(isStampPolicy).map((policy) => ({ ...policy }));
+}
 
 function isTransaction(value: unknown): value is StampTransaction {
   const v = value as StampTransaction;
   return !!v && typeof v.id === 'string' && typeof v.storeId === 'string' && Number.isInteger(v.delta)
-    && Number.isInteger(v.balanceAfter) && typeof v.reason === 'string' && Number.isFinite(Date.parse(v.createdAt));
+    && Number.isSafeInteger(v.delta) && v.delta !== 0 && Number.isSafeInteger(v.balanceAfter)
+    && v.balanceAfter >= 0 && typeof v.reason === 'string' && Number.isFinite(Date.parse(v.createdAt));
 }
 
 function loadDemo(): StampTransaction[] {
+  if (unsavedDemo) return unsavedDemo;
   try {
     const saved: unknown = JSON.parse(window.localStorage.getItem(DEMO_KEY) ?? '[]');
     return Array.isArray(saved) ? saved.filter(isTransaction).map((t) => ({ ...t, origin: 'demo' as const })) : [];
@@ -34,13 +48,14 @@ function loadDemo(): StampTransaction[] {
 }
 
 function saveDemo(list: StampTransaction[]) {
-  try { window.localStorage.setItem(DEMO_KEY, JSON.stringify(list)); } catch { /* 저장 실패 시 이번 화면에서만 반영 */ }
+  try { window.localStorage.setItem(DEMO_KEY, JSON.stringify(list)); unsavedDemo = null; }
+  catch { unsavedDemo = list; /* 저장 차단 시 이번 세션에서만 유지 */ }
 }
 
 const byNewest = (a: StampTransaction, b: StampTransaction) => Date.parse(b.createdAt) - Date.parse(a.createdAt);
 
 export async function fetchStamps(): Promise<StampView[]> {
-  const policies = MOCK_STAMP_POLICIES;
+  const policies = await fetchStampPolicies();
   const mine = new Map(MOCK_MY_STAMPS.map((m) => [m.storeId, m.count]));
   const demo = loadDemo();
   const [stores, here] = await Promise.all([fetchStoresByIds(policies.map((p) => p.storeId)), getUserLocation()]);
@@ -48,8 +63,12 @@ export async function fetchStamps(): Promise<StampView[]> {
     const store = stores.get(policy.storeId);
     if (!store) return [];
     const mineDemo = demo.filter((t) => t.storeId === policy.storeId);
-    let count = Math.min(mine.get(policy.storeId) ?? 0, policy.requiredStamps);
-    [...mineDemo].sort((a, b) => -byNewest(a, b)).forEach((t) => { count = Math.max(0, Math.min(policy.requiredStamps, count + t.delta)); });
+    // 목표가 낮아져도 기존 잔액을 잘라내지 않는다. 과거 거래의 차감량도 그대로 보존한다.
+    let count = validBalance(mine.get(policy.storeId));
+    [...mineDemo].sort((a, b) => -byNewest(a, b)).forEach((t) => {
+      const next = count + t.delta;
+      if (Number.isSafeInteger(next) && next >= 0) count = next;
+    });
     const history = [...MOCK_STAMP_HISTORY.filter((t) => t.storeId === policy.storeId), ...mineDemo].sort(byNewest);
     return [{
       ...policy,
@@ -68,25 +87,34 @@ export async function fetchStamps(): Promise<StampView[]> {
  * 규칙은 DB 함수와 같다: 잔액이 0 미만이 되거나, 다 모은 적립판에 더 찍을 수 없다.
  */
 export async function recordDemoStamp(view: StampView, kind: 'earn' | 'redeem'): Promise<StampTransaction> {
-  if (kind === 'earn' && view.count >= view.requiredStamps) throw new Error('FULL');
-  if (kind === 'redeem' && view.count < view.requiredStamps) throw new Error('NOT_ENOUGH');
-  const delta = kind === 'earn' ? 1 : -view.requiredStamps;
-  const tx: StampTransaction = {
-    id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `demo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    storeId: view.storeId,
-    delta,
-    balanceAfter: view.count + delta,
-    reason: kind === 'earn' ? view.unit : `상품 교환 · ${view.reward}`,
-    createdAt: new Date().toISOString(),
-    origin: 'demo',
-  };
-  saveDemo([...loadDemo(), tx]);
-  return tx;
+  if (recordingStores.has(view.storeId)) throw new Error('BUSY');
+  recordingStores.add(view.storeId);
+  try {
+    const current = (await fetchStamps()).find((v) => v.storeId === view.storeId);
+    if (!current) throw new Error('POLICY_UNAVAILABLE');
+    if (current.requiredStamps !== view.requiredStamps || current.reward !== view.reward
+      || current.unit !== view.unit || current.condition !== view.condition) throw new Error('POLICY_CHANGED');
+    if (kind === 'earn' && current.count >= current.requiredStamps) throw new Error('FULL');
+    if (kind === 'redeem' && current.count < current.requiredStamps) throw new Error('NOT_ENOUGH');
+    const delta = kind === 'earn' ? 1 : -current.requiredStamps;
+    const tx: StampTransaction = {
+      id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `demo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      storeId: view.storeId,
+      delta,
+      balanceAfter: current.count + delta,
+      reason: kind === 'earn' ? current.unit : `상품 교환 · ${current.reward}`,
+      createdAt: new Date().toISOString(),
+      origin: 'demo',
+    };
+    saveDemo([...loadDemo(), tx]);
+    return tx;
+  } finally { recordingStores.delete(view.storeId); }
 }
 
 /** [시연용] 이 브라우저에서 추가한 적립·교환 기록을 지운다 */
 export async function resetStampDemo(): Promise<void> {
-  try { window.localStorage.removeItem(DEMO_KEY); } catch { /* 무시 */ }
+  try { window.localStorage.removeItem(DEMO_KEY); unsavedDemo = null; }
+  catch { unsavedDemo = []; }
 }
 
 export function hasStampDemo(): boolean {

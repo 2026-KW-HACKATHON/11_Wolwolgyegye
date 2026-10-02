@@ -61,3 +61,13 @@
   background: #eff6ff;
   color: #2563eb;
 }
+
+.page-header[data-home='true'] { height: 62px; background: var(--color-surface); border-color: var(--color-border); }
+.page-header__brand { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--color-brand); }
+.page-header__brand strong { font-size: 21px; letter-spacing: -.08em; white-space: nowrap; }
+.page-header__brand-mark { display: grid; place-items: center; width: 30px; height: 34px; border-radius: 10px; background: var(--color-brand-soft); font-size: 23px; }
+.page-header__tagline { display: none; color: var(--color-text-muted); font-size: 12px; }
+.page-header[data-home='true'] .page-header__help,
+.page-header[data-home='true'] .page-header__settings { width: 44px; height: 44px; color: var(--color-text-muted); }
+.page-header[data-home='true'] .page-header__help { border: 0; background: var(--color-bg); font-size: 19px; }
+@media (min-width: 480px) { .page-header__tagline { display: inline; margin-left: 5px; } }

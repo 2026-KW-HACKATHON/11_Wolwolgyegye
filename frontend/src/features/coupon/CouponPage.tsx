@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '../../shared/toast/ToastContext';
+import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
 import { fetchStamps, recordDemoStamp, resetStampDemo } from './source';
 import StampDetail from './StampDetail';
 import StampList from './StampList';
@@ -16,6 +17,7 @@ export default function CouponPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
+  const active = usePageActive();
   const [stamps, setStamps] = useState<StampView[] | null>(null);
   const [error, setError] = useState(false);
   const [version, setVersion] = useState(0);
@@ -27,13 +29,22 @@ export default function CouponPage() {
   const listScroll = useRef(0);
 
   useEffect(() => {
+    if (!active) return;
     let cancelled = false;
     setError(false);
     fetchStamps()
       .then((list) => { if (!cancelled) setStamps(list); })
       .catch(() => { if (!cancelled) setError(true); });
     return () => { cancelled = true; };
-  }, [version]);
+  }, [version, active]);
+
+  // 다른 화면/탭에서 돌아오면 사장님 설정과 잔액을 다시 조회한다.
+  useEffect(() => {
+    const refresh = () => { if (active && document.visibilityState === 'visible') setVersion((n) => n + 1); };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => { window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh); };
+  }, [active]);
 
   const selectedId = new URLSearchParams(location.search).get('store');
   const selected = stamps?.find((v) => v.storeId === selectedId) ?? null;
@@ -61,12 +72,19 @@ export default function CouponPage() {
       setFresh(kind === 'earn' ? { storeId: view.storeId, index: tx.balanceAfter - 1 } : null);
       window.setTimeout(() => setFresh(null), 1800); // 탭을 다시 열 때 애니메이션이 반복되지 않게
       setVersion((n) => n + 1);
-      if (kind === 'redeem') toast(`${view.reward} 교환 완료! 새 적립판이 시작됐어요`);
+      if (kind === 'redeem') toast(`${view.reward} 교환 완료! 스탬프 ${tx.balanceAfter}개가 남았어요`);
       else if (tx.balanceAfter >= view.requiredStamps) toast('다 모았어요! 이제 선물을 받을 수 있어요');
       else toast(`도장 쾅! ${tx.balanceAfter}/${view.requiredStamps}`);
       return true;
-    } catch {
-      toast(kind === 'earn' ? '다 모은 적립판이에요. 먼저 선물을 받아 주세요' : '스탬프가 아직 부족해요');
+    } catch (error) {
+      const code = error instanceof Error ? error.message : '';
+      setVersion((n) => n + 1);
+      if (code === 'POLICY_CHANGED') toast('가게의 적립 기준이 변경됐어요. 새 기준을 확인한 뒤 다시 진행해 주세요');
+      else if (code === 'POLICY_UNAVAILABLE') toast('가게의 적립 기준을 확인할 수 없어요');
+      else if (code === 'BUSY') toast('이미 처리 중이에요. 잠시 기다려 주세요');
+      else if (code === 'FULL') toast('다 모은 적립판이에요. 먼저 선물을 받아 주세요');
+      else if (code === 'NOT_ENOUGH') toast('스탬프가 아직 부족해요');
+      else toast('처리하지 못했어요. 잠시 후 다시 시도해 주세요');
       return false;
     }
   }, [toast]);
