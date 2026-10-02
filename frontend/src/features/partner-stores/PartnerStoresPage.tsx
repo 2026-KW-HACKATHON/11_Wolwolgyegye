@@ -127,18 +127,6 @@ export default function PartnerStoresPage() {
   const listTitle = current ? `${current.label} 학생 혜택` : audience === 'resident' ? '주민·일반 이용자 혜택' : '단과대별 제휴 가게';
 
   return <div className="ps-page">
-    <section className="ps-hero" aria-labelledby="ps-hero-title">
-      <div className="ps-hero-copy">
-        <span className="ps-eyebrow"><Icon name="ticket" />광운대 학생 제휴</span>
-        <h1 id="ps-hero-title">내 단과대 혜택,<br /><em>가게별로 한눈에</em></h1>
-        <p>소속을 고르면 받을 수 있는 혜택만 모아 보여드려요. <b>가게 이름을 누르면 위치 지도</b>가 열려요.</p>
-      </div>
-      <div className="ps-hero-stat" aria-live="polite">
-        <span>{current ? `${current.label} 학생이 받을 수 있는 곳` : audience === 'resident' ? '주민 대상 제휴' : '제휴 가게'}</span>
-        <b>{stores ? (audience === 'resident' ? 0 : collegeCounts[college ?? 'all']) : '—'}<small>곳</small></b>
-      </div>
-    </section>
-
     <section className="ps-audience" aria-labelledby="ps-audience-title">
       <div className="ps-audience-head">
         <h2 id="ps-audience-title">내 소속</h2>

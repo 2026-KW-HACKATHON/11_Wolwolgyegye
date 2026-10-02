@@ -2,9 +2,7 @@ import { useMemo } from 'react';
 import Icon from '../../shared/Icon';
 import ExtraIcon from '../../shared/ExtraIcon';
 import { useFavoriteStores } from '../../shared/favorites/useFavoriteStores';
-import { useUserSession } from '../../shared/session/UserSessionContext';
-import { STAMP_FILTERS, STAMP_SORTS, initialOf, isReady, relativeDay, remainingOf, statusText, tiltOf } from './constants';
-import StampSeal from './StampSeal';
+import { STAMP_FILTERS, STAMP_SORTS, initialOf, isReady, relativeDay, remainingOf, statusText, tiltOf, rewardsOf, progressOf, MAX_STAMP_SLOTS } from './constants';
 import type { StampFilter, StampSort, StampView } from './types';
 
 interface Props {
@@ -24,13 +22,11 @@ interface Props {
 
 export default function StampList({ stamps, error, onRetry, missingId, query, onQuery, filter, onFilter, sort, onSort, onOpen, onResetDemo }: Props) {
   const { isFavorite, toggle } = useFavoriteStores();
-  const { userName } = useUserSession();
   const all = useMemo(() => stamps ?? [], [stamps]);
 
   const ready = all.filter(isReady);
   const collecting = all.filter((v) => v.count > 0 && !isReady(v));
-  const closest = [...collecting].sort((a, b) => remainingOf(a) - remainingOf(b))[0];
-  const totalStamps = all.reduce((sum, v) => sum + v.count, 0);
+  const totalRewards = all.reduce((sum, v) => sum + rewardsOf(v), 0);
   const hasDemo = all.some((v) => v.history.some((t) => t.origin === 'demo'));
   const counts: Record<StampFilter, number> = {
     all: all.length,
@@ -52,42 +48,19 @@ export default function StampList({ stamps, error, onRetry, missingId, query, on
     if (sort === 'near') return list.sort((a, b) => a.walkMinutes - b.walkMinutes || byName(a, b));
     if (sort === 'recent') return list.sort((a, b) => (Date.parse(b.lastActivityAt ?? '') || 0) - (Date.parse(a.lastActivityAt ?? '') || 0) || byName(a, b));
     // 선물 가까운순: 받을 수 있는 선물 → 남은 개수 적은 순 → 아직 시작 안 한 가게
-    const rank = (v: StampView) => (isReady(v) ? -1 : v.count === 0 ? 1000 : remainingOf(v));
-    return list.sort((a, b) => rank(a) - rank(b) || byName(a, b));
+    const rank = (v: StampView) => isReady(v) ? 0 : v.count > 0 ? 1 : 2;
+    return list.sort((a, b) => rank(a) - rank(b) || remainingOf(a) - remainingOf(b) || byName(a, b));
   }, [all, filter, query, sort, isFavorite]); // isFavorite 는 찜 목록이 바뀌면 새 함수가 된다
-
-  const spotlight = ready[0] ?? closest;
-  const headline = ready.length
-    ? <>지금 받을 수 있는 선물이 <em>{ready.length}개</em> 있어요</>
-    : closest
-      ? <><em>{remainingOf(closest)}개</em>만 더 모으면 {closest.reward}</>
-      : <>자주 가는 가게에서 스탬프를 모아보세요</>;
 
   return (
     <>
-      <section className="st-wallet" aria-labelledby="st-wallet-title">
-        <div className="st-wallet-copy">
-          <span className="st-eyebrow"><ExtraIcon name="stamp" />{userName ? `${userName}님의 스탬프 지갑` : '나의 스탬프 지갑'}</span>
-          <h1 id="st-wallet-title" className="st-wallet-title">{stamps ? headline : '적립 현황을 불러오는 중이에요'}</h1>
-          <dl className="st-stats">
-            <div><dt>모은 도장</dt><dd><b>{totalStamps}</b>개</dd></div>
-            <div><dt>받을 선물</dt><dd><b>{ready.length}</b>개</dd></div>
-            <div><dt>적립 중인 가게</dt><dd><b>{collecting.length + ready.length}</b>곳</dd></div>
-          </dl>
-        </div>
-        {spotlight && (
-          <button type="button" className={`st-spotlight${isReady(spotlight) ? ' is-ready' : ''}`} onClick={() => onOpen(spotlight.storeId)}>
-            <span className="st-spotlight-seal">
-              <StampSeal initial={initialOf(spotlight.store.name)} tilt={-8} seed={3} size="sm" />
-            </span>
-            <span className="st-spotlight-text">
-              <small>{isReady(spotlight) ? '지금 선물 받기' : '선물까지 가장 가까운 가게'}</small>
-              <strong>{spotlight.store.name}</strong>
-              <span>{spotlight.reward} · {spotlight.count}/{spotlight.requiredStamps}</span>
-            </span>
-            <Icon name="chevronRight" className="st-spotlight-go" />
-          </button>
-        )}
+      <section className="st-reward-summary" aria-labelledby="st-wallet-title">
+        <Icon name="gift" />
+        <h1 id="st-wallet-title" aria-live="polite">
+          {error ? '받을 수 있는 선물 수를 확인하지 못했어요' : stamps
+            ? <>받을 수 있는 선물 <em>{totalRewards}개</em></>
+            : '받을 수 있는 선물 확인 중…'}
+        </h1>
       </section>
 
       <div className="st-toolbar">
@@ -153,7 +126,7 @@ export default function StampList({ stamps, error, onRetry, missingId, query, on
                         <strong>{v.store.name}</strong>
                       </span>
                     </span>
-                    <span className="st-meter" aria-hidden="true">
+                    {v.requiredStamps <= MAX_STAMP_SLOTS ? <span className="st-meter" style={{ gridTemplateColumns: `repeat(${Math.min(v.requiredStamps, 10)}, minmax(0, 1fr))` }} aria-hidden="true">
                       {Array.from({ length: v.requiredStamps }, (_, i) => {
                         const on = i < v.count;
                         const gift = i === v.requiredStamps - 1;
@@ -163,7 +136,7 @@ export default function StampList({ stamps, error, onRetry, missingId, query, on
                           </i>
                         );
                       })}
-                    </span>
+                    </span> : <span className="st-progress st-meter-progress" aria-hidden="true"><span style={{ width: `${progressOf(v)}%` }} /></span>}
                     <span className="st-item-row">
                       <span className="st-item-count"><b>{v.count}</b> / {v.requiredStamps}</span>
                       <span className={`st-badge${done ? ' is-ready' : v.count === 0 ? ' is-new' : ''}`}>{statusText(v)}</span>

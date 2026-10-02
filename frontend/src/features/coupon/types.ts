@@ -9,7 +9,7 @@ import type { Store } from '../../core/types/place';
 /** 가게가 정한 스탬프 규칙 (DB 의 stamp_policies 테이블 한 행) */
 export interface StampPolicy {
   storeId: string;
-  /** 상품을 받기까지 채워야 하는 스탬프 개수 */
+  /** 사장님이 정한 선물 1개당 필요 개수. 양의 정수이며 모든 화면·교환 계산의 기준. */
   requiredStamps: number;
   /** 받는 상품 (예: "아메리카노 1잔") */
   reward: string;

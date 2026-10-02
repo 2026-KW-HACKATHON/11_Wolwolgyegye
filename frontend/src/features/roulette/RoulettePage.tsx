@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MENUS, MENU_PRESETS, WHEEL_COLORS, menusForPreset } from './constants';
+import { MENUS, MENU_PRESETS, menusForPreset } from './constants';
 import { fetchStoresByMenu } from './source';
 import type { RouletteStoreView, WheelMenu } from './types';
 import './roulette.css';
@@ -51,15 +51,6 @@ function objectParticle(word: string) {
   return hasFinalConsonant ? '을' : '를';
 }
 
-/** 직접 추가한 메뉴에는 아직 안 쓴 색을 먼저 준다 */
-function nextColor(current: WheelMenu[]) {
-  const used = new Set(current.map((m) => m.color));
-  return (
-    WHEEL_COLORS.find((color) => !used.has(color)) ??
-    WHEEL_COLORS[current.length % WHEEL_COLORS.length]
-  );
-}
-
 function menuSetKey(menus: WheelMenu[]) {
   return menus
     .map((m) => m.id)
@@ -71,11 +62,12 @@ export default function RoulettePage() {
   const navigate = useNavigate();
   const [menus, setMenus] = useState<WheelMenu[]>(loadMenus);
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState('');
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<WheelMenu | null>(null);
   const [stores, setStores] = useState<RouletteStoreView[] | null>(null);
+  const wheelZoneRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
 
   const isEmpty = menus.length === 0;
   const segmentAngle = isEmpty ? 360 : 360 / menus.length;
@@ -113,23 +105,20 @@ export default function RoulettePage() {
     };
   }, [result]);
 
+  // 편집기를 열면 원판 아래에 펼쳐진 편집 영역이 화면에 들어오도록 내려준다
+  useEffect(() => {
+    if (editing) editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [editing]);
+
+  function finishEditing() {
+    setEditing(false);
+    wheelZoneRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function applyMenus(next: WheelMenu[]) {
     setMenus(next);
     saveMenus(next);
     setResult(null);
-  }
-
-  function handleAddCustom(event: FormEvent) {
-    event.preventDefault();
-    const name = draft.trim();
-    setDraft('');
-    if (!name || menus.some((m) => m.name === name)) return;
-
-    const preset = MENUS.find((m) => m.name === name);
-    applyMenus([
-      ...menus,
-      preset ?? { id: `custom-${name}`, name, emoji: '🍽️', color: nextColor(menus) },
-    ]);
   }
 
   function handleSpin() {
@@ -161,19 +150,6 @@ export default function RoulettePage() {
             고민은 줄이고, <em>맛있는 한 끼</em>를 고르세요.
           </h1>
         </div>
-        <div className="rl-filters">
-          {MENU_PRESETS.map((preset) => (
-            <button
-              key={preset.key}
-              type="button"
-              className={`rl-chip${activePreset === preset.key ? ' is-on' : ''}`}
-              aria-pressed={activePreset === preset.key}
-              onClick={() => !spinning && applyMenus(menusForPreset(preset.key))}
-            >
-              {preset.label}
-            </button>
-          ))}
-        </div>
       </header>
 
       <section className="rl-card">
@@ -184,88 +160,9 @@ export default function RoulettePage() {
             룰렛에 올릴 메뉴는 직접 고를 수 있어요. 돌리고 나면 그 메뉴를 파는 동네 가게를 함께
             추천해 드려요.
           </p>
-
-          <div className="rl-editor">
-            <div className="rl-editor-head">
-              <span className="rl-editor-count">내 룰렛 {menus.length}칸</span>
-              <button type="button" className="rl-editor-toggle" onClick={() => setEditing((v) => !v)}>
-                {editing ? '편집 닫기' : '메뉴 편집'}
-              </button>
-            </div>
-
-            {editing && (
-              <div className="rl-editor-body">
-                <p className="rl-editor-label">룰렛에 올린 메뉴</p>
-                {isEmpty ? (
-                  <p className="rl-editor-none">아직 올린 메뉴가 없어요.</p>
-                ) : (
-                  <ul className="rl-menu-chips">
-                    {menus.map((menu) => (
-                      <li key={menu.id}>
-                        <span className="rl-menu-chip">
-                          <i className="rl-menu-dot" style={{ background: menu.color }} />
-                          {menu.name}
-                          <button
-                            type="button"
-                            className="rl-menu-remove"
-                            aria-label={`${menu.name} 빼기`}
-                            onClick={() => applyMenus(menus.filter((m) => m.id !== menu.id))}
-                          >
-                            ×
-                          </button>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {addableMenus.length > 0 && (
-                  <>
-                    <p className="rl-editor-label">추천 메뉴 더하기</p>
-                    <ul className="rl-menu-chips">
-                      {addableMenus.map((menu) => (
-                        <li key={menu.id}>
-                          <button
-                            type="button"
-                            className="rl-add-chip"
-                            onClick={() => applyMenus([...menus, menu])}
-                          >
-                            + {menu.name}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-
-                <form className="rl-add-form" onSubmit={handleAddCustom}>
-                  <input
-                    className="rl-add-input"
-                    value={draft}
-                    maxLength={6}
-                    placeholder="직접 입력 (예: 초밥)"
-                    aria-label="룰렛에 추가할 메뉴"
-                    onChange={(e) => setDraft(e.target.value)}
-                  />
-                  <button type="submit" className="rl-add-submit" disabled={!draft.trim()}>
-                    추가
-                  </button>
-                </form>
-
-                <button
-                  type="button"
-                  className="rl-editor-reset"
-                  disabled={isEmpty}
-                  onClick={() => applyMenus([])}
-                >
-                  룰렛 초기화
-                </button>
-              </div>
-            )}
-          </div>
         </div>
 
-        <div className="rl-wheel-zone">
+        <div className="rl-wheel-zone" ref={wheelZoneRef}>
           <div className="rl-wheel-frame">
             <span className="rl-pointer" aria-hidden="true" />
             <div
@@ -278,7 +175,8 @@ export default function RoulettePage() {
                   className="rl-wheel-label"
                   style={{
                     ...labelPosition(i, menus.length),
-                    fontSize: labelFontSize(menus.length),
+                    // PC에서는 CSS 변수로 원판 크기에 맞게 글자를 함께 키운다
+                    fontSize: `calc(${labelFontSize(menus.length)} * var(--rl-label-scale, 1))`,
                     // 원판이 돌아도 글자는 똑바로 서 있도록 같은 각도만큼 되돌린다
                     transform: `translate(-50%, -50%) rotate(${-rotation}deg)`,
                   }}
@@ -298,20 +196,113 @@ export default function RoulettePage() {
                 SPIN
               </button>
             )}
+          </div>
 
-            {result && (
-              <div className="rl-result-pop">
-                <span className="rl-result-emoji">{result.emoji}</span>
+          {/* 결과는 원판을 가리지 않도록 원판 아래에 띄운다 */}
+          {result && (
+            <div className="rl-result" role="status">
+              <span className="rl-result-emoji">{result.emoji}</span>
+              <div className="rl-result-text">
                 <p className="rl-result-label">오늘의 추천 메뉴</p>
                 <p className="rl-result-headline">
                   {result.headline ?? `오늘은 ${result.name} 어때요?`}
                 </p>
-                <button type="button" className="rl-respin" onClick={handleSpin} disabled={spinning}>
-                  다시 돌리기
+              </div>
+              <button type="button" className="rl-respin" onClick={handleSpin} disabled={spinning}>
+                다시 돌리기
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="rl-editor" ref={editorRef}>
+          <div className="rl-editor-head">
+            <span className="rl-editor-count">내 룰렛 {menus.length}칸</span>
+            <button
+              type="button"
+              className="rl-editor-toggle"
+              onClick={() => (editing ? finishEditing() : setEditing(true))}
+            >
+              {editing ? '편집 닫기' : '메뉴 편집'}
+            </button>
+          </div>
+
+          {editing && (
+            <div className="rl-editor-body">
+              <p className="rl-editor-label">메뉴 묶음으로 채우기</p>
+              <div className="rl-filters">
+                {MENU_PRESETS.map((preset) => (
+                  <button
+                    key={preset.key}
+                    type="button"
+                    className={`rl-chip${activePreset === preset.key ? ' is-on' : ''}`}
+                    aria-pressed={activePreset === preset.key}
+                    disabled={spinning}
+                    onClick={() => applyMenus(menusForPreset(preset.key))}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+
+              <p className="rl-editor-label">룰렛에 올린 메뉴</p>
+              {isEmpty ? (
+                <p className="rl-editor-none">아직 올린 메뉴가 없어요.</p>
+              ) : (
+                <ul className="rl-menu-chips">
+                  {menus.map((menu) => (
+                    <li key={menu.id}>
+                      <span className="rl-menu-chip">
+                        <i className="rl-menu-dot" style={{ background: menu.color }} />
+                        {menu.name}
+                        <button
+                          type="button"
+                          className="rl-menu-remove"
+                          aria-label={`${menu.name} 빼기`}
+                          onClick={() => applyMenus(menus.filter((m) => m.id !== menu.id))}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {addableMenus.length > 0 && (
+                <>
+                  <p className="rl-editor-label">추천 메뉴 더하기</p>
+                  <ul className="rl-menu-chips">
+                    {addableMenus.map((menu) => (
+                      <li key={menu.id}>
+                        <button
+                          type="button"
+                          className="rl-add-chip"
+                          onClick={() => applyMenus([...menus, menu])}
+                        >
+                          + {menu.name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              <div className="rl-editor-foot">
+                <button
+                  type="button"
+                  className="rl-editor-reset"
+                  disabled={isEmpty}
+                  onClick={() => applyMenus([])}
+                >
+                  룰렛 초기화
+                </button>
+                <button type="button" className="rl-editor-done" onClick={finishEditing}>
+                  설정 완료
                 </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 

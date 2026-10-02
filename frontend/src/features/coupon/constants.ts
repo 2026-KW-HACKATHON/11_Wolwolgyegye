@@ -1,4 +1,5 @@
 import type { StampFilter, StampSort, StampTransaction, StampView } from './types';
+import { isStampPolicy, validBalance } from './policy';
 
 /** 화면 전용 상수·표시 규칙 (DB 와 무관) */
 
@@ -41,11 +42,15 @@ export function withRo(word: string): string {
   return `${word}${jong === 0 || jong === 8 ? '로' : '으로'}`;
 }
 
-export const isReady = (v: StampView) => v.count >= v.requiredStamps;
-export const remainingOf = (v: StampView) => Math.max(0, v.requiredStamps - v.count);
+/** 큰 목표도 수백 개의 SVG를 만들지 않고 진행 막대로 표시한다. */
+export const MAX_STAMP_SLOTS = 30;
+export const rewardsOf = (v: StampView) => isStampPolicy(v) ? Math.floor(validBalance(v.count) / v.requiredStamps) : 0;
+export const isReady = (v: StampView) => rewardsOf(v) > 0;
+export const remainingOf = (v: StampView) => isStampPolicy(v) ? Math.max(0, v.requiredStamps - validBalance(v.count)) : 0;
+export const progressOf = (v: StampView) => isStampPolicy(v) ? Math.min(100, (validBalance(v.count) / v.requiredStamps) * 100) : 0;
 
 export function statusText(v: StampView): string {
-  if (isReady(v)) return '선물 받을 수 있어요';
+  if (isReady(v)) return `선물 ${rewardsOf(v)}개 받을 수 있어요`;
   if (v.count === 0) return '첫 스탬프를 모아보세요';
   return `선물까지 ${remainingOf(v)}개`;
 }
@@ -53,6 +58,7 @@ export function statusText(v: StampView): string {
 /** 이번 적립판(마지막 교환 이후)에 찍힌 도장들의 날짜. 오래된 순, 최대 count 개 */
 export function currentCycleDates(v: StampView): string[] {
   const dates: string[] = [];
+  if (v.count <= 0) return dates;
   for (const t of v.history) { // 최신순
     if (t.delta < 0) break;
     dates.push(t.createdAt);

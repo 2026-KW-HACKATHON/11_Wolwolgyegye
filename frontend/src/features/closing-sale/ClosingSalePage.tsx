@@ -87,6 +87,9 @@ export default function ClosingSalePage() {
     );
   }, [sales, sort, now]);
 
+  /** 배너에 보여줄 진행 중인 세일 가게 수 (한 가게가 여러 세일을 올려도 한 곳으로 센다) */
+  const activeStoreCount = useMemo(() => new Set(visible.map((sale) => sale.storeId)).size, [visible]);
+
   function toggleLike(id: string) {
     const next = likedIds.includes(id) ? likedIds.filter((v) => v !== id) : [...likedIds, id];
     setLikedIds(next);
@@ -101,6 +104,17 @@ export default function ClosingSalePage() {
           지금, 동네 가게의 <em>마감세일</em>을 만나보세요
         </h1>
         <p className="cs-hero-sub">남은 시간 안에만 받을 수 있는 신선한 할인 혜택이에요.</p>
+        {sales !== null && (
+          <p className="cs-hero-count" role="status">
+            {activeStoreCount > 0 ? (
+              <>
+                지금 <b>{activeStoreCount}곳</b>에서 마감세일 진행 중
+              </>
+            ) : (
+              '현재는 진행중인 세일이 없어요'
+            )}
+          </p>
+        )}
         <span className="cs-hero-mark" aria-hidden="true">
           %
         </span>
@@ -154,9 +168,13 @@ export default function ClosingSalePage() {
                 <li key={sale.id} className={`cs-card cs-tone-${toneForStore(sale.storeId)}`}>
                   <div className="cs-card-top">
                     <span className={`cs-countdown${urgent ? ' is-urgent' : ''}`}>
-                      마감까지 {formatLeft(left)}
+                      <span className="cs-countdown-label">마감까지 </span>
+                      {formatLeft(left)}
                     </span>
-                    <strong className="cs-discount">{formatDiscountRate(sale.discountRate)} OFF</strong>
+                    <strong className="cs-discount">
+                      {formatDiscountRate(sale.discountRate)}
+                      <span className="cs-discount-off"> OFF</span>
+                    </strong>
                   </div>
 
                   <div className="cs-card-body">

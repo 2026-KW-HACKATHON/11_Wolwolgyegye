@@ -56,6 +56,23 @@
   z-index: 1;
 }
 
+/* 진행 중인 세일 가게 수 */
+.cs-hero-count {
+  position: relative;
+  display: inline-block;
+  margin: var(--space-3, 12px) 0 0;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill, 999px);
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 0.78rem;
+  font-weight: 600;
+  z-index: 1;
+}
+
+.cs-hero-count b {
+  font-weight: 800;
+}
+
 /* 배너 오른쪽에 크게 깔리는 % 장식 */
 .cs-hero-mark {
   position: absolute;
@@ -288,21 +305,163 @@
   font-weight: 700;
 }
 
-@media (min-width: 720px) {
+/* 모바일: 배너를 절반 정도 높이로 줄인다 */
+@media (max-width: 719px) {
   .cs-hero {
-    padding: var(--space-6, 32px);
+    padding: 10px 14px;
+    margin-bottom: var(--space-3, 12px);
+    border-radius: var(--radius-md, 14px);
+  }
+
+  .cs-hero-badge {
+    padding: 2px 8px;
+    font-size: 0.62rem;
+  }
+
+  /* 폭 제한을 풀어 제목이 어색하게 두 줄로 끊기지 않게 한다 */
+  .cs-hero-heading {
+    max-width: none;
+    margin: 4px 0 1px;
+    font-size: 0.95rem;
+    word-break: keep-all;
+  }
+
+  .cs-hero-heading em {
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+
+  .cs-hero-sub {
+    font-size: 0.7rem;
+  }
+
+  .cs-hero-count {
+    margin-top: 5px;
+    padding: 2px 8px;
+    font-size: 0.66rem;
+  }
+
+  .cs-hero-mark {
+    right: -2px;
+    bottom: -20px;
+    font-size: 4.5rem;
+  }
+}
+
+/* 모바일·태블릿: 한 화면에 가게가 4곳 이상 보이도록 가로형 작은 카드로 바꾼다 */
+@media (max-width: 1023px) {
+  .cs-grid {
+    gap: var(--space-2, 8px);
+  }
+
+  .cs-card {
+    flex-direction: row;
+    border-radius: var(--radius-md, 14px);
+  }
+
+  .cs-card-top {
+    flex: 0 0 92px;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 0;
+    padding: 10px 8px;
+    text-align: center;
+  }
+
+  .cs-countdown {
+    order: 1;
+    padding: 2px 7px;
+    border-radius: 8px;
+    font-size: 0.64rem;
+    line-height: 1.35;
+  }
+
+  .cs-discount {
+    font-size: 1.35rem;
+    line-height: 1.05;
+  }
+
+  /* "마감까지" 다음 줄에 남은 시간 */
+  .cs-countdown-label {
+    display: block;
+  }
+
+  .cs-discount-off {
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+  }
+
+  .cs-card-body {
+    flex: 1;
+    min-width: 0;
+    gap: 2px;
+    padding: 10px 12px;
+  }
+
+  .cs-card-meta {
+    font-size: 0.7rem;
+  }
+
+  .cs-card-name {
+    font-size: 0.95rem;
+  }
+
+  .cs-card-desc {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.76rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cs-card-foot {
+    margin-top: 4px;
+    padding-top: 6px;
+    font-size: 0.72rem;
+  }
+
+  .cs-like {
+    font-size: 0.72rem;
+  }
+}
+
+@media (min-width: 720px) {
+  /* PC 배너는 목록이 바로 보이도록 낮게 유지한다 */
+  .cs-hero {
+    padding: var(--space-4, 16px) var(--space-6, 32px);
+    margin-bottom: var(--space-4, 16px);
   }
 
   .cs-hero-heading {
-    font-size: 2rem;
+    max-width: none;
+    margin: var(--space-2, 8px) 0 4px;
+    font-size: 1.35rem;
+    word-break: keep-all;
+  }
+
+  .cs-hero-sub {
+    font-size: 0.83rem;
+  }
+
+  .cs-hero-count {
+    margin-top: var(--space-2, 8px);
   }
 
   .cs-hero-mark {
     right: 24px;
-    bottom: -70px;
-    font-size: 13rem;
+    bottom: -40px;
+    font-size: 8rem;
   }
 
+  /* 태블릿은 작은 카드 두 줄 */
+  .cs-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
   .cs-grid {
     grid-template-columns: repeat(3, 1fr);
   }
