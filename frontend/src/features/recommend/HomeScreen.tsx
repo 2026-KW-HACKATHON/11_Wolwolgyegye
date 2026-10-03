@@ -91,6 +91,6 @@ export default function HomeScreen({ onShowNearby, onShowStore }: { onShowNearby
       <div className="rp-promotion-row">{sales.slice(0, 3).map((sale) => <Link key={sale.id} to="/closing-sale" className="rp-promotion"><span className="rp-promotion-icon"><Icon name="tag" /></span><strong>{Math.round(sale.discountRate * 100)}<small>% 할인</small></strong><b>{sale.store.name}</b><p>{sale.desc}</p><span className="rp-promotion-footer">할인 내용 보기 <Icon name="chevronRight" /></span></Link>)}</div>
     </section>}
     <button className="rp-map-teaser" type="button" onClick={onShowNearby}><span className="rp-map-teaser-icon"><Icon name="compass" /></span><span><strong>이번엔 지도로 둘러볼까요?</strong><small>가까운 가게를 한눈에 찾아보세요.</small></span><Icon name="chevronRight" /></button>
-    <p className="rp-demo-note">소식과 일부 혜택은 아직 예시 데이터예요.<br />{HAS_SUPABASE_CONFIG ? '지도에는 확인 후 공개된 가게만 표시되며, 예시 소식은 지도와 연결되지 않아요.' : '지도도 예시 배치로 볼 수 있어요.'}</p>
+    <p className="rp-demo-note">소식과 일부 혜택은 아직 예시 데이터예요.<br />{HAS_SUPABASE_CONFIG ? '지도 가게 일부는 2026년 6월 공공데이터 기준이며 현재 영업 여부는 미확인이에요.' : '지도도 예시 배치로 볼 수 있어요.'}</p>
   </div>;
 }
