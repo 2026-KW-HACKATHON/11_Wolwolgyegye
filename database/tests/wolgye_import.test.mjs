@@ -5,7 +5,7 @@ import test from 'node:test';
 
 const readSql = (path) => readFile(new URL(path, import.meta.url), 'utf8');
 
-test('월계1동 후보는 비공개이며 현장 확인한 빠말만 공개된다', async () => {
+test('후보 851곳은 기본 비공개이고, 전체 공개 SQL은 해당 후보만 반복해서 공개한다', async () => {
   const db = new PGlite();
   try {
     await db.exec(await readSql('./bootstrap.sql'));
@@ -27,6 +27,14 @@ test('월계1동 후보는 비공개이며 현장 확인한 빠말만 공개된�
     const visible = await db.query('select name, cuisine_type from public.stores');
     await db.exec('rollback');
     assert.deepEqual(visible.rows, [{ name: '빠말Pasmal', cuisine_type: '베이커리' }]);
+
+    const publishAllSql = await readSql('../imports/wolgye1-publish-all-candidates.sql');
+    await db.exec(publishAllSql);
+    await db.exec(publishAllSql);
+    await db.exec('begin; set local role anon;');
+    const allVisible = await db.query('select count(*)::integer as count from public.stores');
+    await db.exec('rollback');
+    assert.equal(allVisible.rows[0].count, 851);
   } finally {
     await db.close();
   }

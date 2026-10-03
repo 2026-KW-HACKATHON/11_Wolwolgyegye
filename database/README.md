@@ -68,6 +68,8 @@ python database/scripts/import_wolgye_stores.py "C:\다운로드\상가정보.zi
 
 원본 ZIP/CSV는 저장소에 넣지 않는다. 이 도구는 SQL 파일만 생성하며 Supabase에 자동 접속하거나 운영 DB를 변경하지 않는다.
 
+전체 후보 공개를 요청받은 경우에는 `imports/wolgye1-publish-all-candidates.sql`을 별도로 실행한다. 851개 후보의 ID·상호·주소가 모두 일치해야만 적용되며, 운영 DB에 실행하기 전 [검토 안내](imports/README.md)를 읽는다. 프론트 지도의 업종 필터는 `stores.cuisine_type`을 화면에서 묶는 방식이라 DB 테이블을 추가하지 않는다.
+
 ## 보안 규칙
 
 - 비로그인 사용자: 공개 가게·게시글·혜택만 조회.
