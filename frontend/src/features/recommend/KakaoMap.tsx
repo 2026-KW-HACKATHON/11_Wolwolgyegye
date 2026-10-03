@@ -3,19 +3,26 @@ import type { Store } from '../../core/types/place';
 import { MOCK_USER_LOCATION } from '../../core/mock/stores';
 import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
 import MapPreview from './MapPreview';
+import type { MapStoreGroup } from './mapStoreGroups';
 
 interface KakaoLatLng { getLat(): number; getLng(): number }
 interface KakaoMapInstance { setCenter(position: KakaoLatLng): void; relayout(): void }
 interface KakaoMarkerInstance { setMap(map: KakaoMapInstance | null): void }
+interface KakaoMarkerImage { }
 interface KakaoMarkerClusterer { addMarkers(markers: KakaoMarkerInstance[]): void; clear(): void }
 interface KakaoMaps {
   load(callback: () => void): void;
   LatLng: new (lat: number, lng: number) => KakaoLatLng;
   Map: new (element: HTMLElement, options: { center: KakaoLatLng; level: number; scrollwheel: boolean }) => KakaoMapInstance;
-  Marker: new (options: { position: KakaoLatLng; title: string; clickable: boolean }) => KakaoMarkerInstance;
+  Marker: new (options: { position: KakaoLatLng; title: string; clickable: boolean; image?: KakaoMarkerImage }) => KakaoMarkerInstance;
+  MarkerImage: new (src: string, size: KakaoSize, options: { offset: KakaoPoint }) => KakaoMarkerImage;
+  Size: new (width: number, height: number) => KakaoSize;
+  Point: new (x: number, y: number) => KakaoPoint;
   MarkerClusterer?: new (options: { map: KakaoMapInstance; gridSize: number; averageCenter: boolean; minLevel: number }) => KakaoMarkerClusterer;
   event: { addListener(target: KakaoMarkerInstance, event: string, listener: () => void): void };
 }
+interface KakaoSize { }
+interface KakaoPoint { }
 declare global { interface Window { kakao?: { maps: KakaoMaps } } }
 
 const key = import.meta.env.VITE_KAKAO_MAP_KEY?.trim();
@@ -41,19 +48,29 @@ function loadKakaoMaps(): Promise<KakaoMaps> {
   return sdkPromise;
 }
 
-export default function KakaoMap({ stores, selectedId, onSelect }: { stores: Store[]; selectedId: string | null; onSelect: (id: string) => void }) {
+function groupMarkerImage(maps: KakaoMaps, count: number): KakaoMarkerImage {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="54" viewBox="0 0 48 54"><path d="M24 51 11 35a20 20 0 1 1 26 0Z" fill="#275b46" stroke="white" stroke-width="3"/><text x="24" y="29" text-anchor="middle" fill="white" font-family="sans-serif" font-size="16" font-weight="700">${count}</text></svg>`;
+  return new maps.MarkerImage(`data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`, new maps.Size(48, 54), { offset: new maps.Point(24, 54) });
+}
+
+export default function KakaoMap({ stores, groups, selectedId, onSelect, onSelectGroup }: {
+  stores: Store[]; groups: MapStoreGroup[]; selectedId: string | null;
+  onSelect: (id: string) => void; onSelectGroup: (key: string) => void;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<KakaoMapInstance | null>(null);
   const markersRef = useRef<KakaoMarkerInstance[]>([]);
   const clustererRef = useRef<KakaoMarkerClusterer | null>(null);
   const sdkRef = useRef<KakaoMaps | null>(null);
   const onSelectRef = useRef(onSelect);
+  const onSelectGroupRef = useRef(onSelectGroup);
   const active = usePageActive();
   const [visible, setVisible] = useState(false);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(key ? 'loading' : 'error');
   const [message, setMessage] = useState(key ? '' : '지도 키가 아직 연결되지 않았어요. VITE_KAKAO_MAP_KEY를 설정해 주세요.');
 
   useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
+  useEffect(() => { onSelectGroupRef.current = onSelectGroup; }, [onSelectGroup]);
   useEffect(() => {
     const node = containerRef.current;
     if (!node || !active || !key) return;
@@ -85,14 +102,22 @@ export default function KakaoMap({ stores, selectedId, onSelect }: { stores: Sto
     if (!map || !maps || status !== 'ready') return;
     clustererRef.current?.clear();
     markersRef.current.forEach((marker) => marker.setMap(null));
-    markersRef.current = stores.map((store) => {
-      const marker = new maps.Marker({ position: new maps.LatLng(store.location.lat, store.location.lng), title: store.name, clickable: true });
+    const images = new Map<number, KakaoMarkerImage>();
+    markersRef.current = groups.map((group) => {
+      const count = group.stores.length;
+      if (count > 1 && !images.has(count)) images.set(count, groupMarkerImage(maps, count));
+      const marker = new maps.Marker({
+        position: new maps.LatLng(group.lat, group.lng),
+        title: count > 1 ? `${group.address} · 가게 ${count}곳` : group.stores[0].name,
+        clickable: true,
+        ...(count > 1 ? { image: images.get(count) } : {}),
+      });
       if (!clustererRef.current) marker.setMap(map);
-      maps.event.addListener(marker, 'click', () => onSelectRef.current(store.id));
+      maps.event.addListener(marker, 'click', () => count > 1 ? onSelectGroupRef.current(group.key) : onSelectRef.current(group.stores[0].id));
       return marker;
     });
     clustererRef.current?.addMarkers(markersRef.current);
-  }, [stores, status]);
+  }, [groups, status]);
 
   useEffect(() => {
     const store = stores.find((item) => item.id === selectedId);
