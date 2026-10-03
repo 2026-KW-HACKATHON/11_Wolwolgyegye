@@ -4,6 +4,7 @@ import { MOCK_STORES, MOCK_USER_LOCATION } from '../../core/mock/stores';
 import { fetchPublicStores } from '../../core/supabase/stores';
 import type { Store } from '../../core/types/place';
 import { distanceMeters } from '../../core/utils/geo';
+import { fetchNeighborhoodCatalog, mergeNeighborhoodStores } from '../../core/utils/neighborhoodCatalog';
 import { STORE_CATEGORIES, storeCategory, type StoreCategory } from '../../core/utils/storeCategories';
 import Icon from '../../shared/Icon';
 import { kakaoMapLink } from '../../shared/map/kakaoSdk';
@@ -32,15 +33,24 @@ export default function NearbyScreen({ selectedId, onSelect, onShowMap }: {
   const [category, setCategory] = useState<StoreCategory>('all');
   const [stores, setStores] = useState<Store[]>(HAS_SUPABASE_CONFIG ? [] : DEMO_STORES);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>(HAS_SUPABASE_CONFIG ? 'loading' : 'ready');
+  const [sourceWarning, setSourceWarning] = useState('');
   const [retry, setRetry] = useState(0);
   useEffect(() => {
     if (!HAS_SUPABASE_CONFIG) return;
     const controller = new AbortController();
-    fetchPublicStores(controller.signal).then((rows) => {
-      setStores(rows);
+    Promise.allSettled([fetchNeighborhoodCatalog(controller.signal), fetchPublicStores(controller.signal)]).then(([catalog, published]) => {
+      if (controller.signal.aborted) return;
+      if (catalog.status === 'rejected' && published.status === 'rejected') {
+        setLoadState('error');
+        return;
+      }
+      setStores(mergeNeighborhoodStores(
+        catalog.status === 'fulfilled' ? catalog.value : [],
+        published.status === 'fulfilled' ? published.value : [],
+      ));
+      setSourceWarning(catalog.status === 'rejected' ? '공공데이터 목록을 가져오지 못해 일부 가게만 보여요.' :
+        published.status === 'rejected' ? '사장님이 수정한 최신 정보는 잠시 확인할 수 없어요.' : '');
       setLoadState('ready');
-    }).catch(() => {
-      if (!controller.signal.aborted) setLoadState('error');
     });
     return () => controller.abort();
   }, [retry]);
@@ -84,7 +94,8 @@ export default function NearbyScreen({ selectedId, onSelect, onShowMap }: {
     </div> : <div className="rp-map-bottom rp-map-hint" role={loadState === 'error' ? 'alert' : 'status'}><Icon name="pin" /><span>
       {loadState === 'loading' ? '동네 가게를 불러오는 중이에요' : loadState === 'error' ? '가게 목록을 불러오지 못했어요' : visibleStores.length ? '가게 표시를 눌러 위치를 확인하세요' : '이 분류에 공개된 가게가 아직 없어요'}
       <small>{loadState === 'ready' ? HAS_SUPABASE_CONFIG ? `${visibleStores.length}곳 표시 · 일부는 2026년 6월 공공데이터 기준` : `${visibleStores.length}곳의 예시 가게` : loadState === 'error' ? '연결 상태를 확인하고 다시 시도해 주세요' : '잠시만 기다려 주세요'}</small>
-      {loadState === 'error' && <button type="button" onClick={() => { setLoadState('loading'); setRetry((n) => n + 1); }}>다시 시도</button>}
+      {sourceWarning && <small>{sourceWarning}</small>}
+      {loadState === 'error' && <button type="button" onClick={() => { setSourceWarning(''); setLoadState('loading'); setRetry((n) => n + 1); }}>다시 시도</button>}
     </span></div>}
   </div>;
 }

@@ -21,7 +21,7 @@ select count(*) as total_stores from public.stores;
 
 팀이 현장에서 인터뷰한 빠말 한 곳만 `wolgye1-publish-pasmal.sql`로 공개할 수 있다. 상호·주소가 가져온 자료와 정확히 일치할 때만 업데이트하며, 다르면 거래를 취소한다. 현장 인터뷰에서 빵집으로 확인한 업종도 함께 반영한다. 다른 850곳과 상호가 다른 `베르데`/`카페바르데`는 확인 전까지 공개하지 않는다.
 
-프론트 지도는 Supabase가 설정되어 있으면 `is_published=true`이고 `is_demo=false`인 가게만 읽는다. 비공개 후보는 주민에게 보이지 않는다. 공개 전에는 SQL Editor에서 목록·주소·현재 영업 여부를 개별 확인한다.
+프론트 지도는 Supabase의 `is_published=true` 가게와 읽기 전용 공공데이터 목록을 합쳐 보여준다. 공공데이터 목록은 업종·위치 탐색용이며, DB의 비공개 상태나 사장님 게시 권한을 바꾸지 않는다. 같은 ID가 공개 DB에도 있으면 사장님이 수정한 정보를 우선한다. 공개 전에는 SQL Editor에서 목록·주소·현재 영업 여부를 개별 확인한다.
 
 2026-10-02 팀이 `wolgye1-stores-import.sql`과 `wolgye1-publish-pasmal.sql`을 실제 Supabase SQL Editor에서 실행했다. 빠말 공개 결과 1행과 `is_published=true`를 확인했고, 공개용 키로 비로그인 조회 시 공개 가게 1곳이 보였다. 전체 851건의 현재 영업 여부는 확인되지 않았다.
 
@@ -30,3 +30,5 @@ select count(*) as total_stores from public.stores;
 `wolgye1-publish-all-candidates.sql`은 사용자가 전체 목록 공개를 요청했을 때를 위해 만든 별도 작업이다. 저장소에 추가하는 것만으로 DB가 변경되지는 않는다. 실제 Supabase SQL Editor에서 **파일 전체를 실행**해야 반영된다. 851개 ID와 상호·주소가 모두 일치하지 않으면 트랜잭션이 실패하고 아무 가게도 추가 공개하지 않는다. 이미 소유자가 연결된 가게와 예시 가게는 건드리지 않는다. 실행 후 비로그인 공개 조회 수가 851개 이상인지 확인한다(기존에 별도 공개 가게가 있으면 더 많을 수 있다).
 
 공공데이터는 2026년 6월 기준이므로 현재 영업 중이라는 보장이 없다. 사이트에는 이 기준일과 방문 전 확인 안내를 표시한다. 메뉴·가격·사진·영업시간은 원본에 없으므로 공개 후에도 빈 값으로 남는다.
+
+사이트의 읽기 전용 목록은 `python database/scripts/build_wolgye_catalog.py`로 `frontend/public/data/wolgye1-candidates.json`에 생성했다. 원본 CSV가 바뀌면 검토 후 새 파일을 만들고 다시 배포한다. 이 파일은 소유권이나 DB 승인 상태의 대체물이 아니다.
