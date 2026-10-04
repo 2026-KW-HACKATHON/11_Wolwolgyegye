@@ -7,6 +7,7 @@ import { useToast } from '../../shared/toast/ToastContext';
 import './login.css';
 
 type Mode = 'login' | 'customer-signup' | 'owner-signup' | 'reset';
+const KAKAO_PROVIDER = 'custom:kakao-no-email' as const;
 
 function authMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : '';
@@ -60,7 +61,7 @@ export default function LoginPage() {
   function handleKakao() {
     void run(async () => {
       const { error: oauthError } = await getSupabaseClient().auth.signInWithOAuth({
-        provider: 'kakao',
+        provider: KAKAO_PROVIDER,
         options: { redirectTo: `${window.location.origin}/login` },
       });
       if (oauthError) throw oauthError;

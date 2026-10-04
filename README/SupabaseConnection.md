@@ -41,8 +41,9 @@ npm run build
 
 - Supabase Dashboard의 Authentication → URL Configuration에서 배포 주소를 Site URL로 설정하고 `https://배포주소/login`, `https://배포주소/login?intent=owner`, 로컬 개발 주소의 같은 경로를 Redirect URLs에 추가한다.
 - Authentication → Providers에서 Email 가입·이메일 확인을 활성화한다. 인증 메일과 비밀번호 재설정 메일이 실제로 배달되도록 운영용 SMTP를 설정한다.
-- 카카오 간편로그인은 Kakao Developers의 REST API 키와 Client Secret을 Supabase의 Kakao provider에 등록하고, Kakao Developers에는 Supabase가 표시하는 `/auth/v1/callback` URL을 등록해야 한다. 카카오맵 키와는 별개다.
-- 2026-10-04 현재 공개 Auth 설정 확인 결과: 이메일 가입 가능, 이메일 인증 사용, 카카오 provider 비활성화. 카카오 설정이 끝나기 전에는 버튼을 눌러도 로그인할 수 없다.
+- 카카오 간편로그인은 Supabase 기본 Kakao provider가 `account_email`, `profile_image`, `profile_nickname`을 항상 요청해, 이메일 동의 권한이 없는 비즈 앱 미등록 상태에서는 Kakao `KOE205`로 실패한다. `Allow users without an email`만 켜거나 클라이언트의 `scopes`를 바꾸어도 기본 요청 범위는 제거되지 않는다.
+- 이 앱은 Supabase Authentication → Sign In / Providers → Custom Providers에서 OIDC 제공자 `custom:kakao-no-email`을 생성해 사용한다. Issuer URL은 `https://kauth.kakao.com`, Client ID는 카카오 REST API 키, Client Secret은 해당 키의 카카오 로그인 클라이언트 시크릿 코드다. Scopes는 `openid`, `profile_nickname`만 설정하고 `Email optional`을 켠다. Kakao Developers의 OpenID Connect도 ON이어야 한다. 생성 화면의 Callback URL을 Kakao Developers → 앱 → 플랫폼 키 → REST API 키 → 로그인 리다이렉트 URI에 등록한다. 시크릿은 대시보드에 직접 입력하고 저장소나 채팅에 남기지 않는다.
+- 기본 Kakao provider의 활성화는 위 맞춤형 제공자를 대신하지 않는다. 제공자 생성 전에는 사이트의 카카오 버튼이 동작하지 않는다. 운영 사이트에서 로그인 버튼 → Kakao 동의 → `/login` 복귀 → 세션 생성까지 검증해야 한다.
 - 비밀번호·OAuth 토큰·`service_role` 키는 앱 테이블이나 프론트 환경변수에 저장하지 않는다. 실제 권한은 RLS와 `stores.owner_id`가 판단한다.
 
 브라우저에서 이메일 가입→인증→로그인→로그아웃, 카카오 로그인→복귀, 사장님 신청→관리자 승인→`/owner` 접근을 각각 실제 계정으로 점검해야 한다. 관리자 승인 API와 화면은 아직 구현되지 않아 승인 처리는 서버 측에서 별도로 수행한다.
