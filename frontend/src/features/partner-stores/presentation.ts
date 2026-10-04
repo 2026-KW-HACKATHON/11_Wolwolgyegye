@@ -1,4 +1,4 @@
-import { COLLEGES } from './mock';
+import { COLLEGES } from './colleges';
 import type { CollegeKey, PartnerAudience, PartnerBenefitDetails, PartnerIndustry, PartnerStoreMenuItem, PartnerStoreView } from './types';
 
 export const AUDIENCE_STORAGE_KEY = 'wolwol.partner.audience.v1';

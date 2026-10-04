@@ -2,7 +2,7 @@ import type { Store } from '../../core/types/place';
 
 /**
  * '제휴 가게' 카테고리 전용 데이터: 광운대학교 단과대학별 학생 제휴 혜택.
- * 여기 있는 타입은 이 카테고리에서만 쓰며, storeId 로 core/mock/stores.ts (실제 연동 시 stores 테이블)의 가게와 연결한다.
+ * 여기 있는 타입은 이 카테고리에서만 쓰며, storeId로 Supabase stores 테이블의 가게와 연결한다.
  */
 
 /** 광운대학교 단과대학 */

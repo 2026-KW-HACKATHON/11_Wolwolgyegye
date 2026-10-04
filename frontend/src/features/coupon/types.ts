@@ -38,8 +38,6 @@ export interface StampTransaction {
   balanceAfter: number;
   reason: string;
   createdAt: string;
-  /** 'demo' = 이 브라우저에서 시연으로 추가한 기록 */
-  origin?: 'sample' | 'demo';
 }
 
 /** 화면이 받는 모양: 규칙 + 내 적립 수 + 가게 공통 정보 + 도보 시간 + 이력 (source.ts 가 조합) */

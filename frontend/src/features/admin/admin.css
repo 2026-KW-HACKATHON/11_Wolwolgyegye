@@ -1,0 +1,54 @@
+.ad-page { min-height: 100%; padding: 36px clamp(18px, 4vw, 56px) 80px; background: #f7f3ed; color: #2f241d; overflow: auto; }
+.ad-top { max-width: 1180px; margin: 0 auto 28px; display: flex; justify-content: space-between; gap: 24px; align-items: flex-end; }
+.ad-top span, .ad-heading span { color: #8b2635; font-size: .72rem; font-weight: 800; letter-spacing: .13em; }
+.ad-top h1 { margin: 6px 0; font-size: clamp(1.8rem, 4vw, 2.8rem); }
+.ad-top p { margin: 0; color: #76685e; }
+.ad-top nav { display: flex; gap: 8px; }
+.ad-top nav a { padding: 10px 14px; border: 1px solid #d9cfc3; border-radius: 999px; background: #fff; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.ad-section { max-width: 1180px; margin: 0 auto 24px; padding: clamp(18px, 3vw, 30px); border: 1px solid #e1d8cc; border-radius: 24px; background: #fff; box-shadow: 0 12px 34px rgba(66, 45, 31, .07); }
+.ad-heading { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 18px; }
+.ad-heading h2 { margin: 4px 0 0; font-size: 1.35rem; }
+.ad-heading b { padding: 8px 12px; border-radius: 999px; background: #f1e8dc; color: #5a3a28; font-size: .82rem; }
+.ad-empty { margin: 0; padding: 30px; border-radius: 16px; background: #f8f5f0; text-align: center; color: #7c7067; }
+.ad-application-list { display: grid; gap: 18px; }
+.ad-application { padding: 20px; border: 1px solid #e5ddd3; border-radius: 18px; }
+.ad-application > header { display: flex; justify-content: space-between; gap: 16px; }
+.ad-application header span, .ad-application time { color: #8b7e74; font-size: .75rem; }
+.ad-application h3 { margin: 3px 0; }
+.ad-application header p { margin: 0; color: #655b53; font-size: .85rem; }
+.ad-application dl { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin: 16px 0; padding: 14px; border-radius: 14px; background: #f8f5f0; }
+.ad-application dl div { display: contents; }
+.ad-application dt { color: #8b7e74; font-size: .8rem; }
+.ad-application dd { margin: 0; font-weight: 700; }
+.ad-application details { border-top: 1px solid #eee6dc; }
+.ad-application summary { padding: 14px 2px; cursor: pointer; font-weight: 800; }
+.ad-form { display: flex; gap: 10px; align-items: end; padding: 0 0 16px; }
+.ad-form--grid { display: grid; grid-template-columns: 1fr 1fr; }
+.ad-form label, .ad-search { display: flex; flex: 1; flex-direction: column; gap: 5px; color: #6e6056; font-size: .78rem; font-weight: 800; }
+.ad-form input, .ad-form select, .ad-form textarea, .ad-search input { width: 100%; padding: 10px 12px; border: 1px solid #d9cfc3; border-radius: 10px; background: #fff; color: #2f241d; font: inherit; }
+.ad-form button { padding: 11px 16px; border-radius: 10px; background: #513524; color: #fff; font-weight: 800; white-space: nowrap; }
+.ad-form button:disabled, .ad-store button:disabled { opacity: .5; cursor: wait; }
+.ad-span { grid-column: 1 / -1; }
+.ad-reject button { background: #922f36; }
+.ad-help { margin: 8px 0 14px; color: #83766b; font-size: .8rem; }
+.ad-error, .ad-page-error { color: #a42631; font-size: .85rem; font-weight: 700; }
+.ad-page-error { max-width: 1180px; margin: 0 auto 18px; padding: 14px 16px; border-radius: 12px; background: #fff0f0; }
+.ad-page-error button { margin-left: 12px; text-decoration: underline; }
+.ad-search { max-width: 460px; }
+.ad-store-list { display: grid; gap: 8px; }
+.ad-store { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 15px; border: 1px solid #eee6dc; border-radius: 13px; }
+.ad-store h3 { margin: 0 0 3px; font-size: .95rem; }
+.ad-store p { margin: 0; color: #71655c; font-size: .8rem; }
+.ad-store small { color: #9a8d83; }
+.ad-store button { min-width: 78px; padding: 8px 10px; border-radius: 999px; background: #eee9e3; color: #655b53; font-size: .78rem; font-weight: 800; }
+.ad-store button.is-public { background: #dcefe3; color: #17633a; }
+@media (max-width: 680px) {
+  .ad-page { padding: 22px 12px 60px; }
+  .ad-top { align-items: flex-start; flex-direction: column; }
+  .ad-application > header { flex-direction: column; }
+  .ad-application dl { grid-template-columns: 1fr; }
+  .ad-application dl div { display: block; }
+  .ad-application dd { margin-top: 2px; }
+  .ad-form, .ad-form--grid { display: grid; grid-template-columns: 1fr; }
+  .ad-span { grid-column: auto; }
+}

@@ -1,22 +1,34 @@
 import { fetchStoresByIds, getUserLocation } from '../../core/source/storeSource';
+import { getSupabaseClient } from '../../core/supabase/client';
 import { walkMinutes } from '../../core/utils/geo';
-import { MOCK_CLOSING_SALES } from './mock';
 import type { ClosingSale, ClosingSaleView } from './types';
 
 /**
  * 손님 화면에 보여줄 마감세일을 가져오는 지점.
  *
- * 지금은 예시 데이터를 "지금 기준 마감 시각"으로 바꿔서 쓰지만, 백엔드가 준비되면
- * fetchSaleRows 안만 아래처럼 바꾸면 화면 코드는 그대로 둬도 된다.
- *
- *   const { data } = await supabase.from('closing_sales').select('*');
- *   return data;
+ * 공개 중이고 아직 마감되지 않은 DB 행만 가져온다.
  */
 async function fetchSaleRows(): Promise<ClosingSale[]> {
-  const now = Date.now();
-  return MOCK_CLOSING_SALES.map(({ closesInMinutes, ...sale }) => ({
-    ...sale,
-    closeAt: new Date(now + closesInMinutes * 60_000).toISOString(),
+  const client = getSupabaseClient();
+  const { data, error } = await client.from('closing_sales')
+    .select('id, store_id, description, discount_rate, close_at')
+    .eq('is_published', true)
+    .gt('close_at', new Date().toISOString())
+    .order('close_at');
+  if (error) throw new Error('마감세일을 불러오지 못했어요.');
+  const ids = (data ?? []).map((row) => row.id);
+  const counts = new Map<string, number>();
+  if (ids.length) {
+    const result = await client.rpc('get_sale_like_counts', { p_sale_ids: ids });
+    if (!result.error) for (const row of result.data ?? []) counts.set(row.sale_id, Number(row.like_count));
+  }
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    storeId: row.store_id,
+    desc: row.description,
+    discountRate: Number(row.discount_rate),
+    closeAt: row.close_at,
+    likeCount: counts.get(row.id) ?? 0,
   }));
 }
 

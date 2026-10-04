@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../core/auth/AuthContext';
+import { getSupabaseClient } from '../../core/supabase/client';
 import { SALE_SORTS, toneForStore, type SaleSortKey } from './constants';
 import { formatDiscountRate } from './discount';
 import { fetchClosingSales } from './source';
@@ -8,27 +10,8 @@ import './closing-sale.css';
 
 /** 남은 시간 표시를 1분마다 새로 계산한다 */
 const TICK_MS = 30_000;
-const LIKE_STORAGE_KEY = 'wol-closing-sale-likes';
 /** 이 시간보다 적게 남으면 "곧 마감" 으로 강조한다 */
 const URGENT_MINUTES = 60;
-
-function loadLikes(): string[] {
-  try {
-    const raw = window.localStorage.getItem(LIKE_STORAGE_KEY);
-    const saved = raw ? (JSON.parse(raw) as string[]) : [];
-    return Array.isArray(saved) ? saved : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveLikes(ids: string[]) {
-  try {
-    window.localStorage.setItem(LIKE_STORAGE_KEY, JSON.stringify(ids));
-  } catch {
-    /* 저장 실패해도 이번 세션 동작에는 지장 없음 */
-  }
-}
 
 function minutesLeft(sale: ClosingSaleView, now: number) {
   return Math.floor((new Date(sale.closeAt).getTime() - now) / 60_000);
@@ -57,20 +40,27 @@ function sortSales(sales: ClosingSaleView[], key: SaleSortKey) {
 
 export default function ClosingSalePage() {
   const navigate = useNavigate();
+  const { userId } = useAuth();
   const [sales, setSales] = useState<ClosingSaleView[] | null>(null);
   const [sort, setSort] = useState<SaleSortKey>('closing');
-  const [likedIds, setLikedIds] = useState<string[]>(loadLikes);
+  const [likedIds, setLikedIds] = useState<string[]>([]);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     let cancelled = false;
-    fetchClosingSales().then((list) => {
-      if (!cancelled) setSales(list);
+    Promise.all([
+      fetchClosingSales(),
+      userId ? getSupabaseClient().from('sale_likes').select('sale_id').eq('user_id', userId) : Promise.resolve({ data: [], error: null }),
+    ]).then(([list, likes]) => {
+      if (!cancelled) {
+        setSales(list);
+        if (!likes.error) setLikedIds((likes.data ?? []).map((row) => row.sale_id));
+      }
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [userId]);
 
   // 남은 시간이 멈춰 보이지 않도록 주기적으로 현재 시각을 새로 읽는다
   useEffect(() => {
@@ -90,10 +80,16 @@ export default function ClosingSalePage() {
   /** 배너에 보여줄 진행 중인 세일 가게 수 (한 가게가 여러 세일을 올려도 한 곳으로 센다) */
   const activeStoreCount = useMemo(() => new Set(visible.map((sale) => sale.storeId)).size, [visible]);
 
-  function toggleLike(id: string) {
-    const next = likedIds.includes(id) ? likedIds.filter((v) => v !== id) : [...likedIds, id];
-    setLikedIds(next);
-    saveLikes(next);
+  async function toggleLike(id: string) {
+    if (!userId) return;
+    const exists = likedIds.includes(id);
+    setLikedIds((current) => exists ? current.filter((value) => value !== id) : [...current, id]);
+    const client = getSupabaseClient();
+    const result = exists
+      ? await client.from('sale_likes').delete().eq('user_id', userId).eq('sale_id', id)
+      : await client.from('sale_likes').insert({ user_id: userId, sale_id: id });
+    if (result.error) setLikedIds((current) => exists ? [...current, id] : current.filter((value) => value !== id));
+    else setSales(await fetchClosingSales());
   }
 
   return (
@@ -190,9 +186,10 @@ export default function ClosingSalePage() {
                         className={`cs-like${liked ? ' is-on' : ''}`}
                         aria-pressed={liked}
                         aria-label={`${sale.store.name} 관심 ${liked ? '취소' : '등록'}`}
-                        onClick={() => toggleLike(sale.id)}
+                        disabled={!userId}
+                        onClick={() => void toggleLike(sale.id)}
                       >
-                        {liked ? '♥' : '♡'} {sale.likeCount + (liked ? 1 : 0)}명이 관심
+                        {liked ? '♥' : '♡'} {sale.likeCount}명이 관심
                       </button>
                       <span className="cs-close-time">{formatCloseTime(sale)} 마감</span>
                     </div>

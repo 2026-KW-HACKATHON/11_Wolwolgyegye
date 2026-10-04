@@ -15,6 +15,7 @@ export interface AuthContextValue {
   email: string | null;
   hasEmailLogin: boolean;
   emailVerified: boolean;
+  isAdmin: boolean;
   passwordRecovery: boolean;
   finishPasswordRecovery: () => void;
   ownedStores: { id: string; name: string }[];
@@ -26,7 +27,7 @@ export interface AuthContextValue {
 
 export const AuthContext = createContext<AuthContextValue>({
   status: 'checking', userId: null, userName: null, email: null,
-  hasEmailLogin: false, emailVerified: false, passwordRecovery: false,
+  hasEmailLogin: false, emailVerified: false, isAdmin: false, passwordRecovery: false,
   ownedStores: [], ownerApplication: null, error: null,
   refresh: async () => {}, logout: async () => {}, finishPasswordRecovery: () => {},
 });

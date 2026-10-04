@@ -219,3 +219,14 @@ test('이미지 경로는 본인 가게만 쓰기 가능, 경로 이동 공격 �
   await rejectsCode(as('authenticated', owner, "update storage.objects set name=$1 where name=$2", [cafe + '/test.webp', path]), '42501');
   assert.equal((await as('authenticated', neighbor, 'select * from storage.objects')).rows.length, 0);
 });
+
+test('관리자 RPC는 서버 권한표를 확인하고 일반 로그인 사용자를 차단', async () => {
+  await db.query('insert into private.admin_users(user_id) values ($1)', [owner]);
+  assert.equal((await as('authenticated', owner, 'select public.is_current_user_admin() as allowed')).rows[0].allowed, true);
+  assert.equal((await as('authenticated', neighbor, 'select public.is_current_user_admin() as allowed')).rows[0].allowed, false);
+  await rejectsCode(as('authenticated', neighbor, "select * from public.admin_list_owner_applications('all')"), '42501');
+  assert.ok((await as('authenticated', owner, "select * from public.admin_list_owner_applications('all')")).rows.length > 0);
+  await as('authenticated', owner, 'select public.admin_set_store_published($1,true)', [hidden]);
+  assert.equal((await as('anon', null, 'select id from public.stores where id=$1', [hidden])).rows.length, 1);
+  await as('authenticated', owner, 'select public.admin_set_store_published($1,false)', [hidden]);
+});

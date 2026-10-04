@@ -8,7 +8,7 @@ import Icon from '../../shared/Icon';
 import { useFavoriteStores } from '../../shared/favorites/useFavoriteStores';
 import StoreMap, { directionText } from '../../shared/map/StoreMap';
 import Sheet from '../../shared/sheet/Sheet';
-import { COLLEGES } from './mock';
+import { COLLEGES } from './colleges';
 import { fetchPartnerStores } from './source';
 import { AUDIENCE_STORAGE_KEY, STATUS_LABELS, benefitStatus, collegeOf, distanceLabel, estimatePrice, industryOf, isAudience, mapUrl, money, phoneUrl, safeSourceUrl } from './presentation';
 import type { PartnerAudience, PartnerIndustry, PartnerStoreView } from './types';
@@ -229,7 +229,7 @@ export default function PartnerStoresPage() {
     </section>
 
     <aside className="ps-guide"><span className="ps-guide-icon"><ExtraIcon name="info" /></span><div><b>방문 전 확인하세요</b><p>내가 혜택 대상인지 · 학생증이 필요한지 · 적용 조건과 기간이 맞는지</p></div></aside>
-    <p className="ps-disclaimer"><b>시연용 데이터</b> 가게·위치·가격·혜택은 예시이며 실제로 사용할 수 없어요. 거리는 예시 기준점에서 잰 직선거리예요. 광운대학교 공식 서비스가 아니며, 실제 운영 시 학생회 공지와 가게 확인을 거쳐 정보를 제공합니다.</p>
+    <p className="ps-disclaimer"><b>이용 전 확인</b> 가게·메뉴·혜택은 관리자가 등록한 DB 정보예요. 거리는 월계1동 기준점에서 잰 직선거리이며, 광운대학교 공식 서비스가 아닙니다. 방문 전 가게와 학생회 공지를 다시 확인해 주세요.</p>
 
     <Sheet open={!!selected && active} title={presenting ? '혜택 안내 화면' : '제휴 혜택 자세히'} onClose={close}>
       {selected && <div className="ps-detail">

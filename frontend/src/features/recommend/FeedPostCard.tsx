@@ -19,7 +19,7 @@ export default function FeedPostCard({ post, onShowStore }: { post: FeedPost; on
   return <article className="rp-post">
     <header className="rp-post-owner">
       <span className="rp-post-avatar" aria-hidden="true"><Icon name="storefront" /></span>
-      <div><strong>{store?.name ?? '동네 가게'}</strong><span>사장님이 전하는 소식{post.origin === 'sample' ? ' · 예시' : ''}</span></div>
+      <div><strong>{store?.name ?? '동네 가게'}</strong><span>사장님이 전하는 소식</span></div>
       <button type="button" className={'rp-save' + (saved ? ' is-saved' : '')} aria-pressed={saved} aria-label={(store?.name ?? '가게') + (saved ? ' 찜 해제' : ' 찜하기')} onClick={() => {
         toggle(post.storeId);
         toast(saved ? '찜한 가게에서 해제했어요.' : '찜한 가게에 담았어요.');

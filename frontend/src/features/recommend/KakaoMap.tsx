@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Store } from '../../core/types/place';
-import { MOCK_USER_LOCATION } from '../../core/mock/stores';
+import { WOLGYE_CENTER } from '../../core/location/wolgye';
 import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
 import MapPreview from './MapPreview';
 import type { MapStoreGroup } from './mapStoreGroups';
@@ -85,7 +85,7 @@ export default function KakaoMap({ stores, groups, selectedId, onSelect, onSelec
     void loadKakaoMaps().then((maps) => {
       if (cancelled || !containerRef.current) return;
       sdkRef.current = maps;
-      mapRef.current = new maps.Map(containerRef.current, { center: new maps.LatLng(MOCK_USER_LOCATION.lat, MOCK_USER_LOCATION.lng), level: 4, scrollwheel: false });
+      mapRef.current = new maps.Map(containerRef.current, { center: new maps.LatLng(WOLGYE_CENTER.lat, WOLGYE_CENTER.lng), level: 4, scrollwheel: false });
       if (maps.MarkerClusterer) clustererRef.current = new maps.MarkerClusterer({ map: mapRef.current, gridSize: 50, averageCenter: true, minLevel: 3 });
       setStatus('ready');
     }).catch((error: unknown) => {
@@ -138,6 +138,6 @@ export default function KakaoMap({ stores, groups, selectedId, onSelect, onSelec
   return <div className="rp-map-frame">
     <div ref={containerRef} className="rp-map-canvas" role="img" aria-label="월계1동 주변 가게가 표시된 카카오 지도" />
     {status !== 'ready' && <div className="rp-map-state" role={status === 'error' ? 'alert' : 'status'}><strong>{status === 'loading' ? '동네 지도를 불러오는 중' : '지도를 잠시 불러오지 못했어요'}</strong><span>{status === 'error' ? '잠시 후 다시 방문해 주세요. 동네 소식은 계속 볼 수 있어요.' : '잠시만 기다려 주세요.'}</span>{import.meta.env.DEV && status === 'error' && <small>{message}</small>}</div>}
-    {status === 'ready' && <button type="button" className="rp-map-recenter" onClick={() => mapRef.current?.setCenter(new sdkRef.current!.LatLng(MOCK_USER_LOCATION.lat, MOCK_USER_LOCATION.lng))} aria-label="월계1동 기준점으로 이동">◎</button>}
+    {status === 'ready' && <button type="button" className="rp-map-recenter" onClick={() => mapRef.current?.setCenter(new sdkRef.current!.LatLng(WOLGYE_CENTER.lat, WOLGYE_CENTER.lng))} aria-label="월계1동 기준점으로 이동">◎</button>}
   </div>;
 }

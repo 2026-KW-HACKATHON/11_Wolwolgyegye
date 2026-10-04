@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MOCK_STORES, MOCK_USER_LOCATION } from '../../core/mock/stores';
+import { WOLGYE_CENTER } from '../../core/location/wolgye';
 import { fetchPublicStores } from '../../core/supabase/stores';
 import type { Store } from '../../core/types/place';
 import { distanceMeters } from '../../core/utils/geo';
-import { fetchNeighborhoodCatalog, mergeNeighborhoodStores } from '../../core/utils/neighborhoodCatalog';
 import { STORE_CATEGORIES, storeCategory, type StoreCategory } from '../../core/utils/storeCategories';
 import Icon from '../../shared/Icon';
 import { kakaoMapLink } from '../../shared/map/kakaoSdk';
@@ -16,14 +15,8 @@ const FILTERS: { key: MapFilter; label: string }[] = [
   { key: 'all', label: '모든 서비스' }, { key: 'space-rental', label: '공간 대여' },
   { key: 'oneday-class', label: '원데이클래스' }, { key: 'closing-sale', label: '마감 할인' },
 ];
-const DEMO_STORES = MOCK_STORES.filter((store) =>
-  store.supports['space-rental'] || store.supports['oneday-class'] ||
-  store.supports['closing-sale'] || store.supports.coupon || store.supports['partner-stores']);
-const HAS_SUPABASE_CONFIG = Boolean(import.meta.env.VITE_SUPABASE_URL?.trim() &&
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim());
-
 function distanceLabel(store: Store) {
-  const meters = distanceMeters(MOCK_USER_LOCATION, store.location);
+  const meters = distanceMeters(WOLGYE_CENTER, store.location);
   return meters < 1000 ? Math.round(meters / 10) * 10 + 'm' : (meters / 1000).toFixed(1) + 'km';
 }
 
@@ -36,27 +29,16 @@ export default function NearbyScreen({ selectedId, onSelect, onShowMap }: {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-  const [stores, setStores] = useState<Store[]>(HAS_SUPABASE_CONFIG ? [] : DEMO_STORES);
-  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>(HAS_SUPABASE_CONFIG ? 'loading' : 'ready');
-  const [sourceWarning, setSourceWarning] = useState('');
+  const [stores, setStores] = useState<Store[]>([]);
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [retry, setRetry] = useState(0);
   useEffect(() => {
-    if (!HAS_SUPABASE_CONFIG) return;
     const controller = new AbortController();
-    Promise.allSettled([fetchNeighborhoodCatalog(controller.signal), fetchPublicStores(controller.signal)]).then(([catalog, published]) => {
+    fetchPublicStores(controller.signal).then((published) => {
       if (controller.signal.aborted) return;
-      if (catalog.status === 'rejected' && published.status === 'rejected') {
-        setLoadState('error');
-        return;
-      }
-      setStores(mergeNeighborhoodStores(
-        catalog.status === 'fulfilled' ? catalog.value : [],
-        published.status === 'fulfilled' ? published.value : [],
-      ));
-      setSourceWarning(catalog.status === 'rejected' ? '공공데이터 목록을 가져오지 못해 일부 가게만 보여요.' :
-        published.status === 'rejected' ? '사장님이 수정한 최신 정보는 잠시 확인할 수 없어요.' : '');
+      setStores(published);
       setLoadState('ready');
-    });
+    }).catch(() => { if (!controller.signal.aborted) setLoadState('error'); });
     return () => controller.abort();
   }, [retry]);
   const serviceStores = useMemo(() => stores.filter((store) => filter === 'all' || store.supports[filter]), [filter, stores]);
@@ -78,7 +60,7 @@ export default function NearbyScreen({ selectedId, onSelect, onShowMap }: {
     if (category !== 'all' && storeCategory(selectedStore.cuisineType) !== category) setCategory('all');
   }, [selectedId, filter, category, stores]);
 
-  const mapLink = HAS_SUPABASE_CONFIG && selected ? kakaoMapLink(selected.name, selected.location.lat, selected.location.lng) : null;
+  const mapLink = selected ? kakaoMapLink(selected.name, selected.location.lat, selected.location.lng) : null;
 
   function selectStore(id: string) {
     setSelectedGroupKey(null);
@@ -114,7 +96,7 @@ export default function NearbyScreen({ selectedId, onSelect, onShowMap }: {
       <div className="rp-group-list">{selectedGroup.stores.map((store) => <button key={store.id} type="button" onClick={() => selectStore(store.id)}><span><strong>{store.name}</strong><small>{store.cuisineType || '업종 정보 없음'}</small></span><Icon name="chevronRight" /></button>)}</div>
     </div> : selected ? <div className="rp-map-bottom rp-selected-store" aria-live="polite">
       <div className="rp-selected-header"><span className="rp-selected-icon"><Icon name="storefront" /></span><div><small>선택한 동네 가게</small><strong>{selected.name}</strong></div><button type="button" onClick={() => onSelect(null)} aria-label="가게 선택 해제">×</button></div>
-      <p>{selected.cuisineType ? `${selected.cuisineType} · ` : ''}{selected.address}</p><p className="rp-selected-distance">월계1동 기준점에서 직선 {distanceLabel(selected)} · {HAS_SUPABASE_CONFIG ? '공공데이터 기준 정보일 수 있어요. 방문 전 영업 여부를 확인해 주세요' : '예시 위치'}</p>
+      <p>{selected.cuisineType ? `${selected.cuisineType} · ` : ''}{selected.address}</p><p className="rp-selected-distance">월계1동 기준점에서 직선 {distanceLabel(selected)} · 관리자가 공개한 DB 정보예요. 방문 전 영업 여부를 확인해 주세요</p>
       {selectedAddressGroup && selectedAddressGroup.stores.length > 1 && <button type="button" className="rp-same-address" onClick={() => selectGroup(selectedAddressGroup.key)}>이 주소의 다른 가게 {selectedAddressGroup.stores.length - 1}곳 보기 <Icon name="chevronRight" /></button>}
       <div className="rp-selected-actions">
         {selected.supports['space-rental'] && <Link to="/space-rental">공간 소식 보기 <Icon name="chevronRight" /></Link>}
@@ -125,9 +107,8 @@ export default function NearbyScreen({ selectedId, onSelect, onShowMap }: {
       </div>
     </div> : <div className="rp-map-bottom rp-map-hint" role={loadState === 'error' ? 'alert' : 'status'}><Icon name="pin" /><span>
       {loadState === 'loading' ? '동네 가게를 불러오는 중이에요' : loadState === 'error' ? '가게 목록을 불러오지 못했어요' : visibleStores.length ? '가게 표시를 눌러 위치를 확인하세요' : '이 분류에 공개된 가게가 아직 없어요'}
-      <small>{loadState === 'ready' ? HAS_SUPABASE_CONFIG ? `${visibleStores.length}곳 표시 · 일부는 2026년 6월 공공데이터 기준` : `${visibleStores.length}곳의 예시 가게` : loadState === 'error' ? '연결 상태를 확인하고 다시 시도해 주세요' : '잠시만 기다려 주세요'}</small>
-      {sourceWarning && <small>{sourceWarning}</small>}
-      {loadState === 'error' && <button type="button" onClick={() => { setSourceWarning(''); setLoadState('loading'); setRetry((n) => n + 1); }}>다시 시도</button>}
+      <small>{loadState === 'ready' ? `${visibleStores.length}곳 표시 · 관리자 공개 가게만 표시` : loadState === 'error' ? '연결 상태를 확인하고 다시 시도해 주세요' : '잠시만 기다려 주세요'}</small>
+      {loadState === 'error' && <button type="button" onClick={() => { setLoadState('loading'); setRetry((n) => n + 1); }}>다시 시도</button>}
     </span></div>}
   </div>;
 }

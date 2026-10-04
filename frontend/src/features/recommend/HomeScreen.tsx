@@ -8,7 +8,7 @@ import { useFavoriteStores } from '../../shared/favorites/useFavoriteStores';
 import { useUserSession } from '../../shared/session/UserSessionContext';
 import { fetchClosingSales } from '../closing-sale/source';
 import type { ClosingSaleView } from '../closing-sale/types';
-import { FEED_CHANGE_EVENT, fetchFeedPosts, findFeedStore, POST_STORAGE_KEY } from '../store-feed/feedSource';
+import { FEED_CHANGE_EVENT, fetchFeedPosts, findFeedStore } from '../store-feed/feedSource';
 import type { FeedKind, FeedPost } from '../store-feed/types';
 import FeedPostCard from './FeedPostCard';
 
@@ -50,12 +50,9 @@ export default function HomeScreen({ onShowNearby, onShowStore }: { onShowNearby
     if (!active) return;
     void reload();
     const onChange = () => void reload();
-    const onStorage = (event: StorageEvent) => { if (event.key === POST_STORAGE_KEY || event.key === null) void reload(); };
     window.addEventListener(FEED_CHANGE_EVENT, onChange);
-    window.addEventListener('storage', onStorage);
     return () => {
       window.removeEventListener(FEED_CHANGE_EVENT, onChange);
-      window.removeEventListener('storage', onStorage);
     };
   }, [active, reload]);
 
@@ -80,7 +77,7 @@ export default function HomeScreen({ onShowNearby, onShowStore }: { onShowNearby
       <div className="rp-section-heading"><h2 id="rp-feed-title">사장님이 전하는 소식</h2><Link className="rp-owner-link" to="/owner">글쓰기 <Icon name="chevronRight" /></Link></div>
       <div className="rp-search"><Icon name="search" /><input type="search" aria-label="동네 소식 검색" placeholder="가게 이름이나 궁금한 수업을 검색해요" value={query} onChange={(event) => setQuery(event.target.value)} />{query && <button type="button" aria-label="검색어 지우기" onClick={() => setQuery('')}>×</button>}</div>
       <div className="rp-feed-filters" aria-label="게시글 종류">{FILTERS.map(([key, label]) => <button key={key} type="button" className={filter === key ? 'is-active' : ''} aria-pressed={filter === key} onClick={() => setFilter(key)}>{label}</button>)}</div>
-      <p className="rp-feed-count" role="status">{loading ? '소식을 불러오고 있어요' : visiblePosts.length + '개의 소식'}{!loading && <span>최신순 · 예시 데이터 포함</span>}</p>
+      <p className="rp-feed-count" role="status">{loading ? '소식을 불러오고 있어요' : visiblePosts.length + '개의 소식'}{!loading && <span>최신순 · 등록된 DB 정보</span>}</p>
       {error ? <div className="rp-feed-message" role="alert"><Icon name="storefront" /><strong>소식을 불러오지 못했어요</strong><p>{error}</p><button type="button" onClick={() => void reload()}>다시 시도</button></div> :
         loading ? <div className="rp-skeleton" aria-hidden="true" /> :
         visiblePosts.length === 0 ? <div className="rp-feed-message"><Icon name={filter === 'saved' ? 'heart' : 'search'} /><strong>{filter === 'saved' ? '마음에 드는 가게를 찜해 보세요' : '찾으시는 소식이 아직 없어요'}</strong><p>{filter === 'saved' ? '가게의 하트를 누르면 여기에 모아볼 수 있어요.' : '다른 검색어나 분류로 다시 찾아보세요.'}</p><button type="button" onClick={() => { setQuery(''); setFilter('all'); }}>전체 소식 보기</button></div> :
@@ -91,6 +88,6 @@ export default function HomeScreen({ onShowNearby, onShowStore }: { onShowNearby
       <div className="rp-promotion-row">{sales.slice(0, 3).map((sale) => <Link key={sale.id} to="/closing-sale" className="rp-promotion"><span className="rp-promotion-icon"><Icon name="tag" /></span><strong>{Math.round(sale.discountRate * 100)}<small>% 할인</small></strong><b>{sale.store.name}</b><p>{sale.desc}</p><span className="rp-promotion-footer">할인 내용 보기 <Icon name="chevronRight" /></span></Link>)}</div>
     </section>}
     <button className="rp-map-teaser" type="button" onClick={onShowNearby}><span className="rp-map-teaser-icon"><Icon name="compass" /></span><span><strong>이번엔 지도로 둘러볼까요?</strong><small>가까운 가게를 한눈에 찾아보세요.</small></span><Icon name="chevronRight" /></button>
-    <p className="rp-demo-note">소식과 일부 혜택은 아직 예시 데이터예요.<br />{HAS_SUPABASE_CONFIG ? '지도 가게 일부는 2026년 6월 공공데이터 기준이며 현재 영업 여부는 미확인이에요.' : '지도도 예시 배치로 볼 수 있어요.'}</p>
+    <p className="rp-demo-note">가게와 소식은 관리자 또는 승인된 사장님이 등록한 정보만 표시해요.<br />방문 전 영업 여부와 이용 조건을 확인해 주세요.</p>
   </div>;
 }

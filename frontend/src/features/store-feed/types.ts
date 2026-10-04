@@ -18,8 +18,8 @@ interface PostBase {
   notes: string;
   createdAt: string;
   status: FeedStatus;
-  /** 실제 권한이 아닌 로컬 시연 데이터 구분 */
-  origin: 'sample' | 'local';
+  /** Supabase DB에서 조회한 실제 게시글 */
+  origin: 'db';
 }
 
 export interface SpacePost extends PostBase {
