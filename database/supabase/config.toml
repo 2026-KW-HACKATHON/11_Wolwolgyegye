@@ -15,9 +15,9 @@ major_version = 17
 [db.migrations]
 enabled = true
 
+# 예시 데이터는 두지 않는다. 데이터는 실제 DB 에만 넣는다.
 [db.seed]
-enabled = true
-sql_paths = ["./seed.sql"]
+enabled = false
 
 [studio]
 enabled = true

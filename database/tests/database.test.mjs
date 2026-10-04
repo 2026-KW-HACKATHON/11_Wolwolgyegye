@@ -1,3 +1,5 @@
+// 새 구조(migrations/20261004000100_schema.sql)를 메모리 PostgreSQL(PGlite)에서 검사한다.
+// 아래 가게·계정은 테스트 안에서만 만들고 지우는 값이며, 실제 DB 에는 들어가지 않는다.
 import { PGlite } from '@electric-sql/pglite';
 import { before, after, test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -7,14 +9,17 @@ const db = new PGlite();
 const sqlFile = (path) => readFile(new URL(path, import.meta.url), 'utf8');
 const owner = 'a0000000-0000-4000-8000-000000000001';
 const neighbor = 'a0000000-0000-4000-8000-000000000002';
-const workshop = '10000000-0000-4000-8000-000000000001';
-const cafe = '10000000-0000-4000-8000-000000000002';
-const hidden = '10000000-0000-4000-8000-000000000003';
-const post = '30000000-0000-4000-8000-000000000001';
-const sale = '40000000-0000-4000-8000-000000000001';
+const applicant = 'a0000000-0000-4000-8000-000000000003';
+const socialUser = 'a0000000-0000-4000-8000-000000000004';
+const unverified = 'a0000000-0000-4000-8000-000000000005';
+const shopA = '10000000-0000-4000-8000-000000000001'; // owner 의 가게
+const shopB = '10000000-0000-4000-8000-000000000002'; // neighbor 의 가게
+const hidden = '10000000-0000-4000-8000-000000000003'; // 비공개, owner 소유
+const freeShop = '10000000-0000-4000-8000-000000000004'; // 주인 없음 (승인 대상)
 const request = 'b0000000-0000-4000-8000-000000000001';
+let applicationId;
 
-// 연결 한 개에서 순서대로 검사한다. 역할/로그인 정보는 매 호출 뒤 롤백한다.
+// 연결 한 개에서 순서대로 검사한다. 역할/로그인 정보는 매 호출 뒤 되돌린다.
 async function as(role, user, query, params = []) {
   assert.ok(['anon', 'authenticated', 'service_role'].includes(role));
   await db.exec('begin; set local role ' + role + ';');
@@ -30,6 +35,7 @@ async function as(role, user, query, params = []) {
 }
 const rejectsCode = (promise, code) => assert.rejects(promise, (error) => error.code === code);
 const scalar = async (query, params = []) => Object.values((await db.query(query, params)).rows[0])[0];
+const rows = async (role, user, query, params) => (await as(role, user, query, params)).rows;
 
 before(async () => {
   await db.exec(await sqlFile('./bootstrap.sql'));
@@ -37,185 +43,155 @@ before(async () => {
   for (const name of (await readdir(folder)).filter((name) => name.endsWith('.sql')).sort()) {
     await db.exec(await readFile(new URL(name, folder), 'utf8'));
   }
-  const seed = await sqlFile('../supabase/seed.sql');
-  await db.exec(seed);
-  await db.exec(seed); // seed 재실행으로 중복 데이터가 생기지 않아야 한다.
-  assert.equal(await scalar('select count(*)::integer from public.feed_posts'), 2);
-  await db.query('insert into auth.users(id) values ($1), ($2)', [owner, neighbor]);
-  await db.query("update public.profiles set display_name=case when user_id=$1 then '사장님' else '주민' end where user_id in ($1,$2)", [owner, neighbor]);
-  await db.query('update public.stores set owner_id=$1 where id=$2', [owner, workshop]);
-  await db.query('update public.stores set owner_id=$1 where id=$2', [neighbor, cafe]);
-  await db.query("insert into public.stores(id,owner_id,name,address,lat,lng) values ($1,$2,'비공개 가게','예시',37.62,127.06)", [hidden, owner]);
+  await db.query("insert into auth.users(id,raw_user_meta_data,email_confirmed_at) values ($1,null,now()),($2,null,now())", [owner, neighbor]);
+  await db.query("insert into auth.identities(user_id,provider) values ($1,'email'),($2,'email')", [owner, neighbor]);
+  await db.exec("insert into public.store_types(id,name,group_name) values ('korean','한식','restaurant'),('cafe','카페','cafe')");
+  await db.query(`insert into public.stores(id,owner_id,sbiz_id,name,type_id,address,lat,lng,floor,building_id,is_published) values
+    ($1,$5,'MA001','가게 A','korean','주소 1',37.62,127.06,1,'B1',true),
+    ($2,$6,'MA002','가게 B','cafe','주소 2',37.62,127.06,-1,'B1',true),
+    ($3,$5,null,'비공개 가게',null,'주소 3',37.62,127.06,null,'',false),
+    ($4,null,'MA004','주인 없는 가게','korean','주소 4',37.62,127.06,2,'B2',true)`, [shopA, shopB, hidden, freeShop, owner, neighbor]);
 });
 after(async () => { await db.close(); });
 
-const applicant = 'a0000000-0000-4000-8000-000000000003';
-const socialUser = 'a0000000-0000-4000-8000-000000000004';
-const unverified = 'a0000000-0000-4000-8000-000000000005';
-const newStore = '10000000-0000-4000-8000-000000000004';
-let applicationId;
-const applyQuery = "insert into public.owner_applications(user_id,applicant_name,contact_phone,store_name,store_address) values ($1,'테스트 신청자','000-0000-0000','신청 가게','예시 주소') returning id";
+test('모든 앱 표에 RLS 적용', async () => {
+  const tables = (await db.query("select relname,relrowsecurity from pg_class c join pg_namespace n on c.relnamespace=n.oid where n.nspname='public' and c.relkind='r'")).rows;
+  assert.equal(tables.length, 21);
+  assert.deepEqual(tables.filter((t) => !t.relrowsecurity).map((t) => t.relname), []);
+});
 
-test('이메일/소셜 가입 프로필 자동 생성, 이름 정규화 및 metadata 권한 위조 무시', async () => {
+test('비로그인: 공개 가게와 유형만 보이고, 비공개 가게는 사장님 본인만 본다', async () => {
+  const visible = (await rows('anon', null, 'select id from public.stores')).map((r) => r.id);
+  assert.equal(visible.length, 3);
+  assert.ok(!visible.includes(hidden));
+  assert.equal((await rows('anon', null, 'select id from public.store_types')).length, 2);
+  assert.equal((await rows('authenticated', owner, 'select id from public.stores where id=$1', [hidden])).length, 1);
+  assert.equal((await rows('authenticated', neighbor, 'select id from public.stores where id=$1', [hidden])).length, 0);
+});
+
+test('가게: 사장님은 이름·유형·전화만 고치고, 소유권·좌표·공개 여부·새 가게 등록은 못 한다', async () => {
+  assert.equal((await as('authenticated', owner, "update public.stores set name='새 이름', type_id='cafe', phone='02-000-0000' where id=$1", [shopA])).affectedRows, 1);
+  assert.equal((await as('authenticated', neighbor, "update public.stores set name='침범' where id=$1", [shopA])).affectedRows, 0);
+  await rejectsCode(as('authenticated', owner, 'update public.stores set owner_id=$1 where id=$2', [neighbor, shopA]), '42501');
+  await rejectsCode(as('authenticated', owner, 'update public.stores set lat=37.7 where id=$1', [shopA]), '42501');
+  await rejectsCode(as('authenticated', owner, 'update public.stores set is_published=false where id=$1', [shopA]), '42501');
+  await rejectsCode(as('authenticated', owner, "insert into public.stores(name,address,lat,lng) values ('임의','주소',37,127)"), '42501');
+  await rejectsCode(db.query("insert into public.stores(name,address,lat,lng,type_id) values ('없는 유형','주소',37,127,'nope')"), '23503');
+});
+
+test('메뉴·영업시간·이미지: 자기 가게만 쓰고, 공개 가게 것은 누구나 읽는다', async () => {
+  await as('authenticated', owner, "insert into public.store_menus(store_id,name,price,type_id) values ($1,'김치찌개',9000,'korean')", [shopA]);
+  await rejectsCode(as('authenticated', neighbor, "insert into public.store_menus(store_id,name,price) values ($1,'침범',1)", [shopA]), '42501');
+  await rejectsCode(as('authenticated', owner, "insert into public.store_menus(store_id,name,price) values ($1,'음수',-1)", [shopA]), '23514');
+  assert.equal((await rows('anon', null, 'select name from public.store_menus where store_id=$1', [shopA])).length, 1);
+
+  await as('authenticated', owner, "insert into public.store_hours(store_id,weekday,opens_at,closes_at) values ($1,1,'11:00','02:00')", [shopA]);
+  await as('authenticated', owner, 'insert into public.store_hours(store_id,weekday,is_closed) values ($1,0,true)', [shopA]);
+  await rejectsCode(as('authenticated', owner, "insert into public.store_hours(store_id,weekday,opens_at,closes_at) values ($1,1,'09:00','18:00')", [shopA]), '23505');
+  await rejectsCode(as('authenticated', owner, 'insert into public.store_hours(store_id,weekday) values ($1,2)', [shopA]), '23514');
+  await rejectsCode(as('authenticated', owner, "insert into public.store_hours(store_id,weekday,opens_at,closes_at) values ($1,7,'09:00','18:00')", [shopA]), '23514');
+
+  await as('authenticated', owner, "insert into public.store_images(store_id,image_path) values ($1,$2)", [hidden, hidden + '/a.webp']);
+  assert.equal((await rows('anon', null, 'select id from public.store_images where store_id=$1', [hidden])).length, 0);
+  assert.equal((await rows('authenticated', owner, 'select id from public.store_images where store_id=$1', [hidden])).length, 1);
+});
+
+test('제휴: 운영자만 등록하고, 혜택 하나를 여러 제휴사에 건다', async () => {
+  await rejectsCode(as('authenticated', owner, "insert into public.partner_benefits(store_id,discount_rate) values ($1,0.1)", [shopA]), '42501');
+  await rejectsCode(as('authenticated', owner, "insert into public.partners(name) values ('경영대')"), '42501');
+  const [p1, p2] = (await rows('service_role', null, "insert into public.partners(name) values ('경영대'),('공과대') returning id")).map((r) => r.id);
+  const benefit = (await rows('service_role', null, "insert into public.partner_benefits(store_id,discount_amount,condition) values ($1,1000,'학생증 제시') returning id", [shopA]))[0].id;
+  await as('service_role', null, 'insert into public.benefit_partners(benefit_id,partner_id) values ($1,$2),($1,$3)', [benefit, p1, p2]);
+  await rejectsCode(as('service_role', null, 'insert into public.benefit_partners(benefit_id,partner_id) values ($1,$2)', [benefit, p1]), '23505');
+  await rejectsCode(as('service_role', null, 'insert into public.partner_benefits(store_id) values ($1)', [shopA]), '23514');
+  assert.equal((await rows('anon', null, 'select id from public.benefit_partners')).length, 2);
+});
+
+test('마감세일: 금액·퍼센트·무료 제공 세 유형과 각 유형의 필수값', async () => {
+  const insert = 'insert into public.closing_sales(store_id,discount_type,discount_amount,discount_rate,offer,starts_at,ends_at) values ($1,$2,$3,$4,$5,now(),now()+interval \'2 hours\')';
+  await as('authenticated', owner, insert, [shopA, 'amount', 2000, null, '']);
+  await as('authenticated', owner, insert, [shopA, 'rate', null, 0.3, '']);
+  await as('authenticated', owner, insert, [shopA, 'free', null, null, '빵 2개 사면 1개 더']);
+  await rejectsCode(as('authenticated', owner, insert, [shopA, 'amount', null, 0.3, '']), '23514');
+  await rejectsCode(as('authenticated', owner, insert, [shopA, 'free', null, null, ' ']), '23514');
+  await rejectsCode(as('authenticated', owner, insert, [shopA, 'coupon', 1000, null, '']), '23514');
+  await rejectsCode(as('authenticated', owner, insert, [shopA, 'rate', null, 1.5, '']), '23514');
+  await rejectsCode(as('authenticated', neighbor, insert, [shopA, 'amount', 1000, null, '']), '42501');
+  await rejectsCode(as('authenticated', owner, "insert into public.closing_sales(store_id,discount_type,discount_amount,starts_at,ends_at) values ($1,'amount',1,now(),now()-interval '1 hour')", [shopA]), '23514');
+  assert.equal((await rows('anon', null, 'select id from public.closing_sales')).length, 3);
+});
+
+test('공간대여·원데이클래스: 한 가게에 여러 개, 비공개 글은 사장님만 보고 사진은 글을 따른다', async () => {
+  const category = (await rows('service_role', null, "insert into public.space_rental_categories(name) values ('스터디·회의') returning id"))[0].id;
+  const insertRental = "insert into public.space_rentals(store_id,category_id,title,price,capacity,min_hours,is_published) values ($1,$2,$3,10000,4,2,$4) returning id";
+  const open = (await rows('authenticated', owner, insertRental, [shopA, category, '공간 1', true]))[0].id;
+  const closed = (await rows('authenticated', owner, insertRental, [shopA, category, '공간 2', false]))[0].id;
+  await rejectsCode(as('authenticated', neighbor, insertRental, [shopA, category, '침범', true]), '42501');
+  await rejectsCode(as('authenticated', owner, "insert into public.space_rental_categories(name) values ('임의')"), '42501');
+  assert.deepEqual((await rows('anon', null, 'select id from public.space_rentals')).map((r) => r.id), [open]);
+  assert.equal((await rows('authenticated', owner, 'select id from public.space_rentals')).length, 2);
+
+  await as('authenticated', owner, 'insert into public.space_rental_images(space_rental_id,image_path) values ($1,$2),($3,$4)', [open, shopA + '/1.webp', closed, shopA + '/2.webp']);
+  await rejectsCode(as('authenticated', neighbor, 'insert into public.space_rental_images(space_rental_id,image_path) values ($1,$2)', [open, shopB + '/x.webp']), '42501');
+  assert.equal((await rows('anon', null, 'select id from public.space_rental_images')).length, 1);
+
+  const insertClass = "insert into public.one_day_classes(store_id,title,starts_at,duration_minutes,price,current_count,max_count) values ($1,'수업',now()+interval '1 day',90,30000,$2,$3) returning id";
+  assert.equal((await rows('authenticated', owner, insertClass, [shopA, 3, 8])).length, 1);
+  assert.equal((await rows('authenticated', owner, insertClass, [shopA, 0, 4])).length, 1);
+  await rejectsCode(as('authenticated', owner, insertClass, [shopA, 9, 8]), '23514');
+  assert.equal((await rows('anon', null, 'select id from public.one_day_classes')).length, 2);
+});
+
+test('이메일/소셜 가입 시 프로필 자동 생성, 이름 정리', async () => {
   await db.query("insert into auth.users(id,raw_user_meta_data,email_confirmed_at) values ($1,$2,now()),($3,$4,now()),($5,null,null)", [
-    applicant, { display_name: '새 사장님', role: 'owner' }, socialUser, { name: '가'.repeat(70), role: 'admin' }, unverified,
+    applicant, { display_name: '새 사장님', role: 'owner' }, socialUser, { name: '가'.repeat(70) }, unverified,
   ]);
   await db.query("insert into auth.identities(user_id,provider) values ($1,'email'),($2,'kakao'),($3,'email')", [applicant, socialUser, unverified]);
   assert.equal(await scalar('select display_name from public.profiles where user_id=$1', [applicant]), '새 사장님');
   assert.equal(await scalar('select length(display_name) from public.profiles where user_id=$1', [socialUser]), 40);
   assert.equal(await scalar('select display_name from public.profiles where user_id=$1', [unverified]), '월계 주민');
-  assert.equal((await as('authenticated', socialUser, "update public.stores set name='침범' where id=$1", [workshop])).affectedRows, 0);
-  await db.query("insert into public.stores(id,name,address,lat,lng) values ($1,'승인 대상','예시',37.62,127.06)", [newStore]);
+  assert.equal((await rows('authenticated', owner, 'select user_id from public.profiles')).length, 1);
 });
 
-test('이메일 미인증/소셜 전용 계정의 사장님 신청 차단, 자기 신청만 허용', async () => {
-  await rejectsCode(as('authenticated', unverified, applyQuery, [unverified]), '42501');
-  await rejectsCode(as('authenticated', socialUser, applyQuery, [socialUser]), '42501');
-  await rejectsCode(as('authenticated', applicant, applyQuery, [owner]), '42501');
-  applicationId = (await as('authenticated', applicant, applyQuery, [applicant])).rows[0].id;
-  await rejectsCode(as('authenticated', applicant, applyQuery, [applicant]), '23505');
-  assert.equal((await as('authenticated', applicant, 'select status from public.owner_applications')).rows[0].status, 'pending');
-  assert.equal((await as('authenticated', socialUser, 'select * from public.owner_applications')).rows.length, 0);
-  await rejectsCode(as('anon', null, 'select * from public.owner_applications'), '42501');
-  // 신청만으로 가게 권한이 생기지 않는다.
-  assert.equal((await as('authenticated', applicant, "update public.stores set name='무단 변경' where id=$1", [newStore])).affectedRows, 0);
+test('사장님 신청: 이메일 인증 계정 본인만, 승인은 서버만', async () => {
+  const apply = "insert into public.owner_applications(user_id,applicant_name,contact_phone,store_name,store_address) values ($1,'신청자','000-0000-0000','신청 가게','주소') returning id";
+  await rejectsCode(as('authenticated', unverified, apply, [unverified]), '42501');
+  await rejectsCode(as('authenticated', socialUser, apply, [socialUser]), '42501');
+  await rejectsCode(as('authenticated', applicant, apply, [owner]), '42501');
+  applicationId = (await rows('authenticated', applicant, apply, [applicant]))[0].id;
+  await rejectsCode(as('authenticated', applicant, apply, [applicant]), '23505');
+  await rejectsCode(as('authenticated', applicant, "select public.review_owner_application($1,'approved',$2)", [applicationId, freeShop]), '42501');
+  // 다른 사장님 가게는 넘겨줄 수 없다
+  await rejectsCode(as('service_role', null, "select public.review_owner_application($1,'approved',$2)", [applicationId, shopA]), '23505');
+  await as('service_role', null, "select public.review_owner_application($1,'approved',$2,'확인')", [applicationId, freeShop]);
+  assert.equal(await scalar('select owner_id from public.stores where id=$1', [freeShop]), applicant);
+  assert.equal((await as('authenticated', applicant, "update public.stores set phone='010-0000-0000' where id=$1", [freeShop])).affectedRows, 1);
 });
 
-test('신청자가 직접 승인하거나 승인 함수를 호출할 수 없음', async () => {
-  await rejectsCode(as('authenticated', applicant, "update public.owner_applications set status='approved' where id=$1", [applicationId]), '42501');
-  await rejectsCode(as('authenticated', applicant, "insert into public.owner_applications(user_id,applicant_name,contact_phone,store_name,store_address,status) values ($1,'위조','000-0000-0000','가게','주소','approved')", [applicant]), '42501');
-  await rejectsCode(as('authenticated', applicant, "select public.review_owner_application($1,'approved',$2)", [applicationId, newStore]), '42501');
+test('가게 찜: 본인 것만, 공개 가게만, 중복 금지', async () => {
+  await as('authenticated', neighbor, 'insert into public.store_favorites(user_id,store_id) values ($1,$2)', [neighbor, shopA]);
+  await rejectsCode(as('authenticated', neighbor, 'insert into public.store_favorites(user_id,store_id) values ($1,$2)', [neighbor, shopA]), '23505');
+  await rejectsCode(as('authenticated', neighbor, 'insert into public.store_favorites(user_id,store_id) values ($1,$2)', [neighbor, hidden]), '42501');
+  await rejectsCode(as('authenticated', neighbor, 'insert into public.store_favorites(user_id,store_id) values ($1,$2)', [owner, shopB]), '42501');
+  assert.equal((await rows('authenticated', owner, 'select * from public.store_favorites')).length, 0);
 });
 
-test('다른 사장님 가게 탈취 차단 및 승인 실패 시 신청 상태 유지', async () => {
-  await rejectsCode(as('service_role', null, "select public.review_owner_application($1,'approved',$2)", [applicationId, workshop]), '23505');
-  assert.equal(await scalar('select status from public.owner_applications where id=$1', [applicationId]), 'pending');
-  assert.equal(await scalar('select owner_id from public.stores where id=$1', [workshop]), owner);
-  await db.query('update auth.users set email_confirmed_at=null where id=$1', [applicant]);
-  await rejectsCode(as('service_role', null, "select public.review_owner_application($1,'approved',$2)", [applicationId, newStore]), '42501');
-  await db.query('update auth.users set email_confirmed_at=now() where id=$1', [applicant]);
+test('스탬프: 직접 수정 금지, 서버 적립의 중복 방지와 잔액 부족 롤백', async () => {
+  await as('authenticated', neighbor, "insert into public.stamp_policies(store_id,required_stamps,reward,unit) values ($1,10,'음료 1잔','1회 방문')", [shopB]);
+  await rejectsCode(as('authenticated', owner, 'insert into public.user_stamps(user_id,store_id,count) values ($1,$2,999)', [owner, shopB]), '42501');
+  await rejectsCode(as('authenticated', owner, "select public.apply_stamp_change($1,$2,3,$3,'테스트')", [owner, shopB, request]), '42501');
+  const change = 'select public.apply_stamp_change($1,$2,$3,$4,$5) as balance';
+  assert.equal((await rows('service_role', null, change, [owner, shopB, 3, request, '구매']))[0].balance, 3);
+  assert.equal((await rows('service_role', null, change, [owner, shopB, 3, request, '구매']))[0].balance, 3);
+  await rejectsCode(as('service_role', null, change, [owner, shopB, -4, 'b0000000-0000-4000-8000-000000000002', '사용']), '23514');
+  assert.equal(await scalar('select count from public.user_stamps where user_id=$1 and store_id=$2', [owner, shopB]), 3);
+  assert.equal((await rows('authenticated', neighbor, 'select * from public.user_stamps')).length, 0);
 });
 
-test('서버 승인 시 가게 소유권 연결, 재시도 안전, 게시글 작성 가능', async () => {
-  const approve = "select public.review_owner_application($1,'approved',$2,'확인 완료') as store_id";
-  await as('service_role', null, approve, [applicationId, newStore]);
-  assert.equal((await as('service_role', null, approve, [applicationId, newStore])).rows[0].store_id, newStore);
-  assert.equal(await scalar('select owner_id from public.stores where id=$1', [newStore]), applicant);
-  // 사장님 승인과 가게 공개는 별개다.
-  assert.equal((await as('anon', null, 'select id from public.stores where id=$1', [newStore])).rows.length, 0);
-  assert.equal((await as('authenticated', applicant, "insert into public.feed_posts(store_id,author_id,kind,title,description,category,price,capacity,contact_phone,schedule,minimum_hours) values ($1,$2,'space-rental','공간','설명','스터디·회의',10000,4,'000-0000-0000','협의',1) returning id", [newStore, applicant])).rows.length, 1);
-  await rejectsCode(as('service_role', null, "select public.review_owner_application($1,'rejected',null,'변경')", [applicationId]), '22023');
-});
-
-test('반려 신청은 기록을 남기며 새 신청 가능', async () => {
-  const second = (await as('authenticated', applicant, applyQuery, [applicant])).rows[0].id;
-  await as('service_role', null, "select public.review_owner_application($1,'rejected',null,'정보 확인 필요')", [second]);
-  assert.equal(await scalar('select status from public.owner_applications where id=$1', [second]), 'rejected');
-  assert.equal((await as('authenticated', applicant, applyQuery, [applicant])).rows.length, 1);
-});
-
-test('기존 Auth 계정 프로필 보완과 기존 닉네임 보존', async () => {
-  const migrationDb = new PGlite();
-  try {
-    await migrationDb.exec(await sqlFile('./bootstrap.sql'));
-    const folder = new URL('../supabase/migrations/', import.meta.url);
-    const files = (await readdir(folder)).filter((name) => name.endsWith('.sql')).sort();
-    for (const name of files.filter((name) => !name.includes('00600'))) {
-      await migrationDb.exec(await readFile(new URL(name, folder), 'utf8'));
-    }
-    await migrationDb.query("insert into auth.users(id,raw_user_meta_data) values ($1,$2),($3,$4)", [owner, { name: '기존 소셜' }, neighbor, { name: '바뀌면 안 됨' }]);
-    await migrationDb.query("insert into public.profiles(user_id,display_name) values ($1,'내 닉네임')", [neighbor]);
-    await migrationDb.exec(await sqlFile('../supabase/migrations/20260926000600_auth_onboarding.sql'));
-    const rows = (await migrationDb.query('select user_id,display_name from public.profiles')).rows;
-    assert.equal(rows.find((row) => row.user_id === owner).display_name, '기존 소셜');
-    assert.equal(rows.find((row) => row.user_id === neighbor).display_name, '내 닉네임');
-  } finally {
-    await migrationDb.close();
-  }
-});
-
-
-test('모든 앱 테이블 15개에 RLS 적용', async () => {
-  const rows = (await db.query("select relname,relrowsecurity from pg_class c join pg_namespace n on c.relnamespace=n.oid where n.nspname='public' and c.relkind='r'")).rows;
-  assert.equal(rows.length, 15);
-  assert.ok(rows.every((row) => row.relrowsecurity));
-});
-test('예시 데이터 재실행과 익명 공개/비공개 조회', async () => {
-  const rows = (await as('anon', null, 'select id from public.stores')).rows;
-  assert.equal(rows.length, 2);
-  assert.ok(!rows.some((row) => row.id === hidden));
-  assert.equal((await as('authenticated', owner, 'select id from public.stores where id=$1', [hidden])).rows.length, 1);
-});
-test('프로필은 본인만 조회/수정하며 다른 계정 생성 금지', async () => {
-  assert.equal((await as('authenticated', owner, 'select user_id from public.profiles')).rows.length, 1);
-  assert.equal((await as('authenticated', owner, "update public.profiles set display_name='침범' where user_id=$1", [neighbor])).affectedRows, 0);
-  await rejectsCode(as('authenticated', owner, "insert into public.profiles(user_id,display_name) values ($1,'침범')", [neighbor]), '42501');
-});
-test('가게 소유권 변경과 임의 가게 등록 금지', async () => {
-  await rejectsCode(as('authenticated', owner, 'update public.stores set owner_id=$1 where id=$2', [neighbor, workshop]), '42501');
-  await rejectsCode(as('authenticated', owner, "insert into public.stores(name,address,lat,lng) values ('임의','예시',37,127)"), '42501');
-  assert.equal((await as('authenticated', owner, "update public.stores set name='[예시] 수정한 공방' where id=$1", [workshop])).affectedRows, 1);
-});
-test('타인 게시글 수정/삭제 금지, 사장님의 자기 가게 글 수정 허용', async () => {
-  assert.equal((await as('authenticated', neighbor, "update public.feed_posts set title='침범' where id=$1", [post])).affectedRows, 0);
-  assert.equal((await as('authenticated', neighbor, 'delete from public.feed_posts where id=$1', [post])).affectedRows, 0);
-  assert.equal((await as('authenticated', owner, "update public.feed_posts set title='[예시] 수정한 공간' where id=$1", [post])).affectedRows, 1);
-});
-test('사장님 글 작성과 종류별 필수값 검사', async () => {
-  const query = "insert into public.feed_posts(store_id,author_id,kind,title,description,category,price,capacity,contact_phone,starts_at,duration_minutes) values ($1,$2,'oneday-class','테스트 수업','설명','공예·미술',10000,4,'000-0000-0000',now()+interval '1 day',$3) returning id";
-  assert.equal((await as('authenticated', owner, query, [workshop, owner, 90])).rows.length, 1);
-  await rejectsCode(as('authenticated', neighbor, query, [workshop, neighbor, 90]), '42501');
-  await rejectsCode(as('authenticated', owner, query, [workshop, neighbor, 90]), '42501');
-  await rejectsCode(as('authenticated', owner, query, [workshop, owner, null]), '23514');
-  await rejectsCode(as('authenticated', owner, 'update public.feed_posts set price=-1 where id=$1', [post]), '23514');
-});
-test('가게 찜 본인 저장, 중복 금지, 타인 조회 금지', async () => {
-  await as('authenticated', owner, 'insert into public.store_favorites(user_id,store_id) values ($1,$2)', [owner, cafe]);
-  await rejectsCode(as('authenticated', owner, 'insert into public.store_favorites(user_id,store_id) values ($1,$2)', [owner, cafe]), '23505');
-  assert.equal((await as('authenticated', neighbor, 'select * from public.store_favorites')).rows.length, 0);
-  await rejectsCode(as('authenticated', neighbor, 'insert into public.store_favorites(user_id,store_id) values ($1,$2)', [owner, workshop]), '42501');
-});
-test('비공개 게시글은 조회/찜 불가', async () => {
-  await as('authenticated', owner, 'update public.feed_posts set is_published=false where id=$1', [post]);
-  assert.equal((await as('anon', null, 'select id from public.feed_posts where id=$1', [post])).rows.length, 0);
-  await rejectsCode(as('authenticated', neighbor, 'insert into public.post_favorites(user_id,post_id) values ($1,$2)', [neighbor, post]), '42501');
-  await as('authenticated', owner, 'update public.feed_posts set is_published=true where id=$1', [post]);
-  await as('authenticated', neighbor, 'insert into public.post_favorites(user_id,post_id) values ($1,$2)', [neighbor, post]);
-});
-test('세일 관심 수 집계는 다른 사용자의 찜 ID를 노출하지 않는다', async () => {
-  await as('authenticated', owner, 'insert into public.sale_likes(user_id,sale_id) values ($1,$2)', [owner, sale]);
-  await as('authenticated', neighbor, 'insert into public.sale_likes(user_id,sale_id) values ($1,$2)', [neighbor, sale]);
-  assert.equal((await as('authenticated', owner, 'select * from public.sale_likes')).rows.length, 1);
-  const counts = (await as('anon', null, 'select * from public.get_sale_like_counts($1::uuid[])', [[sale]])).rows;
-  assert.equal(Number(counts[0].like_count), 2);
-  await as('authenticated', neighbor, 'update public.closing_sales set is_published=false where id=$1', [sale]);
-  assert.equal((await as('anon', null, 'select * from public.get_sale_like_counts($1::uuid[])', [[sale]])).rows.length, 0);
-});
-test('다른 가게 세일에 상품을 끼워넣을 수 없다', async () => {
-  await rejectsCode(as('authenticated', owner, "insert into public.closing_sale_items(sale_id,store_id,name,original_price,discount_rate) values ($1,$2,'잘못된 상품',1000,0.1)", [sale, workshop]), '23503');
-});
-test('제휴 혜택은 사장님 계정도 임의 발급할 수 없다', async () => {
-  await rejectsCode(as('authenticated', neighbor, "insert into public.partner_benefits(store_id,college_key,benefit) values ($1,'biz','무료')", [cafe]), '42501');
-});
-test('스탬프 직접 수정과 일반 사용자의 적립 함수 호출 금지', async () => {
-  await rejectsCode(as('authenticated', neighbor, 'insert into public.user_stamps(user_id,store_id,count) values ($1,$2,999)', [neighbor, cafe]), '42501');
-  await rejectsCode(as('authenticated', neighbor, "select public.apply_stamp_change($1,$2,3,$3,'테스트')", [neighbor, cafe, request]), '42501');
-});
-test('서버 적립의 중복 방지, 사용 시 잔액 부족 롤백', async () => {
-  const query = 'select public.apply_stamp_change($1,$2,$3,$4,$5) as balance';
-  assert.equal((await as('service_role', null, query, [owner, cafe, 3, request, '구매 확인'])).rows[0].balance, 3);
-  assert.equal((await as('service_role', null, query, [owner, cafe, 3, request, '구매 확인'])).rows[0].balance, 3);
-  await rejectsCode(as('service_role', null, query, [owner, cafe, 4, request, '구매 확인']), '22023');
-  await rejectsCode(as('service_role', null, query, [owner, cafe, -4, 'b0000000-0000-4000-8000-000000000002', '사용']), '23514');
-  assert.equal(await scalar('select count from public.user_stamps where user_id=$1 and store_id=$2', [owner, cafe]), 3);
-  assert.equal(await scalar('select count(*)::integer from public.stamp_transactions'), 1);
-  assert.equal((await as('service_role', null, query, [owner, cafe, -2, 'b0000000-0000-4000-8000-000000000003', '사용'])).rows[0].balance, 1);
-  assert.equal((await as('authenticated', neighbor, 'select * from public.user_stamps')).rows.length, 0);
-});
-test('이미지 경로는 본인 가게만 쓰기 가능, 경로 이동 공격 차단', async () => {
-  const path = workshop + '/test.webp';
+test('사진 저장소: 자기 가게 폴더만 쓰고, 다른 가게 폴더로 옮길 수 없다', async () => {
+  const path = shopA + '/test.webp';
   await as('authenticated', owner, "insert into storage.objects(bucket_id,name) values ('store-media',$1)", [path]);
-  await rejectsCode(as('authenticated', neighbor, "insert into storage.objects(bucket_id,name) values ('store-media',$1)", [workshop + '/other.webp']), '42501');
-  await rejectsCode(as('authenticated', owner, "update storage.objects set name=$1 where name=$2", [cafe + '/test.webp', path]), '42501');
-  assert.equal((await as('authenticated', neighbor, 'select * from storage.objects')).rows.length, 0);
+  await rejectsCode(as('authenticated', neighbor, "insert into storage.objects(bucket_id,name) values ('store-media',$1)", [shopA + '/other.webp']), '42501');
+  await rejectsCode(as('authenticated', owner, 'update storage.objects set name=$1 where name=$2', [shopB + '/test.webp', path]), '42501');
+  assert.equal((await rows('authenticated', neighbor, 'select * from storage.objects')).length, 0);
 });

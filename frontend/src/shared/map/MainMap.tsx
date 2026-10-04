@@ -4,10 +4,10 @@ import 'leaflet/dist/leaflet.css';
 import type { FeatureCollection } from 'geojson';
 import type { GeoPoint, Store } from '../../core/types/place';
 import { ICONS } from '../icons';
-import { buildingListElement, clusterGroups, clusterIcon, CLUSTER_MAX_ZOOM, groupByBuilding } from './sbiz/placeMarkers';
-import type { SbizStore } from './sbiz/stores';
+import { buildingListElement, clusterGroups, clusterIcon, CLUSTER_MAX_ZOOM, groupByBuilding } from './placeMarkers';
+import type { MapStore } from '../../core/supabase/stores';
 import { ADMIN_DONG_LABEL, AREA_LAYERS, createStyles } from './vworld/config';
-import { drawArea, drawBoundary, drawBuildings, drawRoads, drawSchoolFacilities, type DrawContext } from './vworld/draw';
+import { drawArea, drawBoundary, drawBuildings, drawRailways, drawRoads, drawSchoolFacilities, visibleSchoolFacilities, type DrawContext } from './vworld/draw';
 import { isInWolgye1 } from './vworld/geometry';
 import { loadData } from './vworld/loadData';
 import { LANDSCAPE_MIN_ZOOM_HEIGHT_RATIO, MAP_CENTER, MAP_EXTENT, MAP_HEIGHT_PER_RECT, portraitMinZoomHeightRatio, WOLGYE1_LAT_SPAN } from './vworld/mapExtent';
@@ -39,11 +39,11 @@ interface MainMapProps {
   /** 세로 화면(모바일·태블릿 세로)이면 true. 가장 많이 축소할 수 있는 정도가 달라진다 */
   portrait: boolean;
   /** 소상공인 상가정보 가게 (월계1동). 건물 단위로 묶고, 줌을 줄이면 가까운 건물끼리 묶어 그린다 */
-  places: SbizStore[];
+  places: MapStore[];
   /** 지금 2차 탭에 열린 상가정보 가게 id (그 핀을 강조) */
   selectedPlaceId: string | null;
   /** 상가정보 가게를 고르면 (단일 핀을 누르거나, 층별 목록에서 고르면) 불린다 */
-  onPlaceSelect: (place: SbizStore) => void;
+  onPlaceSelect: (place: MapStore) => void;
   /** 상가정보 기준월 (예: 202606). 데이터가 없으면 null */
   placesMonth: string | null;
 }
@@ -185,19 +185,23 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
       if (cancelled) return;
       if (!data) { setStatus('missing'); return; }
 
-      // 추가 순서 = Canvas 그리기 순서. 영역 → 도로 → 건물 순으로 넣어야 건물이 맨 위에 온다.
+      // 추가 순서 = Canvas 그리기 순서. 영역 → 도로 → 철도 → 건물 순으로 넣어야 건물이 맨 위에 온다.
       for (const config of AREA_LAYERS) {
         const geojson = data.areas[config.key];
         if (geojson) drawArea(ctx, config, geojson); // 파일이 없으면 조용히 건너뛴다
       }
-      const roadLayers = drawRoads(ctx, data.roads);
-      drawBuildings(ctx, data.buildings);
-      if (data.schoolFacilities) drawSchoolFacilities(ctx, data.schoolFacilities); // 학교 건물은 일반 건물 위에 종류별 색으로 덮어 그린다
+      const roadLayers = data.roads ? drawRoads(ctx, data.roads) : null;
+      if (data.railways) drawRailways(ctx, data.railways);
+      // 학교 건물은 종류별 색으로 그리고, 같은 건물이 일반 건물에도 있으면 일반 건물 쪽을 뺀다
+      const schoolBuildings = visibleSchoolFacilities(data.schoolFacilities);
+      drawBuildings(ctx, data.buildings, schoolBuildings);
+      drawSchoolFacilities(ctx, schoolBuildings);
       if (data.adminDong) drawBoundary(ctx, data.adminDong, ctx.styles.ADMIN_DONG_STYLE, ADMIN_DONG_LABEL, 'admin-dong-label');
       adminDongRef.current = data.adminDong;
 
       // 줌이 바뀔 때마다 등급별 표시 여부 갱신 (투명도만 바꿔서 그리기 순서를 유지)
       const updateRoadVisibility = () => {
+        if (!roadLayers) return;
         const zoom = map.getZoom();
         for (const [grade, { minZoom, opacity }] of Object.entries(ctx.styles.ROAD_STYLES)) {
           roadLayers[grade as keyof typeof roadLayers].setStyle({ opacity: zoom >= minZoom ? opacity : 0 });
@@ -317,7 +321,7 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
   return (
     <div className="mm-root">
       <div ref={containerRef} className="mm-canvas" role="region" aria-label="월계1동 지도" />
-      <p className="mm-source">데이터 © 브이월드{placesMonth ? ` · 상가정보 © 소상공인시장진흥공단 (${placesMonth.slice(0, 4)}.${placesMonth.slice(4, 6)})` : ''}</p>
+      <p className="mm-source">데이터 © 브이월드 · 도로 © OpenStreetMap{placesMonth ? ` · 상가정보 © 소상공인시장진흥공단 (${placesMonth.slice(0, 4)}.${placesMonth.slice(4, 6)})` : ''}</p>
       {status === 'loading' && <div className="mm-state" role="status">지도를 불러오는 중…</div>}
       {status === 'missing' && (
         <div className="mm-state" role="alert">

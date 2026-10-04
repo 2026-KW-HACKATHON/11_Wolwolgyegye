@@ -1,9 +1,11 @@
 // =====================================================================
 // 소상공인시장진흥공단 상가(상권)정보 API 로 월계1동 가게(상가업소)를 받아
-// public/data/sbiz/stores.geojson 으로 저장하는 스크립트.
+// scripts/.data/sbiz-stores.geojson 으로 저장하는 스크립트. (git 에 넣지 않는 작업 파일)
+// 받은 가게는 npm run import:stores 로 DB(stores 표)에 넣는다. 앱은 DB 에서만 가게를 읽는다.
 // (지도 테스트 워크스페이스 V_World_OSM/scripts/fetch-sbiz.js 를 옮겨 온 것. 바꾼 곳: 읽고 저장하는 위치, 키 이름, 대체 조회 범위)
 //
-// 실행: frontend 폴더에서 npm run fetch:sbiz   (먼저 npm run fetch:vworld 로 월계1동 경계·건물·단지 데이터를 받아 둬야 한다)
+// 실행: frontend 폴더에서 npm run fetch:sbiz → npm run import:stores
+//   (먼저 npm run fetch:vworld 로 월계1동 경계·건물·단지 데이터를 받아 둬야 한다)
 //
 // 인증키: frontend/.env.local 의 SBIZ_KEY (또는 SBIZ_SERVICE_KEY). 공공데이터포털 Decoding 키
 //   - URLSearchParams 가 주소를 만들 때 인코딩하므로 원래 형태(Decoding) 키가 필요하다.
@@ -42,7 +44,8 @@ const KEEP_FIELDS = [
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // 브이월드 수집 결과(경계·단지·건물)를 읽는 곳과, 가게 결과를 저장하는 곳
 const VWORLD_DIR = path.resolve(__dirname, '..', 'public', 'data', 'vworld');
-const DATA_DIR = path.resolve(__dirname, '..', 'public', 'data', 'sbiz');
+const DATA_DIR = path.resolve(__dirname, '.data');
+const OUTPUT_FILE = 'sbiz-stores.geojson';
 
 // ---------------------------------------------------------------------
 // 인증키
@@ -180,7 +183,7 @@ async function main() {
 
   const fc = { type: 'FeatureCollection', stdrYm, features };
   await mkdir(DATA_DIR, { recursive: true });
-  await writeFile(path.join(DATA_DIR, 'stores.geojson'), JSON.stringify(fc), 'utf8');
+  await writeFile(path.join(DATA_DIR, OUTPUT_FILE), JSON.stringify(fc), 'utf8');
 
   // 확인용 통계
   const byCat = {};
@@ -191,11 +194,13 @@ async function main() {
   const inComplex = features.filter((f) => f.properties.complex_id).length;
 
   console.log('\n========== 결과 ==========');
-  console.log(`public/data/sbiz/stores.geojson : ${features.length}곳 (${ADONG_NAME}, 기준월 ${stdrYm})`);
+  console.log(`scripts/.data/${OUTPUT_FILE} : ${features.length}곳 (${ADONG_NAME}, 기준월 ${stdrYm})`);
   console.log(`업종 대분류         : ${Object.entries(byCat).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(', ')}`);
   console.log(`건물과 연결         : ${linked}곳 (건물관리번호 일치) / 연결 안 됨 ${features.length - linked}곳 → 지도에 점으로 표시`);
   console.log(`아파트 단지 안 가게 : ${inComplex}곳`);
   console.log(`소요 시간           : ${((Date.now() - started) / 1000).toFixed(1)}초`);
+  console.log('
+다음 단계: npm run import:stores 로 DB 에 넣는다.');
 }
 
 main().catch((e) => {

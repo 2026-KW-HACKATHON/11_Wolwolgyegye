@@ -4,8 +4,10 @@
 // ---------------------------------------------------------------------
 import L from 'leaflet';
 import type { Feature, FeatureCollection } from 'geojson';
-import { NO_INFO, ROAD_GRADE_LABELS, type AreaLayerConfig, type MapStyles } from './config';
-import { normalizeBuilding, normalizeRoad, normalizeSchoolFacility, type AreaInfo, type BuildingInfo, type RoadGrade, type RoadInfo } from './normalize';
+import { normalizeOsmRoad, normalizeRailway, type RoadGrade, type RoadInfo } from '../osm/normalize';
+import { NO_INFO, ROAD_GRADE_LABELS, SCHOOL_FACILITY_LABELS, type AreaLayerConfig, type MapStyles } from './config';
+import { withoutOverlaps } from './geometry';
+import { normalizeBuilding, normalizeSchoolFacility, type AreaInfo, type BuildingInfo } from './normalize';
 
 export interface DrawContext {
   map: L.Map;
@@ -25,7 +27,7 @@ function escapeHtml(s: unknown): string {
 export function drawArea(ctx: DrawContext, config: AreaLayerConfig, geojson: FeatureCollection) {
   return L.geoJSON(geojson, {
     renderer: ctx.featureRenderer,
-    style: (feature) => ctx.styles.AREA_STYLES[config.styleKey ? config.styleKey(config.normalize(feature as Feature)) : config.key],
+    style: ctx.styles.AREA_STYLES[config.key],
     onEachFeature(feature, sublayer) {
       const info = config.normalize(feature);
       sublayer.bindPopup(() => areaPopupHtml(config.label, info));
@@ -43,7 +45,8 @@ function areaPopupHtml(label: string, { title, lines }: AreaInfo) {
 }
 
 /**
- * 도로를 등급별 레이어로 나눠 그린다. (ROAD_STYLES 순서대로 추가 = 그 순서로 겹쳐 그림)
+ * 도로(OpenStreetMap)를 등급별 레이어로 나눠 그린다. (ROAD_STYLES 순서대로 추가 = 그 순서로 겹쳐 그림)
+ * 등급이 없는 도로(모르는 종류, 지하차도)는 그리지 않는다.
  * LineString, MultiLineString 모두 L.geoJSON 이 그대로 처리한다.
  * minZoom 미만인 등급은 지도에 넣어둔 채 투명하게만 바꾼다.
  * (지도에서 뺐다가 다시 넣으면 Canvas 그리기 순서상 건물 위로 올라오기 때문)
@@ -58,7 +61,7 @@ export function drawRoads(ctx: DrawContext, roadsGeoJSON: FeatureCollection) {
       renderer: ctx.featureRenderer,
       style,
       onEachFeature(feature, sublayer) {
-        const info = normalizeRoad(feature);
+        const info = normalizeOsmRoad(feature);
         // 숨겨진(투명한) 도로는 클릭해도 팝업을 띄우지 않는다
         sublayer.on('click', (e: L.LeafletMouseEvent) => {
           if (map.getZoom() < minZoom) return;
@@ -68,32 +71,55 @@ export function drawRoads(ctx: DrawContext, roadsGeoJSON: FeatureCollection) {
     } as L.GeoJSONOptions);
   }
   for (const feature of roadsGeoJSON.features || []) {
-    const { grade } = normalizeRoad(feature);
-    layers[grade].addData(feature);
+    const { grade } = normalizeOsmRoad(feature);
+    if (grade) layers[grade].addData(feature);
   }
   for (const grade of grades) layers[grade].addTo(map);
   return layers;
 }
 
-function roadPopupHtml({ name, grade, widthM, lanes, complexName, schoolName }: RoadInfo) {
-  let title = name || '이름 없는 도로';
-  if (grade === 'complex') title = `${complexName || '아파트'} 단지 내 도로`;
-  if (grade === 'school') title = `${schoolName || '학교'} 안 도로`;
+function roadPopupHtml({ name, grade, widthM, lanes, bridge }: RoadInfo) {
   const rows = [
-    ['구분', `${ROAD_GRADE_LABELS[grade]}${grade === 'complex' || grade === 'school' ? ' (추정)' : ''}`],
+    ['구분', `${grade ? ROAD_GRADE_LABELS[grade] : NO_INFO}${bridge ? ' (다리)' : ''}`],
     ['도로폭', widthM === null ? NO_INFO : `${widthM}m`],
     ['차로수', lanes === null ? NO_INFO : `${lanes}차로`],
   ];
   return `
     <div class="popup-kind">도로</div>
-    <div class="popup-title">${escapeHtml(title)}</div>
+    <div class="popup-title">${escapeHtml(name || '이름 없는 도로')}</div>
     <table class="popup-table">
       ${rows.map(([k, v]) => `<tr><td>${k}</td><td>${escapeHtml(v)}</td></tr>`).join('')}
     </table>`;
 }
 
-export function drawBuildings(ctx: DrawContext, buildingsGeoJSON: FeatureCollection) {
-  const layer: L.GeoJSON = L.geoJSON(buildingsGeoJSON, {
+/**
+ * 철도(OpenStreetMap)를 그린다. 바탕 선 위에 흰 점선을 겹쳐 철길처럼 보이게 한다.
+ * 지하 구간은 그리지 않는다. 클릭하면 노선 이름을 보여준다.
+ */
+export function drawRailways(ctx: DrawContext, railwaysGeoJSON: FeatureCollection) {
+  const above: FeatureCollection = { type: 'FeatureCollection', features: (railwaysGeoJSON.features || []).filter((f) => !normalizeRailway(f).underground) };
+  L.geoJSON(above, {
+    renderer: ctx.featureRenderer,
+    style: ctx.styles.RAILWAY_BASE_STYLE,
+    onEachFeature(feature, sublayer) {
+      const { name, kindLabel } = normalizeRailway(feature);
+      sublayer.bindPopup(() => `
+        <div class="popup-kind">${escapeHtml(kindLabel)}</div>
+        <div class="popup-title">${escapeHtml(name || '이름 없는 노선')}</div>`);
+    },
+  } as L.GeoJSONOptions).addTo(ctx.map);
+  L.geoJSON(above, { renderer: ctx.featureRenderer, style: ctx.styles.RAILWAY_DASH_STYLE, interactive: false } as L.GeoJSONOptions).addTo(ctx.map);
+}
+
+/**
+ * 일반 건물(도로명주소 건물)을 그린다.
+ * hiddenBy 에 준 건물(학교 건물)과 겹치는 건물은 빼서, 같은 건물이 두 번 겹쳐 그려지지 않게 한다.
+ */
+export function drawBuildings(ctx: DrawContext, buildingsGeoJSON: FeatureCollection, hiddenBy: Feature[] = []) {
+  const visible: FeatureCollection = hiddenBy.length
+    ? { type: 'FeatureCollection', features: withoutOverlaps(buildingsGeoJSON.features || [], hiddenBy) }
+    : buildingsGeoJSON;
+  const layer: L.GeoJSON = L.geoJSON(visible, {
     renderer: ctx.featureRenderer,
     style: ctx.styles.BUILDING_STYLE,
     onEachFeature(feature, sublayer) {
@@ -107,21 +133,27 @@ export function drawBuildings(ctx: DrawContext, buildingsGeoJSON: FeatureCollect
   return layer.addTo(ctx.map);
 }
 
-/** 학교 안 건물을 종류별 색으로 그린다. 일반 건물(도로명주소 건물) 위에 덮어 그려진다 */
-export function drawSchoolFacilities(ctx: DrawContext, geojson: FeatureCollection) {
-  const { SCHOOL_FACILITY_STYLES, SCHOOL_FACILITY_BASE_STYLE } = ctx.styles;
-  return L.geoJSON(geojson, {
+/** 지도에 그리는 학교 건물 (종류를 알 수 있는 건물만) */
+export function visibleSchoolFacilities(geojson: FeatureCollection | null): Feature[] {
+  return (geojson?.features || []).filter((feature) => normalizeSchoolFacility(feature).kind !== null);
+}
+
+/**
+ * 학교 안 건물을 그린다. 색은 일반 건물과 같고, 누르면 학교 이름과 건물 종류를 보여준다.
+ * 겹치는 일반 건물은 drawBuildings 가 미리 뺀다.
+ */
+export function drawSchoolFacilities(ctx: DrawContext, facilities: Feature[]) {
+  const layer: L.GeoJSON = L.geoJSON({ type: 'FeatureCollection', features: facilities } as FeatureCollection, {
     renderer: ctx.featureRenderer,
-    filter: (feature) => normalizeSchoolFacility(feature).kind !== null,
-    style: (feature) => {
-      const { kind } = normalizeSchoolFacility(feature as Feature);
-      return { ...SCHOOL_FACILITY_BASE_STYLE, fillColor: kind ? SCHOOL_FACILITY_STYLES[kind].fillColor : undefined };
-    },
+    style: ctx.styles.BUILDING_STYLE,
     onEachFeature(feature, sublayer) {
       const info = normalizeSchoolFacility(feature);
       if (!info.kind) return;
-      const label = SCHOOL_FACILITY_STYLES[info.kind].label;
-      sublayer.bindPopup(() => `
+      const label = SCHOOL_FACILITY_LABELS[info.kind];
+      const path = sublayer as L.Path;
+      path.on('mouseover', () => path.setStyle(ctx.styles.BUILDING_HOVER_STYLE));
+      path.on('mouseout', () => layer.resetStyle(path));
+      path.bindPopup(() => `
         <div class="popup-kind">학교 건물 · ${escapeHtml(label)} (추정)</div>
         <div class="popup-title">${escapeHtml(info.name || '이름 없는 건물')}</div>
         <table class="popup-table">
@@ -129,7 +161,8 @@ export function drawSchoolFacilities(ctx: DrawContext, geojson: FeatureCollectio
           <tr><td>층수</td><td>${escapeHtml(info.floors === null ? '층수 정보 없음' : `지상 ${info.floors}층`)}</td></tr>
         </table>`);
     },
-  } as L.GeoJSONOptions).addTo(ctx.map);
+  } as L.GeoJSONOptions);
+  return layer.addTo(ctx.map);
 }
 
 function buildingPopupHtml({ name, address, floors }: BuildingInfo) {

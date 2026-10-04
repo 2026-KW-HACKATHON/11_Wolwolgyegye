@@ -2,8 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { Navigate, useNavigate } from 'react-router-dom';
 import { ALL_PANELS, DEFAULT_LANDING_PATH, USER_PANEL } from '../../core/categories/categories';
 import type { PanelMeta } from '../../core/categories/categoryTypes';
-import { SUB_CATEGORIES } from '../../core/categories/subCategories';
-import { loadSbizStores, type SbizData, type SbizStore } from '../../shared/map/sbiz/stores';
+import { SUB_CATEGORIES, subCategoryById } from '../../core/categories/subCategories';
+import { fetchMapStores, floorLabel, type MapStore, type MapStoreData } from '../../core/supabase/stores';
 import { useVisibleCategories } from '../../core/categories/useVisibleCategories';
 import { useLayoutMode } from '../../core/device/LayoutModeContext';
 import { panelAxis, TOUCH_PRIMARY_QUERY } from '../../core/device/layoutMode';
@@ -41,14 +41,18 @@ function storeToSecondary(store: Store): SecondaryPlace {
   };
 }
 
-/** 상가정보 가게 → 2차 탭 요약 */
-function sbizToSecondary(place: SbizStore): SecondaryPlace {
+/** 지도 가게(DB) → 2차 탭 요약 */
+function placeToSecondary(place: MapStore): SecondaryPlace {
   return {
     id: place.id,
     name: place.name,
-    category: [place.large, place.middle, place.small].filter(Boolean).join(' · '),
+    category: [subCategoryById(place.typeId)?.label, place.industry].filter(Boolean).join(' · '),
     address: place.address,
-    facts: [{ label: '층', value: place.floor }, { label: '건물', value: place.buildingName }].filter((f) => f.value),
+    facts: [
+      { label: '층', value: floorLabel(place.floor) },
+      { label: '건물', value: place.buildingName },
+      { label: '전화', value: place.phone },
+    ].filter((f) => f.value),
   };
 }
 
@@ -88,11 +92,11 @@ export default function AppShell() {
   const [stage, setStage] = useState({ width: 0, height: 0 });
   const [panelStates, setPanelStates] = useState<Record<string, PanelState>>({});
   const [subId, setSubId] = useState<string | null>(null);
-  const [sbiz, setSbiz] = useState<SbizData | null>(null);
+  const [mapData, setMapData] = useState<MapStoreData | null>(null);
   const [categoryStores, setCategoryStores] = useState<Store[]>([]);
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
-  /** 2차 탭에 연 상가정보 가게 (카테고리 가게와 동시에 열리지 않는다) */
-  const [selectedPlace, setSelectedPlace] = useState<SbizStore | null>(null);
+  /** 2차 탭에 연 지도 가게 (카테고리 가게와 동시에 열리지 않는다) */
+  const [selectedPlace, setSelectedPlace] = useState<MapStore | null>(null);
   const [locating, setLocating] = useState(false);
 
   // 지도 영역 크기 (1차 탭 크기 계산용)
@@ -118,7 +122,7 @@ export default function AppShell() {
   // 2차 탭이 좌측에 열리면 그만큼을 왼쪽 가림으로 기록한다
   const selectedStore = categoryStores.find((store) => store.id === selectedStoreId) ?? null;
   const secondaryPlace = useMemo(
-    () => (selectedPlace ? sbizToSecondary(selectedPlace) : selectedStore ? storeToSecondary(selectedStore) : null),
+    () => (selectedPlace ? placeToSecondary(selectedPlace) : selectedStore ? storeToSecondary(selectedStore) : null),
     [selectedPlace, selectedStore],
   );
   useLayoutEffect(() => {
@@ -159,34 +163,34 @@ export default function AppShell() {
     navigate(panel.path);
   }
 
-  // ---- 카테고리 가게(DB 연결 전에는 없음) · 소상공인 상가정보(월계1동 가게) ----
+  // ---- 카테고리 가게(아직 없음) · 지도 가게(DB 의 공개 가게, 월계1동 상가정보) ----
   useEffect(() => {
     let cancelled = false;
     void fetchStores().then((stores) => { if (!cancelled) setCategoryStores(stores); });
-    void loadSbizStores().then((data) => { if (!cancelled) setSbiz(data); });
+    void fetchMapStores().then((data) => { if (!cancelled) setMapData(data); });
     return () => { cancelled = true; };
   }, []);
 
   // ---- 지도에 표시할 가게 ----
   const subCategory = SUB_CATEGORIES.find((s) => s.id === subId) ?? null;
   const subCounts = useMemo(() => Object.fromEntries(SUB_CATEGORIES.map((s) =>
-    [s.id, sbiz ? sbiz.stores.filter(s.match).length : 0])), [sbiz]);
+    [s.id, mapData ? mapData.stores.filter((p) => p.typeId === s.id).length : 0])), [mapData]);
   // 가게가 한 곳도 없는 항목은 목록에서 뺀다 (데이터가 아직 없으면 전부 보여준다)
-  const visibleSubs = useMemo(() => (sbiz ? SUB_CATEGORIES.filter((s) => subCounts[s.id] > 0) : SUB_CATEGORIES), [sbiz, subCounts]);
-  // 상가정보 가게: 그 외 카테고리를 고르면 그 업종만, 아니면 전부
-  const places = useMemo(() => (sbiz ? (subCategory ? sbiz.stores.filter(subCategory.match) : sbiz.stores) : []), [sbiz, subCategory]);
+  const visibleSubs = useMemo(() => (mapData ? SUB_CATEGORIES.filter((s) => subCounts[s.id] > 0) : SUB_CATEGORIES), [mapData, subCounts]);
+  // 지도 가게: 그 외 카테고리를 고르면 그 유형만, 아니면 전부
+  const places = useMemo(() => (mapData ? (subCategory ? mapData.stores.filter((p) => p.typeId === subCategory.id) : mapData.stores) : []), [mapData, subCategory]);
   const mapStores = useMemo(() => {
-    // 그 외 카테고리를 고른 동안에는 카테고리 가게 핀을 숨기고 상가정보 가게만 보여준다
+    // 그 외 카테고리를 고른 동안에는 카테고리 가게 핀을 숨기고 지도 가게만 보여준다
     const list = subCategory ? [] : storesForPanel(categoryStores, activeId ?? '');
     return selectedStore && !list.includes(selectedStore) ? [...list, selectedStore] : list;
   }, [subCategory, activeId, selectedStore, categoryStores]);
 
-  // ---- 2차 탭: 카테고리 가게 또는 상가정보 가게 하나만 연다 ----
+  // ---- 2차 탭: 카테고리 가게 또는 지도 가게 하나만 연다 ----
   const selectStore = useCallback((id: string) => { setSelectedPlace(null); setSelectedStoreId(id); }, []);
-  const selectPlace = useCallback((place: SbizStore) => { setSelectedStoreId(null); setSelectedPlace(place); }, []);
+  const selectPlace = useCallback((place: MapStore) => { setSelectedStoreId(null); setSelectedPlace(place); }, []);
   const closeSecondary = useCallback(() => { setSelectedStoreId(null); setSelectedPlace(null); }, []);
 
-  // 상가정보 가게를 열면 그 자리를 탭에 가려지지 않은 영역 가운데로 (2차 탭 폭이 반영된 뒤에)
+  // 지도 가게를 열면 그 자리를 탭에 가려지지 않은 영역 가운데로 (2차 탭 폭이 반영된 뒤에)
   useEffect(() => {
     if (!selectedPlace) return;
     const frame = requestAnimationFrame(() => mapRef.current?.centerOn(selectedPlace, getInsets()));
@@ -251,7 +255,7 @@ export default function AppShell() {
             places={places}
             selectedPlaceId={selectedPlace?.id ?? null}
             onPlaceSelect={selectPlace}
-            placesMonth={sbiz?.stdrYm ?? null}
+            placesMonth={mapData?.sbizMonth || null}
             selectedId={selectedStoreId}
             onSelect={selectStore}
             getInsets={getInsets}

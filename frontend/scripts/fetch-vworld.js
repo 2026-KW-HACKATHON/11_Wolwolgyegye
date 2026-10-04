@@ -1,5 +1,5 @@
 // =====================================================================
-// 브이월드(V-World) 2D데이터 API에서 월계1동 일대의 건물·도로·경계를 받아
+// 브이월드(V-World) 2D데이터 API에서 월계1동 일대의 건물·경계·영역(학교·아파트·강·산)을 받아
 // public/data/vworld/*.geojson 으로 저장하는 스크립트.
 // (지도 테스트 워크스페이스 V_World/scripts/fetch-vworld.js 를 옮겨 온 것. 바꾼 곳: 조회 범위, 저장 위치, 실행 방법)
 //
@@ -12,6 +12,7 @@
 //
 // 화면(src/shared/map)은 이 스크립트가 만든 GeoJSON 파일만 읽는다. 키는 이 스크립트에서만 쓰인다.
 // 데이터 출처를 바꾸고 싶으면 이 스크립트만 교체하면 된다.
+// 도로·철도는 브이월드가 아니라 OpenStreetMap 에서 받는다 (scripts/fetch-osm.js).
 // =====================================================================
 
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -22,7 +23,6 @@ import { fileURLToPath } from 'node:url';
 // 설정 상수 (필요하면 여기만 고치면 된다)
 // ---------------------------------------------------------------------
 const BUILDING_LAYER = 'LT_C_SPBD';       // 건물 (도로명주소 건물)
-const ROAD_LAYER = 'LT_L_SPRD';           // 도로 (도로명주소 도로구간)
 const BOUNDARY_LAYER = 'LT_C_ADEMD_INFO'; // 읍면동(법정동) 경계
 const BOUNDARY_EMD_CD = '11350102';       // 서울 노원구 월계동(법정동) 코드
 
@@ -59,14 +59,6 @@ const APT_MIN_FLOORS = 6;
 const APT_MIN_BUILDINGS = 2;
 // 건축물정보 건물이 도로명주소 건물 도형과 겹치지 않을 때, 이 거리(m) 안의 가장 가까운 건물에 붙인다
 const APT_HOST_MAX_M = 15;
-
-// 도로 그리기용 선: 도로중심선 (수치지도 기반, 단지 안 통로까지 포함되고 도로폭·차로수가 있다)
-// 도로명주소 도로(ROAD_LAYER)는 화면에 직접 그리지 않고, 중심선에 "도로 이름"을 붙이는 데만 쓴다.
-// 중심선 수집에 실패하면 예전처럼 도로명주소 도로를 그대로 저장한다.
-const CENTERLINE_LAYER = 'LT_L_N3A0020000';
-// 중심선 구간의 중간점에서 이 거리(m) 안에 도로명주소 도로가 있으면 그 도로명을 붙인다.
-// (분석 결과 72%가 3m 안에서 일치. 교차로 부근의 짧은 구간은 옆 도로 이름이 붙을 수 있음)
-const NAME_MATCH_MAX_M = 10;
 
 // 조회 범위 — 화면 src/shared/map/vworld/mapExtent.ts 와 같은 규칙·같은 값을 쓴다.
 // 월계1동(행정동)을 감싸는 직사각형 (센서스 행정동 경계 lt_c_cademd, adm_cd 11110510, 기준일 20240630 의 꼭짓점 최소·최대)
@@ -586,7 +578,7 @@ function deriveSchoolFacilities(bldg, schools) {
 /**
  * 영역 레이어 하나를 받아 저장하고 FeatureCollection 을 돌려준다.
  * 실패해도 전체를 멈추지 않고 경고 후 null 을 돌려준다.
- * (건물·도로가 핵심이고, 영역은 없어도 지도가 그려지므로)
+ * (건물이 핵심이고, 영역은 없어도 지도가 그려지므로)
  */
 async function collectOptional(fileName, label, task) {
   await sleep(REQUEST_INTERVAL_MS);
@@ -601,7 +593,7 @@ async function collectOptional(fileName, label, task) {
 }
 
 // ---------------------------------------------------------------------
-// 도로중심선 + 도로명 붙이기 + 단지 내 도로 표시
+// 거리 계산
 // ---------------------------------------------------------------------
 
 // 위경도 차이를 미터로 바꾸는 근사 계수 (위도 37.62° 기준).
@@ -610,110 +602,6 @@ const M_PER_DEG_LNG = 111320 * Math.cos((37.62 * Math.PI) / 180);
 const M_PER_DEG_LAT = 110540;
 /** [경도, 위도] → 평면 미터 좌표 [x, y] */
 const toMeters = ([lng, lat]) => [lng * M_PER_DEG_LNG, lat * M_PER_DEG_LAT];
-
-/** LineString / MultiLineString 을 [선[좌표]] 형태로 통일 */
-const linesOf = (g) => (g?.type === 'LineString' ? [g.coordinates] : g?.type === 'MultiLineString' ? g.coordinates : []);
-
-/** 선의 길이 기준 중간점 [경도, 위도] (꼭짓점 평균보다 선 위에 정확히 놓인다) */
-function lineMidpoint(line) {
-  const lens = [];
-  let total = 0;
-  for (let i = 1; i < line.length; i++) {
-    const [ax, ay] = toMeters(line[i - 1]);
-    const [bx, by] = toMeters(line[i]);
-    const d = Math.hypot(bx - ax, by - ay);
-    lens.push(d);
-    total += d;
-  }
-  let half = total / 2;
-  for (let i = 0; i < lens.length; i++) {
-    if (half <= lens[i]) {
-      const t = lens[i] ? half / lens[i] : 0;
-      return [line[i][0] + t * (line[i + 1][0] - line[i][0]), line[i][1] + t * (line[i + 1][1] - line[i][1])];
-    }
-    half -= lens[i];
-  }
-  return line[0];
-}
-
-/** 점 p 와 선분 a-b 사이의 거리(m) */
-function distToSegmentM(p, a, b) {
-  const [px, py] = toMeters(p);
-  const [ax, ay] = toMeters(a);
-  const [bx, by] = toMeters(b);
-  const dx = bx - ax;
-  const dy = by - ay;
-  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy || 1)));
-  return Math.hypot(px - ax - t * dx, py - ay - t * dy);
-}
-
-/**
- * 도로중심선에 파생 속성을 붙인다. (원본 속성은 그대로 두고, 이 스크립트가 만든 값만 추가)
- *   matched_rn   : 가까운 도로명주소 도로의 도로명 (없으면 '')
- *   complex_name : 단지 안 도로이면 단지 이름, 아니면 ''
- *   in_complex   : 아파트 단지 영역 안에 있고 도로명이 없는 구간이면 true
- *                  (도로명이 붙은 구간은 단지를 지나가는 공공 도로로 보고 제외)
- *   school_name  : 학교 안 도로이면 학교 시설명, 아니면 ''
- *   in_school    : 학교 부지 안에 있고 도로명이 없는 구간이면 true (단지 내 도로가 우선)
- */
-function enrichCenterlines(centerlines, namedRoads, apartments, schools) {
-  // 도로명 선분을 미리 펼쳐 두고, 바운딩 박스로 빠르게 걸러낸다
-  const segments = [];
-  for (const f of namedRoads.features) {
-    const rn = (f.properties?.rn || '').trim();
-    if (!rn) continue;
-    for (const line of linesOf(f.geometry)) {
-      for (let i = 1; i < line.length; i++) segments.push({ a: line[i - 1], b: line[i], rn });
-    }
-  }
-  // 10m ≈ 경도 0.000113°, 위도 0.00009°. 넉넉하게 0.0002° 로 1차 필터
-  const PAD = 0.0002;
-
-  // 단지마다 "단지 내 도로가 하나라도 있는지" 표시 (아래에서 찾으면 true 로 바꾼다)
-  for (const a of apartments?.features ?? []) a.properties.has_inner_roads = false;
-
-  let named = 0;
-  let inComplex = 0;
-  let inSchool = 0;
-  for (const f of centerlines.features) {
-    const line = linesOf(f.geometry)[0];
-    if (!line || line.length < 2) continue;
-    const mid = lineMidpoint(line);
-
-    let best = { d: Infinity, rn: '' };
-    for (const s of segments) {
-      if (mid[0] < Math.min(s.a[0], s.b[0]) - PAD || mid[0] > Math.max(s.a[0], s.b[0]) + PAD) continue;
-      if (mid[1] < Math.min(s.a[1], s.b[1]) - PAD || mid[1] > Math.max(s.a[1], s.b[1]) + PAD) continue;
-      const d = distToSegmentM(mid, s.a, s.b);
-      if (d < best.d) best = { d, rn: s.rn };
-    }
-    const matchedRn = best.d <= NAME_MATCH_MAX_M ? best.rn : '';
-
-    const complex = matchedRn ? null : apartments?.features.find((a) => inPolygon(mid, a.geometry));
-    const school = matchedRn || complex ? null : schools?.features.find((s) => inPolygon(mid, s.geometry));
-
-    f.properties = {
-      ...f.properties,
-      matched_rn: matchedRn,
-      in_complex: Boolean(complex),
-      complex_name: complex ? complex.properties?.name || '' : '',
-      in_school: Boolean(school),
-      school_name: school ? school.properties?.dgm_nm || '' : '',
-    };
-    if (matchedRn) named++;
-    if (school) inSchool++;
-    if (complex) {
-      inComplex++;
-      complex.properties.has_inner_roads = true;
-    }
-  }
-  console.log(`  도로명 붙음: ${named}건 / 단지 내 도로: ${inComplex}건 / 학교 안 도로: ${inSchool}건 / 전체 ${centerlines.features.length}건`);
-
-  // 단지(필지) 단위로 센다. 이름으로 묶으면 같은 이름의 여러 필지·이름 없는 단지가 합쳐져 적게 나온다.
-  const withRoads = (apartments?.features ?? []).filter((a) => a.properties.has_inner_roads).length;
-  console.log(`  단지 내 도로가 있는 단지: ${withRoads}곳 / ${apartments?.features.length ?? 0}곳 (나머지 단지는 원본에 단지 내 도로가 없음)`);
-  return centerlines;
-}
 
 // ---------------------------------------------------------------------
 // 실행
@@ -727,10 +615,6 @@ async function main() {
 
   const buildings = await fetchAllPages(BUILDING_LAYER, '건물');
   await save('buildings.geojson', buildings);
-
-  // 도로명주소 도로: 필수. 중심선에 이름을 붙이는 데 쓰고, 중심선이 실패하면 이것을 그대로 그린다
-  await sleep(REQUEST_INTERVAL_MS);
-  const namedRoads = await fetchAllPages(ROAD_LAYER, '도로명');
 
   // 경계는 실패해도 건물 결과는 이미 저장되어 있으므로 경고만 남긴다
   await sleep(REQUEST_INTERVAL_MS);
@@ -781,34 +665,15 @@ async function main() {
     await save('school_facilities.geojson', schoolFacilities);
   }
 
-  // 도로중심선 (단지 판정에 아파트 영역이 필요하므로 영역 다음에 처리)
-  await sleep(REQUEST_INTERVAL_MS);
-  let roads;
-  let roadSource;
-  try {
-    const centerlines = await fetchAllPages(CENTERLINE_LAYER, '도로중심선');
-    roads = enrichCenterlines(centerlines, namedRoads, areas['apartments.geojson'], areas['schools.geojson']);
-    roadSource = `도로중심선(${CENTERLINE_LAYER}) + 도로명`;
-    // 단지마다 has_inner_roads 가 붙었으므로 아파트 단지 파일을 다시 저장
-    if (areas['apartments.geojson']) await save('apartments.geojson', areas['apartments.geojson']);
-  } catch (e) {
-    console.warn(`  ! 도로중심선 수집 실패: ${mask(e.message)} — 도로명주소 도로로 대신 저장합니다.`);
-    roads = namedRoads;
-    roadSource = `도로명주소 도로(${ROAD_LAYER})`;
-  }
-  await save('roads.geojson', roads);
-
   const seconds = ((Date.now() - started) / 1000).toFixed(1);
   console.log('\n========== 결과 ==========');
   console.log(`public/data/vworld/buildings.geojson : ${buildings.features.length}개`);
-  console.log(`public/data/vworld/roads.geojson     : ${roads.features.length}개 — ${roadSource}`);
   console.log(`public/data/vworld/boundary.geojson  : ${boundary ? `${boundary.features.length}개` : '저장 안 함'}`);
   console.log(`public/data/vworld/admin_dong.geojson: ${adminDong ? `${adminDong.features.length}개` : '저장 안 함'}`);
   console.log(`public/data/vworld/school_facilities.geojson: ${schoolFacilities ? `${schoolFacilities.features.length}개` : '저장 안 함'}`);
   for (const [file, fc] of Object.entries(areas)) {
     console.log(`public/data/vworld/${file.padEnd(18)}: ${fc === null ? '저장 안 함' : `${fc.features.length}개`}`);
   }
-  console.log(`첫 도로 geometry.type  : ${roads.features[0]?.geometry?.type ?? '(도로 없음)'}`);
   console.log(`실제 사용한 size       : ${pageSize}`);
   console.log(`소요 시간              : ${seconds}초`);
 }

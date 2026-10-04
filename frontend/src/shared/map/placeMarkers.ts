@@ -1,15 +1,15 @@
 // ---------------------------------------------------------------------
-// 상가정보 가게 핀: 건물 단위 묶기(A) + 줌에 따른 화면 묶기(C)
+// 가게 핀: 건물 단위 묶기(A) + 줌에 따른 화면 묶기(C)
 //
-// - 상가정보 좌표는 가게 칸이 아니라 건물 단위라, 같은 건물 가게는 한 핀으로 묶는다.
+// - 가게 좌표(상가정보)는 가게 칸이 아니라 건물 단위라, 같은 건물 가게는 한 핀으로 묶는다.
 //     가게 1곳  → 작은 점. 누르면 바로 그 가게(2차 탭)
 //     가게 여럿 → 숫자 핀. 누르면 층별 목록이 먼저 뜨고, 목록에서 가게를 골라야 2차 탭이 열린다
 // - 줌을 줄이면 화면에서 가까운 건물끼리 숫자 묶음으로 합친다. 누르면 그 묶음이 보이게 확대한다.
 //   CLUSTER_MAX_ZOOM 이상에서는 묶지 않는다.
 // ---------------------------------------------------------------------
 import L from 'leaflet';
-import { subCategoryOf, type SubCategory } from '../../../core/categories/subCategories';
-import type { SbizStore } from './stores';
+import { subCategoryById, type SubCategory } from '../../core/categories/subCategories';
+import { floorLabel, type MapStore } from '../../core/supabase/stores';
 
 /** 이 줌부터는 건물끼리 묶지 않고 건물 핀을 그대로 보여준다 */
 export const CLUSTER_MAX_ZOOM = 18;
@@ -22,7 +22,7 @@ interface BuildingGroup {
   lng: number;
   /** 건물명, 없으면 주소 */
   name: string;
-  places: SbizStore[];
+  places: MapStore[];
 }
 
 interface PlaceCluster {
@@ -34,8 +34,8 @@ interface PlaceCluster {
 }
 
 /** 같은 건물(건물관리번호, 없으면 같은 좌표)의 가게를 하나로 묶는다 */
-export function groupByBuilding(places: SbizStore[]): BuildingGroup[] {
-  const byKey = new Map<string, SbizStore[]>();
+export function groupByBuilding(places: MapStore[]): BuildingGroup[] {
+  const byKey = new Map<string, MapStore[]>();
   for (const place of places) {
     const key = place.buildingId || `${place.lat.toFixed(6)},${place.lng.toFixed(6)}`;
     const list = byKey.get(key);
@@ -72,24 +72,25 @@ export function clusterGroups(map: L.Map, groups: BuildingGroup[]): PlaceCluster
   }));
 }
 
-/** 가장 많은 가게가 속한 묶음 (핀 색) */
-function dominantGroup(places: SbizStore[]): SubCategory['group'] {
-  const counts = new Map<SubCategory['group'], number>();
-  for (const p of places) {
-    const g = subCategoryOf(p)?.group ?? 'etc';
-    counts.set(g, (counts.get(g) ?? 0) + 1);
-  }
-  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'etc';
+/** 한 건물에 여러 묶음이 섞여 있을 때 핀 색으로 고르는 순서: 음식점 → 카페·베이커리 → 편의점 → 그 외 */
+const GROUP_PRIORITY: SubCategory['group'][] = ['restaurant', 'cafe', 'convenience', 'etc'];
+
+/** 건물 핀 색: 가게 중 우선순위가 가장 높은 묶음 */
+function pinGroup(places: MapStore[]): SubCategory['group'] {
+  const groups = new Set(places.map((p) => subCategoryById(p.typeId)?.group ?? 'etc'));
+  return GROUP_PRIORITY.find((g) => groups.has(g)) ?? 'etc';
 }
 
-/** 가게 1곳 = 작은 점 / 건물에 여럿 = 숫자 핀 / 건물 여럿 묶음 = 큰 숫자 원 */
+/** 가게 1곳 = 작은 점 / 건물에 여럿 = 숫자 핀 / 건물 여럿 묶음 = 큰 숫자 원. 색은 모두 pinGroup 우선순위 */
 export function clusterIcon(cluster: PlaceCluster, selected: boolean): L.DivIcon {
   const sel = selected ? ' is-selected' : '';
   if (cluster.groups.length > 1) {
-    return L.divIcon({ className: 'pl-wrap', html: `<span class="pl-cluster${sel}">${cluster.count}</span>`, iconSize: [36, 36], iconAnchor: [18, 18] });
+    // 묶음 색도 같은 우선순위: 묶인 가게 중 음식점이 하나라도 있으면 음식점 색
+    const color = `pl--${pinGroup(cluster.groups.flatMap((g) => g.places))}`;
+    return L.divIcon({ className: 'pl-wrap', html: `<span class="pl-cluster ${color}${sel}">${cluster.count}</span>`, iconSize: [36, 36], iconAnchor: [18, 18] });
   }
   const group = cluster.groups[0];
-  const color = `pl--${dominantGroup(group.places)}`;
+  const color = `pl--${pinGroup(group.places)}`;
   if (group.places.length === 1) {
     return L.divIcon({ className: 'pl-wrap', html: `<span class="pl-dot ${color}${sel}"></span>`, iconSize: [18, 18], iconAnchor: [9, 9] });
   }
@@ -100,7 +101,7 @@ export function clusterIcon(cluster: PlaceCluster, selected: boolean): L.DivIcon
  * 건물 가게 목록 (층별). 지하 → 1층 → 위층 순, 층 정보가 없는 가게는 맨 아래.
  * textContent 로 넣어서 가게 이름이 HTML 로 해석되지 않는다.
  */
-export function buildingListElement(group: BuildingGroup, onPick: (place: SbizStore) => void): HTMLElement {
+export function buildingListElement(group: BuildingGroup, onPick: (place: MapStore) => void): HTMLElement {
   const root = document.createElement('div');
   root.className = 'pl-list';
 
@@ -113,11 +114,11 @@ export function buildingListElement(group: BuildingGroup, onPick: (place: SbizSt
   head.append(title, count);
   root.append(head);
 
-  const byFloor = new Map<number | null, SbizStore[]>();
+  const byFloor = new Map<number | null, MapStore[]>();
   for (const p of group.places) {
-    const list = byFloor.get(p.floorNumber);
+    const list = byFloor.get(p.floor);
     if (list) list.push(p);
-    else byFloor.set(p.floorNumber, [p]);
+    else byFloor.set(p.floor, [p]);
   }
   const floors = [...byFloor.keys()].sort((a, b) => (a === null ? 1 : b === null ? -1 : a - b));
 
@@ -126,16 +127,16 @@ export function buildingListElement(group: BuildingGroup, onPick: (place: SbizSt
   for (const floor of floors) {
     const section = document.createElement('section');
     const label = document.createElement('h4');
-    label.textContent = floor === null ? '층 정보 없음' : floor < 0 ? `지하 ${-floor}층` : `${floor}층`;
+    label.textContent = floor === null ? '층 정보 없음' : floorLabel(floor);
     section.append(label);
     for (const place of byFloor.get(floor)!.sort((a, b) => a.name.localeCompare(b.name, 'ko'))) {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = `pl-list__item pl--${subCategoryOf(place)?.group ?? 'etc'}`;
+      button.className = `pl-list__item pl--${subCategoryById(place.typeId)?.group ?? 'etc'}`;
       const name = document.createElement('span');
       name.textContent = place.name;
       const kind = document.createElement('small');
-      kind.textContent = place.small || place.middle;
+      kind.textContent = place.industry;
       button.append(name, kind);
       button.addEventListener('click', () => onPick(place));
       section.append(button);

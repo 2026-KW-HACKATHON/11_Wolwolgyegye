@@ -7,14 +7,6 @@ import type { Feature } from 'geojson';
 type Props = Record<string, unknown>;
 const propsOf = (feature: Feature): Props => (feature.properties ?? {}) as Props;
 
-/** 도로 등급 기준 (normalizeRoad 에서 사용). 도로폭이 있으면 폭으로, 없으면 차로수로 판단한다. */
-const ROAD_GRADE_RULES = {
-  majorMinWidthM: 20, // 폭 20m 이상 → 큰 도로
-  mediumMinWidthM: 10, // 폭 10m 이상 → 중간 도로
-  majorMinLanes: 4, // (폭 정보가 없을 때) 4차로 이상 → 큰 도로
-  mediumMinLanes: 2, // (폭 정보가 없을 때) 2차로 이상 → 중간 도로
-};
-
 /** 앞뒤 공백을 지운 문자열. null/undefined 는 빈 문자열 */
 const clean = (v: unknown): string => (v === null || v === undefined ? '' : String(v).trim());
 
@@ -48,64 +40,6 @@ export function normalizeBuilding(feature: Feature): BuildingInfo {
   const floors = Number.isFinite(floorsNum) && floorsNum > 0 ? floorsNum : null;
 
   return { name, address, floors };
-}
-
-export type RoadGrade = 'major' | 'medium' | 'minor' | 'complex' | 'school';
-
-export interface RoadInfo {
-  name: string;
-  grade: RoadGrade;
-  widthM: number | null;
-  lanes: number | null;
-  complexName: string;
-  schoolName: string;
-}
-
-/**
- * 도로 feature → { name, grade, widthM, lanes, complexName, schoolName }
- *
- * 두 가지 형태의 도로 데이터를 모두 받는다.
- *  (1) 도로중심선 (평소): 도로폭 rvwd, 차로수 rdln 이 있다.
- *      - 수집 스크립트가 붙인 in_complex 가 true 이면 'complex' (아파트 단지 내 도로, 추정)
- *      - in_school 이 true 이면 'school' (학교 부지 안 도로, 추정)
- *      - 폭(또는 차로수)으로 ROAD_GRADE_RULES 에 따라 등급을 정한다.
- *      - 이름은 수집 스크립트가 가까운 도로명주소 도로에서 가져온 matched_rn (추정),
- *        없으면 노선명(name, 예: 동부간선도로)
- *  (2) 도로명주소 도로 (중심선 수집 실패 시): 폭 정보가 없어서
- *      도로명 끝 글자로 "추정"한다. "대로"→major, "길"→minor, 그 외 "로"→medium, 판단 불가→minor
- *  규칙을 바꾸려면 이 함수와 ROAD_GRADE_RULES 만 고치면 된다.
- */
-export function normalizeRoad(feature: Feature): RoadInfo {
-  const p = propsOf(feature);
-  const name = clean(p.matched_rn) || clean(p.name) || clean(p.rn);
-
-  // rvwd("6.500000000000000"), rdln("2.000000000000000") 은 문자열로 오므로 숫자로 변환.
-  // 0 이나 빈 값은 "정보 없음"으로 본다.
-  const widthM = Number.parseFloat(clean(p.rvwd)) || null;
-  const lanes = Number.parseInt(clean(p.rdln), 10) || null;
-
-  let grade: RoadGrade;
-  if (p.in_complex === true) {
-    grade = 'complex';
-  } else if (p.in_school === true) {
-    grade = 'school';
-  } else if (widthM !== null) {
-    if (widthM >= ROAD_GRADE_RULES.majorMinWidthM) grade = 'major';
-    else if (widthM >= ROAD_GRADE_RULES.mediumMinWidthM) grade = 'medium';
-    else grade = 'minor';
-  } else if (lanes !== null) {
-    if (lanes >= ROAD_GRADE_RULES.majorMinLanes) grade = 'major';
-    else if (lanes >= ROAD_GRADE_RULES.mediumMinLanes) grade = 'medium';
-    else grade = 'minor';
-  } else {
-    // (2) 폭·차로수가 없는 데이터: 도로명 끝 글자로 추정
-    grade = 'minor';
-    if (name.endsWith('대로')) grade = 'major'; // "대로"도 "로"로 끝나므로 먼저 검사해야 한다
-    else if (name.endsWith('길')) grade = 'minor';
-    else if (name.endsWith('로')) grade = 'medium';
-  }
-
-  return { name, grade, widthM, lanes, complexName: clean(p.complex_name), schoolName: clean(p.school_name) };
 }
 
 export type SchoolFacilityKind = 'classroom' | 'gym' | 'cafeteria' | 'dorm' | 'etc';
@@ -153,7 +87,6 @@ export function normalizeSchoolFacility(feature: Feature): SchoolFacilityInfo {
 export interface AreaInfo {
   title: string;
   lines: string[];
-  hasInnerRoads?: boolean | null;
 }
 
 /** 강·하천: 하천명, 하천 등급(국가하천/지방하천) */
@@ -178,10 +111,7 @@ export function normalizeSchool(feature: Feature): AreaInfo {
   return { title: clean(p.dgm_nm) || '학교', lines: [level === '미분류' ? '' : level] };
 }
 
-/**
- * 아파트 단지(수집 스크립트가 추정해서 만든 영역): 대표 단지명, 동 수, 최고 층수, 필지 주소
- *   hasInnerRoads: true(단지 내 도로 있음) / false(없음) / null(판단 정보 없음 — 도로중심선 수집 실패 등)
- */
+/** 아파트 단지(수집 스크립트가 추정해서 만든 영역): 대표 단지명, 동 수, 최고 층수, 필지 주소 */
 export function normalizeApartment(feature: Feature): AreaInfo {
   const p = propsOf(feature);
   // 수집 스크립트가 숫자로 저장하지만, 출처가 바뀌어 문자열로 와도 되도록 Number() 로 변환
@@ -190,10 +120,5 @@ export function normalizeApartment(feature: Feature): AreaInfo {
   const summary = [count ? `아파트 ${count}개 동` : '', maxFloors ? `최고 ${maxFloors}층` : '']
     .filter(Boolean)
     .join(', ');
-  const hasInnerRoads = typeof p.has_inner_roads === 'boolean' ? p.has_inner_roads : null;
-  return {
-    title: clean(p.name) || '아파트 단지',
-    lines: [summary, clean(p.address), hasInnerRoads === false ? '단지 내 도로 데이터 없음' : ''],
-    hasInnerRoads,
-  };
+  return { title: clean(p.name) || '아파트 단지', lines: [summary, clean(p.address)] };
 }

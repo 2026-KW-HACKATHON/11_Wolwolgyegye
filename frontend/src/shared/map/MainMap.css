@@ -10,33 +10,26 @@
   --building-fill: #e2d5c3;
   --building-stroke: #c9b8a1;
   --building-hover: #e9b36a;
-  /* 도로 (등급별) */
+  /* 도로 (등급별, OpenStreetMap) */
   --road-major: #ffffff;
-  --road-medium: #fdfaf3;
-  --road-minor: #d6cab8;
-  --road-complex: #e1c6a8; /* 아파트 단지 내 도로: 단지 베이지 위에서 보이는 진한 베이지 */
-  --road-school: #e8b3c1; /* 학교 안 도로: 학교 분홍 위에서 보이는 진한 분홍 */
-  /* 학교 건물 종류 */
-  --school-bld-class: #e6adbb; /* 교사·강의동 */
-  --school-bld-gym: #d98a9f; /* 체육관·강당 */
-  --school-bld-food: #e8c79a; /* 급식실·식당 */
-  --school-bld-dorm: #bfd2ad; /* 기숙사 */
-  --school-bld-etc: #d3c7b8; /* 기타 */
+  --road-medium: #fffdf8;
+  --road-minor: #fbf7f0;
+  --road-service: #f7f1e7;
+  --road-path: #cbbda9;
+  /* 철도 (바탕 선 + 흰 점선) */
+  --rail-base: #9c9087;
+  --rail-dash: #ffffff;
   /* 영역 (건물·도로 아래에 깔리는 면) */
   --mountain-fill: #d4e2c9; /* 산: 동네 소식 초록 계열 */
   --water-fill: #c6dbe2; /* 강·하천 */
-  --school-fill: #f6d7de; /* 학교: 원데이클래스 분홍 */
-  --school-stroke: #dfa3b2;
-  --apartment-fill: #f3e3d2; /* 아파트 단지: 공간대여 베이지 */
-  --apartment-stroke: #d8b896;
-  --apartment-noroad-fill: #ecd3b4; /* 단지 내 도로가 없는 아파트 단지 (테스트용 구분, 학교 분홍과 헷갈리지 않게 베이지 계열) */
-  --apartment-noroad-stroke: #c4955f;
+  --school-fill: #e3d9c9; /* 학교: 바탕보다 조금 진하게 (아파트보다 한 단계 더) */
+  --apartment-fill: #e8e0d2; /* 아파트 단지: 바탕보다 조금 진하게 */
   /* 경계 */
   --admin-dong: #802d40; /* 월계1동(행정동): 브랜드 색 */
-  /* 상가정보 가게 점 (그 외 카테고리 묶음별) */
-  --place-restaurant: #802d40; /* 음식점: 브랜드 자주 */
-  --place-cafe: #a9741c; /* 카페: 호박색 */
-  --place-convenience: #245c4a; /* 편의점: 동네 초록 */
+  /* 가게 점 (그 외 카테고리 묶음별). 한 건물에 여러 묶음이 있으면 음식점 → 카페 → 편의점 → 그 외 순으로 색을 고른다 */
+  --place-restaurant: #d8473f; /* 음식점: 빨강 */
+  --place-cafe: #e2a514; /* 카페·베이커리: 노랑 */
+  --place-convenience: #2f6fd0; /* 편의점: 파랑 */
   --place-etc: #8a7b6e; /* 그 외: 갈회색 */
 
   position: absolute;
@@ -258,16 +251,16 @@
   font-weight: 800;
 }
 
-/* 여러 건물 묶음 (줌을 줄였을 때): 누르면 확대 */
+/* 여러 건물 묶음 (줌을 줄였을 때): 누르면 확대. 색은 건물 핀과 같은 우선순위 묶음 색 */
 .pl-cluster {
   display: grid;
   place-items: center;
   width: 36px;
   height: 36px;
-  border: 3px solid color-mix(in srgb, var(--color-primary) 30%, #ffffff);
+  border: 3px solid color-mix(in srgb, var(--pl-color) 35%, #ffffff);
   border-radius: 50%;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
+  background: var(--pl-color);
+  color: #ffffff;
   box-shadow: 0 2px 8px rgba(43, 31, 23, 0.35);
   font-size: 12px;
   font-weight: 800;

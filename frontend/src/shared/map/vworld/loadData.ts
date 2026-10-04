@@ -6,7 +6,9 @@ import { AREA_LAYERS, DATA_URLS, type AreaKey } from './config';
 
 interface MapData {
   buildings: FeatureCollection;
-  roads: FeatureCollection;
+  /** 도로·철도 (OpenStreetMap). 아직 받지 않았으면 null */
+  roads: FeatureCollection | null;
+  railways: FeatureCollection | null;
   adminDong: FeatureCollection | null;
   schoolFacilities: FeatureCollection | null;
   areas: Record<AreaKey, FeatureCollection | null>;
@@ -26,25 +28,26 @@ async function fetchGeoJSON(url: string): Promise<FeatureCollection | null> {
 }
 
 /**
- * 지도에 필요한 데이터를 모두 읽어 { buildings, roads, adminDong, schoolFacilities, areas } 로 돌려준다.
- * buildings, roads 는 필수. 나머지와 areas 의 각 항목은 없으면 null 이다.
+ * 지도에 필요한 데이터를 모두 읽어 { buildings, roads, railways, adminDong, schoolFacilities, areas } 로 돌려준다.
+ * buildings 는 필수. 나머지와 areas 의 각 항목은 없으면 null 이다.
  *   areas = { water, mountain, school, apartment }
  * 필수 파일이 없으면 null 을 돌려준다. (안내문은 화면 컴포넌트가 띄운다)
  */
 export async function loadData(): Promise<MapData | null> {
-  const [buildings, roads, adminDong, schoolFacilities, ...areaList] = await Promise.all([
+  const [buildings, roads, railways, adminDong, schoolFacilities, ...areaList] = await Promise.all([
     fetchGeoJSON(DATA_URLS.buildings),
     fetchGeoJSON(DATA_URLS.roads),
+    fetchGeoJSON(DATA_URLS.railways),
     fetchGeoJSON(DATA_URLS.adminDong),
     fetchGeoJSON(DATA_URLS.schoolFacilities),
     ...AREA_LAYERS.map((a) => fetchGeoJSON(a.url)),
   ]);
 
-  if (!buildings || !roads) return null;
+  if (!buildings) return null;
 
   const areas = { water: null, mountain: null, school: null, apartment: null } as MapData['areas'];
   AREA_LAYERS.forEach((a, i) => {
     areas[a.key] = areaList[i];
   });
-  return { buildings, roads, adminDong, schoolFacilities, areas };
+  return { buildings, roads, railways, adminDong, schoolFacilities, areas };
 }
