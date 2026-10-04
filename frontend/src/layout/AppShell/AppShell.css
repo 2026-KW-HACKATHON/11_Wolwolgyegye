@@ -1,38 +1,119 @@
 .app-shell {
   display: flex;
-  flex-direction: column;
   height: 100vh;
   height: 100dvh;
-  background: #ffffff;
-}
-
-/* 콘텐츠 슬롯. 남는 높이를 모두 차지하고 내용이 길면 이 안에서만 스크롤 */
-.app-shell__main {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 16px;
-}
-
-.app-shell[data-layout='compact-landscape'] .app-shell__main {
-  padding: 8px 16px;
-}
-
-.app-shell[data-layout='desktop'] .app-shell__main {
-  padding: 24px;
-}
-
-/* 지도 홈은 콘텐츠 슬롯 전체를 사용하고, 피드만 내부에서 스크롤한다. */
-.app-shell__main--recommend {
   overflow: hidden;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+.app-shell[data-layout='portrait'] {
+  flex-direction: column;
+}
+
+.app-shell[data-layout='mobile-landscape'],
+.app-shell[data-layout='wide'] {
+  flex-direction: row;
+}
+
+/* 지도 + 그 위에 올라오는 탭·버튼 영역. --inset-* 은 탭이 가리고 있는 크기 */
+.app-stage {
+  --inset-top: 0px;
+  --inset-right: 0px;
+  --inset-bottom: 0px;
+  --inset-left: 0px;
+  --overlay-ease: 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 1차 탭 안에 들어가는 각 카테고리 화면. 화면 폭이 아니라 탭 폭에 맞춰 배치되도록 컨테이너로 둔다 (@container) */
+.panel-page {
+  container-type: inline-size;
+  padding: var(--space-4);
+}
+
+.panel-page[data-page='recommend'] {
   padding: 0;
 }
 
-.app-shell__main--recommend > div {
-  height: 100%;
+/* ---- 지도 버튼 (그 외 / 내 위치): 보이는 지도의 우측 하단 ---- */
+.map-fabs {
+  position: absolute;
+  z-index: 10;
+  right: calc(var(--inset-right) + 12px);
+  bottom: calc(var(--inset-bottom) + 12px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  transition: right var(--overlay-ease), bottom var(--overlay-ease), opacity 0.2s;
 }
 
-.app-shell[data-layout='compact-landscape'] .app-shell__main--recommend,
-.app-shell[data-layout='desktop'] .app-shell__main--recommend {
-  padding: 0;
+.app-stage[data-panel-state='full'] .map-fabs {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.map-fab {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-neighborhood);
+  box-shadow: var(--shadow-float);
+  font-size: 24px;
+}
+
+.map-fab .icon {
+  display: block;
+}
+
+.map-fab[aria-expanded='true'] {
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+}
+
+.map-fab[aria-busy='true'] .icon {
+  animation: map-fab-pulse 1s ease-in-out infinite;
+}
+
+.map-fab:focus-visible {
+  outline: 3px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+@keyframes map-fab-pulse {
+  50% { opacity: 0.35; }
+}
+
+/* ---- 그 외 카테고리 한 줄 (모든 화면): 보이는 지도 위쪽, 얇게 ---- */
+.map-sub-bar {
+  position: absolute;
+  z-index: 10;
+  top: calc(env(safe-area-inset-top) + 8px);
+  right: var(--inset-right);
+  left: var(--inset-left);
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 12px 4px; /* 위아래는 칩 그림자가 잘리지 않을 만큼만 */
+  scrollbar-width: none;
+  transition: right var(--overlay-ease), left var(--overlay-ease);
+}
+
+.map-sub-bar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-fabs,
+  .map-sub-bar {
+    transition: none;
+  }
 }

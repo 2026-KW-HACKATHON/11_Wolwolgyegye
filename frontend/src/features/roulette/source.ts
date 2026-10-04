@@ -1,19 +1,14 @@
 import { fetchStoresByIds, getUserLocation } from '../../core/source/storeSource';
 import { walkMinutes } from '../../core/utils/geo';
-import { MOCK_ROULETTE_LINKS } from './mock';
 import type { RouletteStoreLink, RouletteStoreView } from './types';
 
 /**
  * 룰렛에서 뽑힌 메뉴로 추천 가게를 찾아오는 지점.
- *
- * 지금은 예시 데이터에서 메뉴 이름이 같은 연결을 골라 주지만, 백엔드가 준비되면
- * fetchLinksByMenu 안만 아래처럼 바꾸면 화면 코드는 그대로 둬도 된다.
- *
- *   const { data } = await supabase.from('roulette_store_links').select('*').eq('menu_name', menuName);
- *   return data;
+ * TODO(DB): 메뉴(store_menus)·메뉴 유형 연결. 그 전까지는 빈 목록이다. (가짜 데이터를 쓰지 않는다)
  */
 async function fetchLinksByMenu(menuName: string): Promise<RouletteStoreLink[]> {
-  return MOCK_ROULETTE_LINKS.filter((link) => link.menuName === menuName);
+  void menuName;
+  return [];
 }
 
 /** 메뉴를 파는 가게 목록에 가게 정보와 도보 시간을 붙여 돌려준다. 가게 정보가 없는 연결은 뺀다 */

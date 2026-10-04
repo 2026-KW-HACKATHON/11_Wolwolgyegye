@@ -564,7 +564,7 @@
   font-size: 0.83rem;
 }
 
-@media (min-width: 720px) {
+@container (min-width: 720px) {
   .rl-hero {
     flex-direction: row;
     align-items: flex-end;

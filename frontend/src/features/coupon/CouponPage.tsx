@@ -51,7 +51,7 @@ export default function CouponPage() {
   const showDetail = !!selected;
 
   // 목록 ↔ 적립판이 바뀔 때만 스크롤을 맞춘다 (적립판은 맨 위, 목록은 보던 위치로)
-  const scroller = () => document.querySelector<HTMLElement>('.app-shell__main');
+  const scroller = () => document.querySelector<HTMLElement>('.swipe-panel[data-panel="coupon"] .swipe-panel__body');
   const view = showDetail ? `store:${selectedId}` : 'list';
   const prevView = useRef(view);
   useLayoutEffect(() => {

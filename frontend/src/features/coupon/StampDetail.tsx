@@ -171,7 +171,7 @@ export default function StampDetail({ view: v, freshIndex, onBack, onRecord }: P
           <dl className="st-facts">
             <div><dt><Icon name="pin" /><span className="st-sr">주소</span></dt><dd>{v.store.address}</dd></div>
             <div><dt><ExtraIcon name="clock" /><span className="st-sr">영업시간</span></dt><dd>{v.store.businessHours}</dd></div>
-            <div><dt><ExtraIcon name="phone" /><span className="st-sr">전화</span></dt><dd>{v.store.phone} <small>예시 번호</small></dd></div>
+            <div><dt><ExtraIcon name="phone" /><span className="st-sr">전화</span></dt><dd>{v.store.phone}</dd></div>
             {origin && <div><dt><Icon name="compass" /><span className="st-sr">방향</span></dt><dd>기준점에서 {directionText(origin, v.store.location)}</dd></div>}
           </dl>
           {origin && <StoreMap key={v.storeId} store={v.store} origin={origin} />}

@@ -1,18 +1,6 @@
 /** 화면 전용 상수. 룰렛에 올리는 기본 메뉴와 빠른 구성은 앱이 정한 콘텐츠라 DB 가 아니라 여기 둔다 */
 import type { MenuPreset, RouletteMenu } from './types';
 
-/** 직접 추가한 메뉴에 돌아가며 입히는 칸 색 */
-export const WHEEL_COLORS = [
-  '#e9cf5e',
-  '#f0a35e',
-  '#8fc9a0',
-  '#dd7f6b',
-  '#9dc0ea',
-  '#b3a4d4',
-  '#c6dd8a',
-  '#ef9090',
-];
-
 /** 룰렛 구성을 한 번에 갈아끼우는 빠른 구성 */
 export const MENU_PRESETS: MenuPreset[] = [
   { key: 'all', label: '전체 메뉴' },

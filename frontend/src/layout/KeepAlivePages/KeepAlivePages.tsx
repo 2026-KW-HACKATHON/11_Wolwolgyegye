@@ -1,49 +1,66 @@
 import { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { ALL_PAGES, DEFAULT_LANDING_PATH } from '../../core/categories/categories';
-import { useActivePath } from '../../core/router/useActivePath';
+import { ALL_PANELS } from '../../core/categories/categories';
 import { PAGE_REGISTRY } from '../../features/pageRegistry';
+import SwipePanel, { type PanelState } from '../SwipePanel/SwipePanel';
 import { PageActiveContext } from './PageActiveContext';
 
-/**
- * 탭 상태 보존.
- * 한 번이라도 방문한 페이지는 언마운트하지 않고 display: none 으로 숨기기만 한다.
- * 그래서 다른 카테고리에 갔다가 돌아와도 각 페이지 내부 상태가 그대로 남는다.
- * (방문하지 않은 페이지는 마운트하지 않는다.)
- */
-export default function KeepAlivePages() {
-  const activePath = useActivePath();
-  const active = ALL_PAGES.find((p) => p.path === activePath) ?? null;
-  const activeId = active?.id ?? null;
+interface KeepAlivePagesProps {
+  activeId: string;
+  axis: 'x' | 'y';
+  /** 1차 탭이 올라오는 지도 영역 크기 (px) */
+  stage: { width: number; height: number };
+  states: Record<string, PanelState>;
+  onStateChange: (id: string, state: PanelState) => void;
+  onVisibleChange: (size: number) => void;
+}
 
+/** 가로 화면에서 반쯤 열린 탭이 지도 영역을 이 비율 이상 덮지 않게 한다 */
+const MAX_HALF_RATIO_X = 0.8;
+
+/**
+ * 카테고리마다 하나씩 있는 1차 탭(스와이프 탭)들.
+ * 한 번이라도 연 탭은 언마운트하지 않고 숨기기만 해서, 다른 카테고리에 갔다가 돌아와도 내용·열림 상태가 그대로 남는다.
+ */
+export default function KeepAlivePages({ activeId, axis, stage, states, onStateChange, onVisibleChange }: KeepAlivePagesProps) {
   const [visited, setVisited] = useState<string[]>([]);
 
   useEffect(() => {
-    if (activeId) {
-      setVisited((prev) => (prev.includes(activeId) ? prev : [...prev, activeId]));
-    }
+    setVisited((prev) => (prev.includes(activeId) ? prev : [...prev, activeId]));
   }, [activeId]);
-
-  if (!activeId) {
-    // 존재하지 않는 경로는 기본 화면으로
-    return <Navigate to={DEFAULT_LANDING_PATH} replace />;
-  }
 
   // 첫 방문 프레임에서도 바로 그려지도록, 아직 visited 에 없으면 함께 계산
   const mountedIds = visited.includes(activeId) ? visited : [...visited, activeId];
+  const full = axis === 'y' ? stage.height : stage.width;
 
   return (
     <>
       {mountedIds.map((id) => {
+        const meta = ALL_PANELS.find((p) => p.id === id);
         const Page = PAGE_REGISTRY[id];
-        if (!Page) return null;
+        if (!meta || !Page) return null;
         const isActive = id === activeId;
+        const half = axis === 'y'
+          ? Math.round(stage.height * meta.sheetHalf)
+          : Math.min(meta.panelHalf, Math.round(stage.width * MAX_HALF_RATIO_X));
         return (
-          <div key={id} style={{ display: isActive ? 'block' : 'none' }}>
+          <SwipePanel
+            key={id}
+            id={id}
+            axis={axis}
+            state={states[id] ?? 'half'}
+            onStateChange={(next) => onStateChange(id, next)}
+            half={half}
+            full={full}
+            active={isActive}
+            title={meta.name}
+            onVisibleChange={onVisibleChange}
+          >
             <PageActiveContext.Provider value={isActive}>
-              <Page />
+              <div className="panel-page" data-page={id}>
+                <Page />
+              </div>
             </PageActiveContext.Provider>
-          </div>
+          </SwipePanel>
         );
       })}
     </>

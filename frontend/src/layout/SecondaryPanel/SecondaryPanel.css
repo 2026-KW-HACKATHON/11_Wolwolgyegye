@@ -1,0 +1,107 @@
+.secondary-panel {
+  position: absolute;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow-y: auto;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-float);
+}
+
+/* 가로 화면: 지도 내 좌측 */
+.secondary-panel[data-layout='wide'],
+.secondary-panel[data-layout='mobile-landscape'] {
+  top: 12px;
+  bottom: 12px;
+  left: 12px;
+  width: min(340px, 42%);
+}
+
+/* 세로 화면: 지도 내 하단 (1차 탭 위에 겹친다) */
+.secondary-panel[data-layout='portrait'] {
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  max-height: 55%;
+}
+
+.secondary-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.secondary-panel__badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.secondary-panel__close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+  font-size: 16px;
+}
+
+.secondary-panel__name {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.04em;
+}
+
+.secondary-panel__category {
+  margin: 0;
+  color: var(--color-neighborhood);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.secondary-panel__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.secondary-panel__facts {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.secondary-panel__facts div {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.secondary-panel__facts dt {
+  flex: none;
+  width: 32px;
+  color: var(--color-text-muted);
+}
+
+.secondary-panel__facts dd {
+  margin: 0;
+}
+
+.secondary-panel__note {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-3);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: 12px;
+}

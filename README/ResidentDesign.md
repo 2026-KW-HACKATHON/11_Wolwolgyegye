@@ -20,14 +20,14 @@
 
 ## 코드 경계
 
-- `frontend/src/features/recommend/RecommendPage.tsx`: 피드·지도 상태, 선택 가게, 손잡이 드래그
+> 레이아웃 개편 이후: 지도는 앱 셸(`layout/AppShell`)이 모든 카테고리 뒤에 깔고, 동네 소식은 그 위에 올라오는 1차 탭 중 하나가 되었다.
+> 손잡이 드래그는 `layout/SwipePanel`, 배경 지도는 `shared/map/MainMap.tsx`·`MapPreview.tsx` 로 옮겼다.
+
+- `frontend/src/features/recommend/RecommendPage.tsx`: 동네 소식 1차 탭 내용 (가게 선택 시 지도에 표시)
 - `HomeScreen.tsx`: 기존 소스에서 소식 조회, 검색·분류, 바로가기
 - `FeedPostCard.tsx`: 주민이 읽는 게시글 카드와 가게 찜·지도 연결
 - `FeedArtwork.tsx`: 사진 없는 게시글의 설명용 SVG 일러스트
-- `NearbyScreen.tsx`: 지도 분류와 선택한 가게 안내
-- `KakaoMap.tsx`: 실제 카카오 SDK 로딩과 마커 연결
-- `MapPreview.tsx`: 키가 없는 개발 환경에서만 사용하는 배치 도식
-- `recommend.css`: 홈 전용 반응형 스타일
+- `recommend.css`: 동네 소식 전용 스타일 (탭 폭 기준 @container)
 
 공통 테마와 헤더·내비게이션 아이콘만 함께 다듬었다. 다른 팀원의 카테고리 폴더, 데이터 타입, DB 계층, 배포 설정은 바꾸지 않는다.
 

@@ -1,6 +1,6 @@
 import type { IconName } from '../../shared/icons';
 
-export interface OwnerMenuItem {
+interface OwnerMenuItem {
   key: string;
   label: string;
   desc: string;

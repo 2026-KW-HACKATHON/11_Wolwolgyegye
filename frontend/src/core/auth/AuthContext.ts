@@ -1,7 +1,7 @@
 import { createContext } from 'react';
 import type { AuthStatus } from './authTypes';
 
-export interface AuthContextValue {
+interface AuthContextValue {
   status: AuthStatus;
 }
 

@@ -32,38 +32,7 @@
 .ps-page :is(button, a, input, select):focus-visible { outline: 3px solid var(--ps-brand); outline-offset: 2px; }
 .ps-page .icon { font-size: 1.15em; }
 .ps-sr { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-
-/* --- 상단 --- */
-.ps-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 16px;
-  padding: 22px 20px;
-  margin-bottom: 18px;
-  border: 1px solid var(--ps-line);
-  border-radius: 24px;
-  background:
-    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ps-ink) 7%, transparent) 1px, transparent 1.5px) 0 0 / 14px 14px,
-    var(--ps-cream);
-}
 .ps-eyebrow { display: inline-flex; align-items: center; gap: 6px; color: var(--ps-blue); font-size: 0.82rem; font-weight: 800; }
-.ps-hero h1 { margin: 10px 0 8px; font-size: 1.5rem; line-height: 1.35; font-weight: 850; letter-spacing: -0.035em; }
-.ps-hero h1 em { color: var(--ps-blue); font-style: normal; }
-.ps-hero p { margin: 0; color: var(--ps-muted); font-size: 0.88rem; line-height: 1.65; word-break: keep-all; }
-.ps-hero p b { color: var(--ps-ink); }
-.ps-hero-stat {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: 18px;
-  background: var(--ps-paper);
-  box-shadow: var(--ps-shadow);
-}
-.ps-hero-stat span { color: var(--ps-muted); font-size: 0.82rem; font-weight: 700; }
-.ps-hero-stat b { color: var(--ps-blue); font-size: 1.9rem; font-weight: 900; letter-spacing: -0.03em; line-height: 1; }
-.ps-hero-stat small { margin-left: 2px; color: var(--ps-muted); font-size: 0.9rem; font-weight: 700; }
 
 /* --- 내 소속 --- */
 .ps-audience { margin-bottom: 14px; }
@@ -314,17 +283,7 @@
 .ps-presentation b { display: block; font-size: 0.86rem; line-height: 1.8; }
 .ps-presentation ~ .ps-secondary { margin-top: 20px; }
 
-/* --- 넓은 화면: 카드를 가로로 (왼쪽 가게·태그 / 오른쪽 혜택), 지도는 아래 전체 폭 --- */
-@media (max-width: 719px) {
-  .ps-hero-stat { display: none; }
-  .ps-hero { padding: 20px 18px; }
-}
-
-@media (min-width: 720px) {
-  .ps-hero { grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr); align-items: center; gap: 28px; padding: 28px 32px; }
-  .ps-hero h1 { font-size: 1.95rem; }
-  .ps-hero-stat { flex-direction: column; align-items: flex-start; gap: 8px; padding: 20px 22px; }
-  .ps-hero-stat b { font-size: 2.6rem; }
+@container (min-width: 720px) {
   .ps-colleges { flex-wrap: wrap; margin: 0; padding: 0; overflow: visible; }
   .ps-card {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
@@ -341,13 +300,6 @@
   .ps-ticket { align-self: stretch; }
   .ps-map-panel { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); align-items: start; gap: 18px; padding-top: 10px; }
   .ps-map-facts { padding-top: 6px; }
-}
-
-@media (max-height: 520px) and (orientation: landscape) {
-  .ps-hero { padding: 16px 20px; gap: 16px; }
-  .ps-hero h1 { margin: 6px 0; font-size: 1.35rem; }
-  .ps-hero-stat { padding: 12px 16px; }
-  .ps-hero-stat b { font-size: 1.8rem; }
 }
 
 @media (hover: hover) {

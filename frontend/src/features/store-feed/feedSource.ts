@@ -1,18 +1,22 @@
-import { MOCK_STORES } from '../../core/mock/stores';
-import { MOCK_SPACE_POSTS } from '../space-rental/mock';
-import { MOCK_CLASS_POSTS } from '../oneday-class/mock';
+import type { Store } from '../../core/types/place';
 import { FEED_CATEGORIES, type FeedKind, type FeedPost, type PostInput } from './types';
 
 export const POST_STORAGE_KEY = 'wol-owner-posts-v1';
 export const FEED_CHANGE_EVENT = 'wol-owner-posts-changed';
 type StoragePort = Pick<Storage, 'getItem' | 'setItem'>;
 
-export function findFeedStore(id: string) {
-  return MOCK_STORES.find((store) => store.id === id);
+/**
+ * 글에 연결할 수 있는 가게 목록. TODO(DB): stores 테이블 연결.
+ * 그 전까지는 가게가 없어서 글을 새로 올릴 수 없다. (가짜 가게를 쓰지 않는다)
+ */
+const FEED_STORES: Store[] = [];
+
+export function findFeedStore(id: string): Store | undefined {
+  return FEED_STORES.find((store) => store.id === id);
 }
 
-export function feedStores(kind: FeedKind) {
-  return MOCK_STORES.filter((store) => store.supports[kind]);
+export function feedStores(kind: FeedKind): Store[] {
+  return FEED_STORES.filter((store) => store.supports[kind]);
 }
 
 function text(value: unknown, max: number, required = true): value is string {
@@ -21,7 +25,7 @@ function text(value: unknown, max: number, required = true): value is string {
 function integer(value: unknown, min: number, max: number): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
 }
-export function validImage(value: string): boolean {
+function validImage(value: string): boolean {
   if (!value) return true;
   if (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(value)) return value.length <= 1_400_000;
   try { return new URL(value).protocol === 'https:' && value.length <= 2048; } catch { return false; }
@@ -52,7 +56,7 @@ export function validatePost(value: unknown, checkFuture = true): string | null 
 function browserStorage(): StoragePort {
   try { return window.localStorage; } catch { throw new Error('브라우저 저장소를 사용할 수 없어요. 저장소 설정을 확인해 주세요.'); }
 }
-export function readLocalPosts(storage?: StoragePort): FeedPost[] {
+function readLocalPosts(storage?: StoragePort): FeedPost[] {
   const raw = (storage ?? browserStorage()).getItem(POST_STORAGE_KEY);
   if (!raw) return [];
   let rows: unknown;
@@ -70,7 +74,8 @@ function persist(posts: FeedPost[], storage?: StoragePort) {
 
 /** Supabase 연결 시 이 모듈의 조회/저장 구현을 교체한다. 현재 데이터는 브라우저별로 분리된다. */
 export async function fetchFeedPosts(kind: FeedKind, storage?: StoragePort): Promise<FeedPost[]> {
-  return [...readLocalPosts(storage), ...MOCK_SPACE_POSTS, ...MOCK_CLASS_POSTS].filter((p) => p.kind === kind);
+  // TODO(DB): space_rentals · oneday_classes 테이블 연결. 지금은 이 브라우저에서 만든 글만 돌려준다.
+  return readLocalPosts(storage).filter((p) => p.kind === kind);
 }
 export async function saveFeedPost(input: PostInput, existingId?: string, storage?: StoragePort): Promise<FeedPost> {
   const error = validatePost(input);

@@ -46,7 +46,7 @@
 | `XxxPage.tsx` / `xxx.css` | 화면 |
 | `types.ts` | 이 카테고리의 데이터 규격 (= DB 테이블 한 행). `XxxView` = 행 + `store` (+ `walkMinutes`) |
 | `mock.ts` | 예시 데이터. `storeId`는 `core/mock/stores.ts`의 id와 맞춘다 |
-| `source.ts` | 데이터 조회 지점. 화면은 이 함수만 부른다. Supabase 연동 때 이 파일 안만 바꾼다 |
+| `source.ts` | 데이터 조회 지점. 화면은 이 함수만 부른다. 백엔드 연동 때 이 파일 안만 바꾼다 |
 | `constants.ts` | 화면 전용 상수 (정렬 옵션, 색, 프리셋 등). DB와 무관한 것만 |
 
 - 비율 값은 `0 ~ 1` 소수로 저장한다 (예: 할인 30% → `0.3`). 표시할 때만 `%`로 바꾼다.

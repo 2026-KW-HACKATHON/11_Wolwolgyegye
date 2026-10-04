@@ -1,0 +1,77 @@
+/* 그 외 카테고리: 지도 위쪽의 얇은 한 줄 (네이버 지도처럼) */
+.sub-cats {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sub-cats li {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+
+/* 묶음이 바뀌는 자리에 얇은 구분선 */
+.sub-cats__group-start::before {
+  content: '';
+  width: 1px;
+  height: 16px;
+  margin: 0 4px 0 1px;
+  background: var(--color-border);
+}
+
+.sub-cats__item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px 0 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: 0 1px 4px rgba(74, 50, 34, 0.12);
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+
+.sub-cats__num {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.sub-cats__count {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.sub-cats__item[aria-pressed='true'] {
+  border-color: var(--color-brand);
+  background: var(--color-brand-soft);
+  color: var(--color-brand);
+  font-weight: 800;
+}
+
+.sub-cats__item[aria-pressed='true'] .sub-cats__num {
+  background: var(--color-brand);
+  color: var(--color-on-primary);
+}
+
+.sub-cats__item:focus-visible {
+  outline: 3px solid var(--color-brand);
+  outline-offset: -3px;
+}

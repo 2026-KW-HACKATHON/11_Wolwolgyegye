@@ -1,4 +1,4 @@
-import { COLLEGES } from './mock';
+import { COLLEGES } from './colleges';
 import type { CollegeKey, PartnerAudience, PartnerBenefitDetails, PartnerIndustry, PartnerStoreMenuItem, PartnerStoreView } from './types';
 
 export const AUDIENCE_STORAGE_KEY = 'wolwol.partner.audience.v1';
@@ -45,11 +45,6 @@ export function estimatePrice(menu: PartnerStoreMenuItem, college: CollegeKey | 
   if (discount.type === 'percent' && discount.value <= 100) return menu.price - Math.floor(menu.price * discount.value / 100);
   if (discount.type === 'amount' && Number.isInteger(discount.value) && discount.value <= menu.price) return menu.price - discount.value;
   return null;
-}
-export function mapUrl(view: PartnerStoreView): string | null {
-  const { lat, lng } = view.store.location;
-  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
-  return `https://map.kakao.com/link/${view.dataMode === 'demo' ? 'map' : 'to'}/${encodeURIComponent(view.store.name)},${lat},${lng}`;
 }
 export function phoneUrl(view: PartnerStoreView): string | null {
   if (view.dataMode === 'demo') return null;

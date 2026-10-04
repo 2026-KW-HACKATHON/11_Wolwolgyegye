@@ -166,7 +166,7 @@ export default function StampList({ stamps, error, onRetry, missingId, query, on
       </section>
 
       <p className="st-demo-note">
-        가게·적립 현황은 예시예요. 시연으로 찍은 도장은 이 브라우저에만 저장돼요.
+        시연으로 찍은 도장은 이 브라우저에만 저장돼요.
         {hasDemo && <button type="button" onClick={onResetDemo}>시연 기록 지우기</button>}
       </p>
     </>

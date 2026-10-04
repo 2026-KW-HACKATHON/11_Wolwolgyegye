@@ -1,6 +1,5 @@
 import { fetchStoresByIds, getUserLocation } from '../../core/source/storeSource';
 import { walkMinutes } from '../../core/utils/geo';
-import { MOCK_MY_STAMPS, MOCK_STAMP_HISTORY, MOCK_STAMP_POLICIES } from './mock';
 import type { StampPolicy, StampTransaction, StampView } from './types';
 import { isStampPolicy, validBalance } from './policy';
 
@@ -26,8 +25,10 @@ const recordingStores = new Set<string>();
  * 추후 인증된 서버 응답을 StampPolicy로 매핑한다. 손님 화면에는 규칙 편집 UI를 두지 않는다.
  * 잘못된 규칙은 목록에서 제외하며 임의로 10개를 넣지 않는다.
  */
-export async function fetchStampPolicies(): Promise<StampPolicy[]> {
-  return MOCK_STAMP_POLICIES.filter(isStampPolicy).map((policy) => ({ ...policy }));
+async function fetchStampPolicies(): Promise<StampPolicy[]> {
+  // TODO(DB·로그인): 스탬프 정책 테이블은 로그인 단계에서 만든다. 그 전까지는 빈 목록이다.
+  const rows: StampPolicy[] = [];
+  return rows.filter(isStampPolicy).map((policy) => ({ ...policy }));
 }
 
 function isTransaction(value: unknown): value is StampTransaction {
@@ -56,7 +57,8 @@ const byNewest = (a: StampTransaction, b: StampTransaction) => Date.parse(b.crea
 
 export async function fetchStamps(): Promise<StampView[]> {
   const policies = await fetchStampPolicies();
-  const mine = new Map(MOCK_MY_STAMPS.map((m) => [m.storeId, m.count]));
+  // TODO(DB·로그인): 내 스탬프 잔액. 로그인 연결 전까지는 없다.
+  const mine = new Map<string, number>();
   const demo = loadDemo();
   const [stores, here] = await Promise.all([fetchStoresByIds(policies.map((p) => p.storeId)), getUserLocation()]);
   return policies.flatMap((policy) => {
@@ -69,7 +71,7 @@ export async function fetchStamps(): Promise<StampView[]> {
       const next = count + t.delta;
       if (Number.isSafeInteger(next) && next >= 0) count = next;
     });
-    const history = [...MOCK_STAMP_HISTORY.filter((t) => t.storeId === policy.storeId), ...mineDemo].sort(byNewest);
+    const history = [...mineDemo].sort(byNewest);
     return [{
       ...policy,
       store,
@@ -115,10 +117,6 @@ export async function recordDemoStamp(view: StampView, kind: 'earn' | 'redeem'):
 export async function resetStampDemo(): Promise<void> {
   try { window.localStorage.removeItem(DEMO_KEY); unsavedDemo = null; }
   catch { unsavedDemo = []; }
-}
-
-export function hasStampDemo(): boolean {
-  return loadDemo().length > 0;
 }
 
 /**

@@ -1,5 +1,5 @@
 export type FeedKind = 'space-rental' | 'oneday-class';
-export type FeedStatus = 'open' | 'closed';
+type FeedStatus = 'open' | 'closed';
 
 /** 게시글 규격. 공통 가게 정보는 core/types/place.ts의 Store를 storeId로 참조한다. */
 interface PostBase {
