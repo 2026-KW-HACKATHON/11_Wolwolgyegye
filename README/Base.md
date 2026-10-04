@@ -47,7 +47,7 @@
     ├─ tsconfig.json
     ├─ vite.config.ts
     ├─ scripts/fetch-vworld.js   (브이월드 → public/data/vworld/*.geojson 건물·경계·영역 수집. 실행: npm run fetch:vworld, 키는 .env.local)
-    ├─ scripts/fetch-osm.js      (OpenStreetMap → public/data/osm/ 도로·철도 수집. 실행: npm run fetch:osm, 키 없음)
+    ├─ scripts/fetch-osm.js      (OpenStreetMap → public/data/osm/ 도로·철도·지하철 노선·역·출구 수집. 실행: npm run fetch:osm, 키 없음)
     ├─ scripts/fetch-sbiz.js     (소상공인 상가정보 → scripts/.data/sbiz-stores.geojson, 월계1동 가게만. 실행: npm run fetch:sbiz)
     ├─ scripts/import-stores.js  (그 파일 → DB stores·store_types. 실행: npm run import:stores, 관리자 키는 .env.local)
     ├─ public/data/vworld/, public/data/osm/  (지도 배경 수집 결과. git 에 올린다. 화면은 이 파일만 읽고 키를 쓰지 않는다)
@@ -82,7 +82,7 @@
         │  └─ Splash/            Splash.tsx, Splash.css
         ├─ shared/
         │  └─ map/               MainMap.tsx/.css (배경 지도, Leaflet 1.9.4), StoreMap.tsx (위치 약도)
-        │     ├─ osm/            normalize.ts (도로·철도 속성 정규화)
+        │     ├─ osm/            normalize.ts (도로·철도·역 속성 정규화), drawTransit.ts (지하철 노선·역 이름표·출구)
         │     ├─ vworld/         mapExtent.ts (지도 범위 규칙), config.ts (스타일·레이어 순서), normalize.ts (속성 정규화),
         │     │                  loadData.ts, draw.ts, geometry.ts (월계1동 안쪽 판단)
         │     └─ placeMarkers.ts (가게 핀: 건물 묶기·줌 묶기·층별 목록)

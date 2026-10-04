@@ -11,6 +11,8 @@ const propsOf = (feature: Feature): Props => (feature.properties ?? {}) as Props
 const clean = (v: unknown): string => (v === null || v === undefined ? '' : String(v).trim());
 
 export interface BuildingInfo {
+  /** 건물관리번호 (가게 데이터의 건물관리번호와 같은 값. 가게가 있는 건물 찾기에 쓴다). 없으면 '' */
+  id: string;
   name: string;
   address: string;
   floors: number | null;
@@ -39,7 +41,7 @@ export function normalizeBuilding(feature: Feature): BuildingInfo {
   const floorsNum = Number.parseInt(clean(p.gro_flo_co), 10);
   const floors = Number.isFinite(floorsNum) && floorsNum > 0 ? floorsNum : null;
 
-  return { name, address, floors };
+  return { id: clean(p.bd_mgt_sn), name, address, floors };
 }
 
 export type SchoolFacilityKind = 'classroom' | 'gym' | 'cafeteria' | 'dorm' | 'etc';

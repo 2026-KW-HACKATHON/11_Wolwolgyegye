@@ -66,3 +66,60 @@ export function normalizeRailway(feature: Feature): RailwayInfo {
     underground: flag(p.tunnel) || Number.parseInt(clean(p.layer), 10) < 0,
   };
 }
+
+/** 노선 색이 없을 때 쓰는 색 */
+const DEFAULT_LINE_COLOUR = '#8a7b6e';
+const colourOf = (v: unknown): string => (/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(clean(v)) ? clean(v) : DEFAULT_LINE_COLOUR);
+
+/** 노선 칩에 넣을 짧은 이름: "1호선" → "1", "경춘선" → "경춘" */
+export const shortLineLabel = (label: string): string => (/^\d+호선$/.test(label) ? label.replace('호선', '') : label.replace(/선$/, '').slice(0, 2));
+
+export interface SubwayLineInfo {
+  /** 예: 1호선, 6호선, 경춘선 */
+  label: string;
+  colour: string;
+}
+
+/** 지하철 노선 feature → { label, colour } (수집 스크립트가 붙인 line_label / line_colour) */
+export function normalizeSubwayLine(feature: Feature): SubwayLineInfo {
+  const p = propsOf(feature);
+  return { label: clean(p.line_label) || clean(p.name), colour: colourOf(p.line_colour) };
+}
+
+export interface StationInfo {
+  name: string;
+  /** 이 역에 서는 노선 (수집 스크립트가 노선 경로의 정차 위치로 계산) */
+  lines: SubwayLineInfo[];
+}
+
+/** 노선 이름에서 계통·급행 같은 말을 뗀다: "1호선 경원·경부 계통" → "1호선" */
+const baseLineLabel = (label: string): string => label.trim().split(/\s+/)[0] ?? '';
+
+/** 역 feature → { name, lines }. 같은 노선이 계통별로 여러 번 들어 있어도 한 번만 */
+export function normalizeStation(feature: Feature): StationInfo {
+  const p = propsOf(feature);
+  const labels = clean(p.station_lines).split(';').filter(Boolean);
+  const colours = clean(p.station_colours).split(';');
+  const lines = new Map<string, SubwayLineInfo>();
+  labels.forEach((label, i) => {
+    const base = baseLineLabel(label);
+    if (base && !lines.has(base)) lines.set(base, { label: base, colour: colourOf(colours[i]) });
+  });
+  return { name: clean(p.name), lines: [...lines.values()] };
+}
+
+/** 노선 feature 의 묶음 이름 (역의 노선과 비교용) */
+export const subwayLineBase = (feature: Feature): string => baseLineLabel(normalizeSubwayLine(feature).label);
+
+export interface StationExitInfo {
+  /** 출구 번호 (예: 1, 2-1). 없으면 '' */
+  number: string;
+  /** 붙은 역의 feature id */
+  stationId: string;
+}
+
+/** 역 출구 feature → { number, stationId } */
+export function normalizeStationExit(feature: Feature): StationExitInfo {
+  const p = propsOf(feature);
+  return { number: clean(p.ref) || clean(p.name).replace(/[^0-9-]/g, ''), stationId: clean(p.station_id) };
+}

@@ -25,6 +25,10 @@ export const DATA_URLS = {
   /** 도로·철도는 OpenStreetMap (scripts/fetch-osm.js) */
   roads: `${OSM_DIR}/roads.geojson`,
   railways: `${OSM_DIR}/railways.geojson`,
+  /** 지하철 노선·역·출구도 OpenStreetMap */
+  subwayLines: `${OSM_DIR}/subway_lines.geojson`,
+  stations: `${OSM_DIR}/stations.geojson`,
+  stationExits: `${OSM_DIR}/station_exits.geojson`,
 };
 
 export type AreaKey = 'water' | 'mountain' | 'school' | 'apartment';
@@ -62,10 +66,16 @@ export interface MapStyles {
   ROAD_STYLES: Record<RoadGrade, RoadStyle>;
   BUILDING_STYLE: PathOptions;
   BUILDING_HOVER_STYLE: PathOptions;
+  /** 가게 핀이 있는 건물의 테두리 (색은 핀 색으로 채운다) */
+  BUILDING_OUTLINE_STYLE: PathOptions;
   AREA_STYLES: Record<AreaKey, PathOptions>;
   /** 철도: 바탕 선 위에 흰 점선을 겹쳐 그린다 */
   RAILWAY_BASE_STYLE: PathOptions;
   RAILWAY_DASH_STYLE: PathOptions;
+  /** 지하철 노선: 철도 위에 겹치는 얇은 선 (색은 노선 색) */
+  SUBWAY_LINE_STYLE: PathOptions;
+  /** 역 이름표와 출구를 잇는 점선 */
+  STATION_EXIT_LINK_STYLE: PathOptions;
   ADMIN_DONG_STYLE: PathOptions;
 }
 
@@ -98,6 +108,8 @@ export function createStyles(css: (name: string) => string): MapStyles {
     },
     RAILWAY_BASE_STYLE: { color: css('--rail-base'), weight: 4, opacity: 0.95, lineCap: 'butt' },
     RAILWAY_DASH_STYLE: { color: css('--rail-dash'), weight: 2, opacity: 1, dashArray: '8 8', lineCap: 'butt', interactive: false },
+    SUBWAY_LINE_STYLE: { weight: 3, opacity: 0.9, lineCap: 'round', lineJoin: 'round' },
+    STATION_EXIT_LINK_STYLE: { color: css('--station-exit-link'), weight: 1.5, opacity: 0.9, dashArray: '3 4', interactive: false },
     BUILDING_STYLE: {
       fillColor: css('--building-fill'),
       fillOpacity: 0.85,
@@ -106,6 +118,7 @@ export function createStyles(css: (name: string) => string): MapStyles {
       opacity: 0.9,
     },
     BUILDING_HOVER_STYLE: { fillColor: css('--building-hover'), fillOpacity: 0.95 },
+    BUILDING_OUTLINE_STYLE: { weight: 2, opacity: 1 },
     // 영역은 모두 테두리 없이 면만. 학교·아파트 단지는 바탕색보다 아주 조금 진한 색이다.
     AREA_STYLES: {
       water: { fillColor: css('--water-fill'), fillOpacity: 0.9, stroke: false },

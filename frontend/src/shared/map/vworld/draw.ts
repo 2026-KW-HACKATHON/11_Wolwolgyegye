@@ -111,26 +111,53 @@ export function drawRailways(ctx: DrawContext, railwaysGeoJSON: FeatureCollectio
   L.geoJSON(above, { renderer: ctx.featureRenderer, style: ctx.styles.RAILWAY_DASH_STYLE, interactive: false } as L.GeoJSONOptions).addTo(ctx.map);
 }
 
+/** 건물 테두리 색칠 (가게 핀이 있는 건물) */
+export interface BuildingOutlines {
+  /** 건물관리번호 → 테두리 색. 목록에 없는 건물은 원래 테두리로 돌아간다 */
+  set: (colors: Map<string, string>) => void;
+}
+
 /**
  * 일반 건물(도로명주소 건물)을 그린다.
  * hiddenBy 에 준 건물(학교 건물)과 겹치는 건물은 빼서, 같은 건물이 두 번 겹쳐 그려지지 않게 한다.
+ * 돌려주는 outlines 로 가게가 있는 건물의 테두리를 핀 색으로 칠한다.
  */
-export function drawBuildings(ctx: DrawContext, buildingsGeoJSON: FeatureCollection, hiddenBy: Feature[] = []) {
+export function drawBuildings(ctx: DrawContext, buildingsGeoJSON: FeatureCollection, hiddenBy: Feature[] = []): BuildingOutlines {
   const visible: FeatureCollection = hiddenBy.length
     ? { type: 'FeatureCollection', features: withoutOverlaps(buildingsGeoJSON.features || [], hiddenBy) }
     : buildingsGeoJSON;
+  const byId = new Map<string, L.Path>();
+  const outlined = new Map<L.Path, string>();
+  const restyle = (path: L.Path) => {
+    layer.resetStyle(path);
+    const color = outlined.get(path);
+    if (color) path.setStyle({ ...ctx.styles.BUILDING_OUTLINE_STYLE, color });
+  };
   const layer: L.GeoJSON = L.geoJSON(visible, {
     renderer: ctx.featureRenderer,
     style: ctx.styles.BUILDING_STYLE,
     onEachFeature(feature, sublayer) {
       const info = normalizeBuilding(feature);
       const path = sublayer as L.Path;
+      if (info.id) byId.set(info.id, path);
       path.bindPopup(() => buildingPopupHtml(info));
       path.on('mouseover', () => path.setStyle(ctx.styles.BUILDING_HOVER_STYLE));
-      path.on('mouseout', () => layer.resetStyle(path));
+      path.on('mouseout', () => restyle(path));
     },
   } as L.GeoJSONOptions);
-  return layer.addTo(ctx.map);
+  layer.addTo(ctx.map);
+
+  return {
+    set(colors) {
+      const previous = [...outlined.keys()];
+      outlined.clear();
+      for (const [id, color] of colors) {
+        const path = byId.get(id);
+        if (path) outlined.set(path, color);
+      }
+      for (const path of new Set([...previous, ...outlined.keys()])) restyle(path);
+    },
+  };
 }
 
 /** 지도에 그리는 학교 건물 (종류를 알 수 있는 건물만) */

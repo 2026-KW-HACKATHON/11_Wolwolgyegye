@@ -1,83 +1,73 @@
-# 월월계계 데이터베이스
+# database 폴더 안내
 
-Supabase(PostgreSQL) 구조. 이 폴더에는 **표의 형태(SQL)만** 둔다. 가게·메뉴·게시글 같은 데이터는 실제 DB 에만 있다.
+우리 앱의 DB(Supabase)에 관한 파일을 모아 둔 곳입니다.
+**여기에는 DB의 "모양"만 있고, 실제 가게·메뉴 같은 데이터는 Supabase 에만 있습니다.**
+표가 서로 어떻게 이어지는지는 [schema.md](schema.md) 를 보세요.
 
-## 폴더 구조
+## 폴더와 파일
 
 ```text
 database/
-├─ README.md                 실행 방법과 적용 순서
-├─ schema.md                 표 관계와 칸 설명
-├─ auth.md                   일반/사장님 가입·로그인·승인 흐름
-├─ package.json              DB 검사용 개발 의존성 (PGlite)
-├─ package-lock.json
+├─ README.md            이 안내서
+├─ schema.md            표 구조 그림 (어떤 표에 어떤 칸이 있는지)
+├─ package.json         DB 검사 도구 설정 (npm test 로 실행)
+├─ package-lock.json    위 도구의 버전 고정 (손대지 않음)
 ├─ supabase/
-│  ├─ config.toml            로컬 Supabase 설정
-│  ├─ migrations/
-│  │  └─ 20261004000100_schema.sql   전체 구조 (2026-10-04 새로 설계)
-│  └─ reset/
-│     └─ 20261004_drop_old_schema.sql 이전 구조 지우기 (일회용, 실제 DB 에서 한 번만)
+│  ├─ config.toml       내 컴퓨터에서 Supabase 를 띄울 때 쓰는 설정 (지금은 안 씀)
+│  └─ migrations/       DB 모양을 만드는 SQL. 번호 순서대로 한 번씩 실행
+│     ├─ 20261004000100_schema.sql     표 21개 전체 + 접근 권한 + 함수
+│     └─ 20261005000100_mock_flag.sql  예시 가게 표시 칸(is_mock) 추가
+├─ mock/
+│  └─ seed_mock.sql     예시(가짜) 데이터 넣기
 └─ tests/
-   ├─ bootstrap.sql          테스트 전용 Auth/Storage 최소 대역
-   └─ database.test.mjs      제약·RLS·함수 검사
+   ├─ bootstrap.sql     검사용 가짜 Supabase 기본 틀 (실제 DB 에 실행 금지)
+   ├─ database.test.mjs DB 모양·권한 검사 12개
+   └─ mock.test.mjs     예시 데이터 넣기·지우기 검사 4개
 ```
 
-파일명 앞 번호는 버전이다. 실제 DB 에 적용한 SQL 은 고치지 않고, 바꿀 내용을 새 번호의 파일로 추가한다.
+## 파일별로 하는 일
 
-## 로컬 검사
+### migrations — DB 모양 만들기
+- Supabase 대시보드 → **SQL Editor** 에 파일 전체를 붙여 넣고 실행합니다.
+- **번호 순서대로, 파일마다 한 번만** 실행합니다. (2026-10-05 실제 DB 에 둘 다 실행 완료)
+- 이미 실행한 파일은 고치지 않습니다. 바꿀 게 생기면 새 번호의 파일을 추가합니다.
 
-`database` 폴더에서 실행한다. 메모리 PostgreSQL(PGlite)을 쓰므로 키·외부 DB 가 필요 없다.
+| 파일 | 하는 일 |
+|---|---|
+| `20261004000100_schema.sql` | 가게·메뉴·영업시간·사진·제휴·마감세일·공간대여·원데이클래스·스탬프·로그인 표를 만들고, 누가 무엇을 읽고 쓸 수 있는지(권한)를 정한다 |
+| `20261005000100_mock_flag.sql` | 가게 표에 "예시 가게" 표시(`is_mock`)를 추가한다 |
+
+### mock/seed_mock.sql — 예시 데이터
+화면을 확인하려고 넣는 가짜 데이터입니다. 이름 앞에 모두 `[예시]` 가 붙습니다.
+
+| 하고 싶은 것 | SQL Editor 에서 |
+|---|---|
+| 넣기 / 새로 고치기 | `seed_mock.sql` 전체 실행 (예전 예시는 지우고 다시 넣음. 세일·수업 시간도 지금 기준으로 다시 맞춰짐) |
+| 전부 지우기 | `delete from public.stores where is_mock;` |
+
+- 예시 가게 14곳에 **서로 이어진** 데이터가 붙습니다: 메뉴 40 · 영업시간 98 · 마감세일 12 · 제휴 혜택 12 · 공간대여 12 · 원데이클래스 12 · 스탬프 10.
+- 가게를 누르면 2차 탭에 그 가게의 메뉴·영업시간·세일·제휴·공간대여·클래스·스탬프가 아래로 이어서 나옵니다.
+  여러 가지가 한꺼번에 붙어 있는 가게: **[예시] 골목 카페**, **[예시] 아침 빵집**, **[예시] 커피 랩**.
+- 예시 표시는 가게 표 한 곳에만 있습니다. 나머지는 모두 가게에 딸려 있어서, 가게를 지우면 함께 지워집니다.
+- 제휴사(광운대 단과대학 8곳)와 공간대여·클래스 분류는 실제로 계속 쓸 목록이라 지워지지 않습니다.
+- 실제 DB 가 배포 사이트와 같은 DB 라서, 넣어 둔 동안은 배포 사이트에도 보입니다.
+
+### tests — 내 컴퓨터에서 검사
+`database` 폴더에서 아래를 실행합니다. 내 컴퓨터 안의 가짜 DB 로 검사하므로 실제 DB 는 건드리지 않습니다.
 
 ```powershell
-npm ci
-npm test
+npm ci     # 처음 한 번
+npm test   # 검사 16개 실행
 ```
 
-검사 범위(12개): 모든 표의 RLS, 비로그인 공개/비공개 조회, 사장님 수정 가능 칸, 메뉴·영업시간·이미지 소유권,
-제휴 등록 권한, 마감세일 세 유형 필수값, 공간대여·클래스 공개 범위와 사진, 가입 프로필 생성, 사장님 신청·승인,
-가게 찜, 스탬프 적립 중복 방지, 사진 저장소 경로 소유권.
-Auth/Storage 서비스 자체는 대역이므로 실제 로그인·업로드는 Supabase 에서 따로 확인한다.
+## 실제 가게 데이터는 어디서 오나
 
-## 실제 Supabase 적용 (SQL Editor)
-
-팀은 CLI 대신 대시보드 SQL Editor 로 SQL 을 실행한다.
-
-1. 2026-09-26 이전 구조가 남아 있으면 `supabase/reset/20261004_drop_old_schema.sql` 전체를 실행해 먼저 지운다. (표 이름이 겹쳐 새 구조가 만들어지지 않는다)
-2. `supabase/migrations/20261004000100_schema.sql` 파일 **전체**를 붙여 넣고 실행한다.
-3. `frontend` 폴더에서 가게를 넣는다.
-   ```powershell
-   npm run fetch:sbiz      # 상가정보 → scripts/.data/sbiz-stores.geojson (git 에 안 올라감)
-   npm run import:stores   # 그 파일 → DB stores 표 (+ store_types)
-   ```
-   `import:stores` 는 `frontend/.env.local` 의 `SUPABASE_SECRET_KEY`(sb_secret_…)를 쓴다. 이 키에는 `VITE_` 를 붙이지 않는다.
-4. 분류(공간대여·원데이클래스)와 제휴사는 운영자가 SQL Editor 에서 넣는다.
-
-## 데이터가 들어오는 길
-
-| 데이터 | 넣는 쪽 |
+| 데이터 | 넣는 방법 |
 |---|---|
-| 가게 851곳, 대표 유형 | `npm run import:stores` (상가정보, 여러 번 실행해도 중복 없음) |
-| 메뉴·영업시간·사진·마감세일·공간대여·클래스 | 사장님 화면 (자기 가게만) |
-| 제휴사·제휴 혜택·분류·가게 공개/숨김·사장님 승인 | 운영자 (SQL Editor) |
+| 가게 851곳 (월계1동 상가정보) | `frontend` 폴더에서 `npm run fetch:sbiz` → `npm run import:stores` (관리자 키 `SUPABASE_SECRET_KEY` 필요) |
+| 메뉴·세일·공간대여 등 | 사장님 화면에서 (로그인 연결 후) |
+| 제휴 혜택, 가게 공개/숨김, 사장님 승인 | 운영자가 SQL Editor 에서 |
 
-- 가게 행은 상가업소번호(`stores.sbiz_id`)로 구분한다. 사장님이 연결된 가게는 다시 넣을 때 건너뛰어 사장님이 고친 정보를 지킨다.
-- 새 가게는 공개(`is_published=true`)로 들어간다. 상가정보 기준월(`sbiz_month`) 이후 폐업했을 수 있어, 지도 아래에 기준월을 표시한다.
-
-## 보안 규칙
-
-- 비로그인 사용자: 공개 가게와 거기에 딸린 메뉴·영업시간·사진·세일·혜택·공간대여·클래스만 조회.
-- 로그인 사용자: 본인 프로필·찜·스탬프 내역 조회. 찜은 직접 추가/삭제.
-- 사장님: 본인 가게의 이름·유형·전화, 메뉴·영업시간·사진·세일·공간대여·클래스·스탬프 정책 관리. 소유권·좌표·공개 여부는 못 바꾼다.
-- 운영자/서버: 가게 등록·공개, 소유권 연결(`review_owner_application`), 제휴·분류 등록, 스탬프 적립/차감(`apply_stamp_change`).
-- `service_role`·Supabase secret key 는 프론트나 `VITE_*` 변수에 절대 넣지 않는다.
-
-[Supabase RLS 안내](https://supabase.com/docs/guides/database/postgres/row-level-security)
-
-## 사진
-
-공개 버킷 `store-media`, 경로 `<store_id>/<파일>`. JPG/PNG/WebP, 최대 5MiB. DB 에는 경로만 저장하고 프론트에서 공개 URL 로 바꾼다.
-공개 버킷이라 글을 숨겨도 사진 URL 자체는 공개된다. 신분증·사업자 증빙은 넣지 않는다.
-
-## 범위
-
-전화 문의 방식이라 예약·결제·채팅 표는 없다. 로그인은 Supabase Auth 를 쓰며 비밀번호 표는 없다. 평점/리뷰는 수집 기능이 없어 제외했다.
+## 지킬 것
+- 관리자 키(`sb_secret_…`)는 `frontend/.env.local` 에만 두고, 앞에 `VITE_` 를 붙이지 않습니다. 채팅·git 에 올리지 않습니다.
+- `tests/bootstrap.sql` 은 검사 전용입니다. 실제 DB 에 실행하지 않습니다.
