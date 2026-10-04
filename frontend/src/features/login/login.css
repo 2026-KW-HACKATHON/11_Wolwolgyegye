@@ -8,6 +8,15 @@
   text-align: left;
 }
 
+.lp-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text, #2b1f17);
+}
+
 .lp-title {
   font-size: 1.15rem;
   font-weight: 700;
@@ -76,6 +85,7 @@
 }
 
 .lp-name-input {
+  width: 100%;
   padding: 12px 14px;
   border: 1px solid var(--color-border, #e7dfd4);
   border-radius: var(--radius-md, 14px);
@@ -84,6 +94,50 @@
   background: var(--color-surface-alt, #f3ece3);
   color: var(--color-text, #2b1f17);
 }
+
+.lp-account-section {
+  margin: 16px 0;
+  padding: 16px;
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface-alt, #f3ece3);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.lp-account-section p { margin: 4px 0 0; }
+.lp-account-section h3 { margin: 0; font-size: 1rem; }
+.lp-account-section.lp-name-form { display: flex; }
+
+.lp-link-button {
+  display: inline-block;
+  margin-top: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.lp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-top: 16px;
+}
+
+.lp-actions button {
+  color: var(--color-primary, #4a3222);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.lp-message, .lp-error {
+  margin: 12px 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+.lp-message { color: #25613e; }
+.lp-error { color: #a32929; }
+
+.lp-card button:disabled { opacity: 0.55; cursor: wait; }
 
 .lp-submit {
   display: flex;

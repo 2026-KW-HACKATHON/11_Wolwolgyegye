@@ -21,7 +21,7 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to={DEFAULT_LANDING_PATH} replace />} />
-      <Route path="/owner" element={<OwnerPage />} />
+      <Route path="/owner" element={status === 'owner' ? <OwnerPage /> : <Navigate to="/login?intent=owner" replace />} />
       <Route path="/*" element={<AppShell />} />
     </Routes>
   );
