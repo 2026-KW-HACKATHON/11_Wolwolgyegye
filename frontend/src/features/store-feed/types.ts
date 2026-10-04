@@ -18,8 +18,8 @@ interface PostBase {
   notes: string;
   createdAt: string;
   status: FeedStatus;
-  /** 출처: db = DB(공간대여·원데이클래스 표), local = 이 브라우저에서 만든 글 */
-  origin: 'db' | 'local';
+  /** 공간대여·원데이클래스 DB에서 읽은 글 */
+  origin: 'db';
 }
 
 export interface SpacePost extends PostBase {

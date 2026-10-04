@@ -17,17 +17,15 @@ interface Props {
   sort: StampSort;
   onSort: (value: StampSort) => void;
   onOpen: (storeId: string) => void;
-  onResetDemo: () => void;
 }
 
-export default function StampList({ stamps, error, onRetry, missingId, query, onQuery, filter, onFilter, sort, onSort, onOpen, onResetDemo }: Props) {
+export default function StampList({ stamps, error, onRetry, missingId, query, onQuery, filter, onFilter, sort, onSort, onOpen }: Props) {
   const { isFavorite, toggle } = useFavoriteStores();
   const all = useMemo(() => stamps ?? [], [stamps]);
 
   const ready = all.filter(isReady);
   const collecting = all.filter((v) => v.count > 0 && !isReady(v));
   const totalRewards = all.reduce((sum, v) => sum + rewardsOf(v), 0);
-  const hasDemo = all.some((v) => v.history.some((t) => t.origin === 'demo'));
   const counts: Record<StampFilter, number> = {
     all: all.length,
     ready: ready.length,
@@ -165,10 +163,7 @@ export default function StampList({ stamps, error, onRetry, missingId, query, on
         </ol>
       </section>
 
-      <p className="st-demo-note">
-        시연으로 찍은 도장은 이 브라우저에만 저장돼요.
-        {hasDemo && <button type="button" onClick={onResetDemo}>시연 기록 지우기</button>}
-      </p>
+      <p className="st-demo-note">스탬프 적립과 교환은 직원 확인 후 서버에서만 처리돼요.</p>
     </>
   );
 }

@@ -56,7 +56,7 @@ after(async () => { await db.close(); });
 
 test('모든 앱 표에 RLS 적용', async () => {
   const tables = (await db.query("select relname,relrowsecurity from pg_class c join pg_namespace n on c.relnamespace=n.oid where n.nspname='public' and c.relkind='r'")).rows;
-  assert.equal(tables.length, 21);
+  assert.equal(tables.length, 23);
   assert.deepEqual(tables.filter((t) => !t.relrowsecurity).map((t) => t.relname), []);
 });
 
@@ -187,6 +187,19 @@ test('가게 찜: 본인 것만, 공개 가게만, 중복 금지', async () => {
   await rejectsCode(as('authenticated', neighbor, 'insert into public.store_favorites(user_id,store_id) values ($1,$2)', [neighbor, hidden]), '42501');
   await rejectsCode(as('authenticated', neighbor, 'insert into public.store_favorites(user_id,store_id) values ($1,$2)', [owner, shopB]), '42501');
   assert.equal((await rows('authenticated', owner, 'select * from public.store_favorites')).length, 0);
+});
+
+test('마감세일·게시글 찜: 로그인 사용자 본인 기록만 쓰고 공개 합계만 센다', async () => {
+  const saleId = await scalar('select id from public.closing_sales where store_id=$1 limit 1', [shopA]);
+  await as('authenticated', neighbor, 'insert into public.sale_likes(user_id,sale_id) values ($1,$2)', [neighbor, saleId]);
+  await rejectsCode(as('authenticated', neighbor, 'insert into public.sale_likes(user_id,sale_id) values ($1,$2)', [owner, saleId]), '42501');
+  assert.equal((await as('anon', null, 'select * from public.get_sale_like_counts(array[$1]::uuid[])', [saleId])).rows[0].like_count, 1);
+
+  const postId = (await rows('authenticated', owner, "insert into public.space_rentals(store_id,title,price,capacity,status) values ($1,'찜 테스트',0,1,'open') returning id", [shopA]))[0].id;
+  await as('authenticated', neighbor, 'insert into public.post_favorites(user_id,post_id) values ($1,$2)', [neighbor, postId]);
+  await rejectsCode(as('authenticated', neighbor, 'insert into public.post_favorites(user_id,post_id) values ($1,$2)', [owner, postId]), '42501');
+  assert.equal((await rows('authenticated', neighbor, 'select post_id from public.post_favorites')).length, 1);
+  assert.equal((await rows('authenticated', owner, 'select post_id from public.post_favorites')).length, 0);
 });
 
 test('스탬프: 직접 수정 금지, 서버 적립의 중복 방지와 잔액 부족 롤백', async () => {

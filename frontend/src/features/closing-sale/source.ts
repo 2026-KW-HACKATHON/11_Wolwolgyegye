@@ -23,7 +23,12 @@ async function fetchSaleRows(): Promise<ClosingSale[]> {
       .gt('ends_at', new Date().toISOString())
       .order('ends_at');
     if (error) throw error;
-    return ((data ?? []) as SaleRow[]).map((row) => ({
+    const rows = (data ?? []) as SaleRow[];
+    const { data: counts, error: countError } = await getSupabaseClient().rpc('get_sale_like_counts', { p_sale_ids: rows.map((row) => row.id) });
+    if (countError) throw countError;
+    const likeCounts = new Map<string, number>(((counts ?? []) as { sale_id: string; like_count: number | string }[])
+      .map((row) => [row.sale_id, Number(row.like_count)]));
+    return rows.map((row) => ({
       id: row.id,
       storeId: row.store_id,
       discountType: row.discount_type,
@@ -35,7 +40,7 @@ async function fetchSaleRows(): Promise<ClosingSale[]> {
       desc: [row.offer, row.condition].filter(Boolean).join(' · '),
       startsAt: row.starts_at,
       closeAt: row.ends_at,
-      likeCount: 0, // TODO(로그인): 관심 표시 표가 생기면 센다
+      likeCount: likeCounts.get(row.id) ?? 0,
     }));
   } catch {
     return [];
