@@ -15,10 +15,13 @@ import type { StampView } from './types';
 
 interface Props {
   view: StampView;
+  /** 방금 찍힌 칸 (도장 찍히는 애니메이션용) */
+  freshIndex: number | null;
   onBack: () => void;
+  onRecord: (view: StampView, kind: 'earn' | 'redeem') => Promise<boolean>;
 }
 
-export default function StampDetail({ view: v, onBack }: Props) {
+export default function StampDetail({ view: v, freshIndex, onBack, onRecord }: Props) {
   const active = usePageActive();
   const { isFavorite, toggle } = useFavoriteStores();
   const [sheet, setSheet] = useState<'code' | 'reward' | null>(null);
@@ -43,6 +46,12 @@ export default function StampDetail({ view: v, onBack }: Props) {
   const history = showAll ? v.history : v.history.slice(0, HISTORY_PREVIEW);
   const percent = progressOf(v);
   const available = rewardsOf(v);
+
+  const confirm = async (kind: 'earn' | 'redeem') => {
+    const result = await onRecord(v, kind);
+    if (result) setSheet(null);
+    return result;
+  };
 
   return (
     <>
@@ -71,7 +80,7 @@ export default function StampDetail({ view: v, onBack }: Props) {
               return (
                 <li key={i} className={`${on ? 'is-on' : ''}${gift ? ' is-gift' : ''}`}>
                   {on ? (
-                    <StampSeal initial={initial} date={dates[i] ? shortDate(dates[i]) : undefined} tilt={tiltOf(v.storeId, i)} seed={i + 2} fresh={false} />
+                    <StampSeal initial={initial} date={dates[i] ? shortDate(dates[i]) : undefined} tilt={tiltOf(v.storeId, i)} seed={i + 2} fresh={freshIndex === i} />
                   ) : (
                     <span className="st-slot-empty" aria-hidden="true">{gift ? <Icon name="gift" /> : i + 1}</span>
                   )}
@@ -135,7 +144,7 @@ export default function StampDetail({ view: v, onBack }: Props) {
                   <li key={t.id} className={`is-${kind}`}>
                     <span className="st-tl-dot" aria-hidden="true">{kind === 'earn' ? <ExtraIcon name="check" /> : <Icon name="gift" />}</span>
                     <div className="st-tl-body">
-                      <b>{kind === 'earn' ? '스탬프 적립' : '선물 교환'}</b>
+                      <b>{kind === 'earn' ? '스탬프 적립' : '선물 교환'}{t.origin === 'demo' && <em>시연</em>}</b>
                       <span>{t.reason}</span>
                       <time dateTime={t.createdAt}>{longDate(t.createdAt)}</time>
                     </div>
@@ -162,7 +171,7 @@ export default function StampDetail({ view: v, onBack }: Props) {
           <dl className="st-facts">
             <div><dt><Icon name="pin" /><span className="st-sr">주소</span></dt><dd>{v.store.address}</dd></div>
             <div><dt><ExtraIcon name="clock" /><span className="st-sr">영업시간</span></dt><dd>{v.store.businessHours}</dd></div>
-            <div><dt><ExtraIcon name="phone" /><span className="st-sr">전화</span></dt><dd>{v.store.phone} <small>예시 번호</small></dd></div>
+            <div><dt><ExtraIcon name="phone" /><span className="st-sr">전화</span></dt><dd>{v.store.phone}</dd></div>
             {origin && <div><dt><Icon name="compass" /><span className="st-sr">방향</span></dt><dd>기준점에서 {directionText(origin, v.store.location)}</dd></div>}
           </dl>
           {origin && <StoreMap key={v.storeId} store={v.store} origin={origin} />}
@@ -179,7 +188,7 @@ export default function StampDetail({ view: v, onBack }: Props) {
       </div>
 
       <Sheet open={sheet === 'code' && active} title="적립 코드" onClose={() => setSheet(null)}>
-        {sheet === 'code' && <CodePanel view={v} />}
+        {sheet === 'code' && <CodePanel view={v} onDemoConfirm={() => confirm('earn')} />}
       </Sheet>
 
       <Sheet open={sheet === 'reward' && active} title="선물 교환권" onClose={() => setSheet(null)}>
@@ -192,15 +201,18 @@ export default function StampDetail({ view: v, onBack }: Props) {
               <span className="st-voucher-code">교환 번호 <b>{v.storeId.replace(/\D/g, '').padStart(3, '0')}-{String(v.redeemedTimes + 1).padStart(2, '0')}</b></span>
             </div>
             <p className="st-sheet-copy">선물 1개 교환 시 스탬프 {v.requiredStamps}개가 차감되고, {Math.max(0, v.count - v.requiredStamps)}개가 남아요.</p>
-            <p className="st-sheet-copy">직원이 사장님 화면에서 확인하면 DB의 적립 잔액에 반영됩니다.</p>
+            <DemoBox label="교환 완료 처리하기" onClick={() => confirm('redeem')}>
+              실제 직원 확인 없이, 교환 후 적립판이 어떻게 바뀌는지 보여줘요.
+            </DemoBox>
           </div>
         )}
       </Sheet>
     </>
   );
 }
+
 /* 직원에게 보여주는 적립 코드 (3분마다 새 번호) */
-function CodePanel({ view }: { view: StampView }) {
+function CodePanel({ view, onDemoConfirm }: { view: StampView; onDemoConfirm: () => Promise<boolean> }) {
   const [code, setCode] = useState(issueStampCode);
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -228,7 +240,25 @@ function CodePanel({ view }: { view: StampView }) {
         <li><b>2</b>직원이 사장님 화면에 번호를 입력해요</li>
         <li><b>3</b>적립판에 도장이 찍혀요</li>
       </ol>
-      <p className="st-sheet-copy">코드는 직원 확인용입니다. 이 화면에서 직접 잔액을 변경할 수는 없어요.</p>
+      <DemoBox label="직원 확인 완료 처리하기" onClick={onDemoConfirm}>
+        실제 직원 확인 없이, 도장이 찍히는 과정을 보여줘요.
+      </DemoBox>
+    </div>
+  );
+}
+
+function DemoBox({ label, onClick, children }: { label: string; onClick: () => Promise<boolean>; children: string }) {
+  const [busy, setBusy] = useState(false);
+  const locked = useRef(false);
+  const run = async () => {
+    if (locked.current) return;
+    locked.current = true; setBusy(true);
+    try { await onClick(); } finally { locked.current = false; setBusy(false); }
+  };
+  return (
+    <div className="st-demo-box">
+      <p><b>시연 모드</b>{children}</p>
+      <button type="button" className="st-btn st-btn--primary st-btn--block" disabled={busy} onClick={run}>{busy ? '처리 중…' : label}</button>
     </div>
   );
 }

@@ -19,12 +19,6 @@ export interface StampPolicy {
   condition: string;
 }
 
-/** 사용자별 적립 현황. 로그인 연동 후에는 사용자 id 로 조회한다 */
-export interface MyStampProgress {
-  storeId: string;
-  count: number;
-}
-
 /**
  * 적립(+)·교환(-) 이력 한 건 (DB 의 stamp_transactions 테이블 한 행).
  * id 는 DB 의 request_id, createdAt 은 ISO 문자열(한국 시간 표기 포함).
@@ -38,6 +32,8 @@ export interface StampTransaction {
   balanceAfter: number;
   reason: string;
   createdAt: string;
+  /** 'demo' = 이 브라우저에서 시연으로 추가한 기록 */
+  origin?: 'sample' | 'demo';
 }
 
 /** 화면이 받는 모양: 규칙 + 내 적립 수 + 가게 공통 정보 + 도보 시간 + 이력 (source.ts 가 조합) */

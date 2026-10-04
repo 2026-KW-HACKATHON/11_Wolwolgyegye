@@ -1,5 +1,5 @@
 export type FeedKind = 'space-rental' | 'oneday-class';
-export type FeedStatus = 'open' | 'closed';
+type FeedStatus = 'open' | 'closed';
 
 /** 게시글 규격. 공통 가게 정보는 core/types/place.ts의 Store를 storeId로 참조한다. */
 interface PostBase {
@@ -18,8 +18,8 @@ interface PostBase {
   notes: string;
   createdAt: string;
   status: FeedStatus;
-  /** Supabase DB에서 조회한 실제 게시글 */
-  origin: 'db';
+  /** 실제 권한이 아닌 로컬 시연 데이터 구분 */
+  origin: 'sample' | 'local';
 }
 
 export interface SpacePost extends PostBase {

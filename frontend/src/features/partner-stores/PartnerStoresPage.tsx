@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getUserLocation } from '../../core/source/storeSource';
 import type { GeoPoint } from '../../core/types/place';
+import { useShell } from '../../layout/AppShell/ShellContext';
 import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
 import ExtraIcon from '../../shared/ExtraIcon';
 import Icon from '../../shared/Icon';
@@ -10,7 +11,7 @@ import StoreMap, { directionText } from '../../shared/map/StoreMap';
 import Sheet from '../../shared/sheet/Sheet';
 import { COLLEGES } from './colleges';
 import { fetchPartnerStores } from './source';
-import { AUDIENCE_STORAGE_KEY, STATUS_LABELS, benefitStatus, collegeOf, distanceLabel, estimatePrice, industryOf, isAudience, mapUrl, money, phoneUrl, safeSourceUrl } from './presentation';
+import { AUDIENCE_STORAGE_KEY, STATUS_LABELS, benefitStatus, collegeOf, distanceLabel, estimatePrice, industryOf, isAudience, money, phoneUrl, safeSourceUrl } from './presentation';
 import type { PartnerAudience, PartnerIndustry, PartnerStoreView } from './types';
 import './partner.css';
 
@@ -42,6 +43,7 @@ function AudienceSelect({ value, onChange, id }: { value: PartnerAudience; onCha
  */
 export default function PartnerStoresPage() {
   const active = usePageActive();
+  const { showStoreOnMap } = useShell();
   const location = useLocation();
   const navigate = useNavigate();
   const { isFavorite, toggle } = useFavoriteStores();
@@ -122,7 +124,6 @@ export default function PartnerStoresPage() {
   const eligible = !!(college && selected?.benefits[college]);
   const canPresent = eligible && (status === 'demo' || status === 'verified');
   const source = safeSourceUrl(info?.sourceUrl);
-  const locationLink = selected ? mapUrl(selected) : null;
   const telephone = selected ? phoneUrl(selected) : null;
   const listTitle = current ? `${current.label} 학생 혜택` : audience === 'resident' ? '주민·일반 이용자 혜택' : '단과대별 제휴 가게';
 
@@ -206,7 +207,7 @@ export default function PartnerStoresPage() {
             </div>
           </div>
 
-          {menu && <div className="ps-price"><span>{menu.name} <small>예시 가격</small></span><span>{price !== null ? <><del>{money(menu.price)}</del><b>{money(price)}</b></> : money(menu.price)}</span></div>}
+          {menu && <div className="ps-price"><span>{menu.name} {v.dataMode === 'demo' && <small>예시 가격</small>}</span><span>{price !== null ? <><del>{money(menu.price)}</del><b>{money(price)}</b></> : money(menu.price)}</span></div>}
           <div className="ps-tags" aria-label="혜택 대상 단과대">{colleges.map((c) => <span className={college === c.key ? 'is-on' : ''} key={c.key}>{c.label}</span>)}</div>
 
           {open && <div className="ps-map-panel" id={`ps-map-${v.storeId}`}>
@@ -229,7 +230,7 @@ export default function PartnerStoresPage() {
     </section>
 
     <aside className="ps-guide"><span className="ps-guide-icon"><ExtraIcon name="info" /></span><div><b>방문 전 확인하세요</b><p>내가 혜택 대상인지 · 학생증이 필요한지 · 적용 조건과 기간이 맞는지</p></div></aside>
-    <p className="ps-disclaimer"><b>이용 전 확인</b> 가게·메뉴·혜택은 관리자가 등록한 DB 정보예요. 거리는 월계1동 기준점에서 잰 직선거리이며, 광운대학교 공식 서비스가 아닙니다. 방문 전 가게와 학생회 공지를 다시 확인해 주세요.</p>
+    <p className="ps-disclaimer">거리는 월계1동 기준점에서 잰 직선거리예요. 광운대학교 공식 서비스가 아니며, 학생회 공지와 가게 확인을 거쳐 정보를 제공합니다.</p>
 
     <Sheet open={!!selected && active} title={presenting ? '혜택 안내 화면' : '제휴 혜택 자세히'} onClose={close}>
       {selected && <div className="ps-detail">
@@ -262,7 +263,7 @@ export default function PartnerStoresPage() {
             {origin && <StoreMap key={selected.storeId} store={selected.store} origin={origin} demo={selected.dataMode === 'demo'} className="ps-detail-map" />}
             <dl className="ps-facts"><div><dt>주소</dt><dd>{selected.store.address}</dd></div><div><dt>영업시간</dt><dd>{selected.store.businessHours}</dd></div></dl>
             {selected.dataMode === 'demo' && <p className="ps-note">주소·좌표·영업시간·전화번호도 예시입니다. 실제 방문 정보로 이용하지 마세요.</p>}
-            <div className="ps-contact">{locationLink ? <a className="ps-secondary" href={locationLink} target="_blank" rel="noopener noreferrer"><Icon name="pin" />{selected.dataMode === 'demo' ? '예시 위치 보기' : '길찾기'}</a> : <button className="ps-secondary" disabled>위치 미등록</button>}{telephone ? <a className="ps-secondary" href={telephone}>가게에 전화</a> : <button type="button" className="ps-secondary" disabled>{selected.dataMode === 'demo' ? '예시 번호 · 전화 불가' : '전화번호 미등록'}</button>}</div>
+            <div className="ps-contact"><button type="button" className="ps-secondary" onClick={() => { const id = selected.storeId; close(); showStoreOnMap(id); }}><Icon name="pin" />{selected.dataMode === 'demo' ? '예시 위치 보기' : '지도에서 보기'}</button>{telephone ? <a className="ps-secondary" href={telephone}>가게에 전화</a> : <button type="button" className="ps-secondary" disabled>{selected.dataMode === 'demo' ? '예시 번호 · 전화 불가' : '전화번호 미등록'}</button>}</div>
           </section>
           {selected.store.supports.coupon && <Link className="ps-stamp-link" to={`/coupon?store=${encodeURIComponent(selected.storeId)}`} onClick={close}><span className="ps-stamp-link-icon"><ExtraIcon name="stamp" /></span><span><b>이 가게의 스탬프도 모을 수 있어요</b><small>제휴 혜택과 중복 적용되는지는 별도 확인이 필요해요.</small></span><Icon name="chevronRight" /></Link>}
           <div className="ps-detail-bottom"><button type="button" className="ps-primary ps-full" disabled={!canPresent} onClick={() => setPresenting(true)}>{!eligible ? '혜택 대상 단과대를 선택해 주세요' : !canPresent ? '혜택 확인 후 이용할 수 있어요' : selected.dataMode === 'demo' ? '혜택 안내 화면 미리보기' : '직원에게 혜택 안내 보여주기'}</button><p className="ps-note">쿠폰 발급·회원 인증 없이 정보를 확인하는 화면입니다.</p></div>

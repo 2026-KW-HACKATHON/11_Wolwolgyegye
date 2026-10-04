@@ -6,7 +6,7 @@ import { findFeedStore } from '../store-feed/feedSource';
 import { formatPrice, isAvailable, type FeedPost } from '../store-feed/types';
 import FeedArtwork from './FeedArtwork';
 
-export default function FeedPostCard({ post, onShowStore }: { post: FeedPost; onShowStore?: (id: string) => void }) {
+export default function FeedPostCard({ post, onShowStore }: { post: FeedPost; onShowStore: (id: string) => void }) {
   const store = findFeedStore(post.storeId);
   const { isFavorite, toggle } = useFavoriteStores();
   const toast = useToast();
@@ -19,7 +19,7 @@ export default function FeedPostCard({ post, onShowStore }: { post: FeedPost; on
   return <article className="rp-post">
     <header className="rp-post-owner">
       <span className="rp-post-avatar" aria-hidden="true"><Icon name="storefront" /></span>
-      <div><strong>{store?.name ?? '동네 가게'}</strong><span>사장님이 전하는 소식</span></div>
+      <div><strong>{store?.name ?? '동네 가게'}</strong><span>사장님이 전하는 소식{post.origin === 'sample' ? ' · 예시' : ''}</span></div>
       <button type="button" className={'rp-save' + (saved ? ' is-saved' : '')} aria-pressed={saved} aria-label={(store?.name ?? '가게') + (saved ? ' 찜 해제' : ' 찜하기')} onClick={() => {
         toggle(post.storeId);
         toast(saved ? '찜한 가게에서 해제했어요.' : '찜한 가게에 담았어요.');
@@ -39,7 +39,7 @@ export default function FeedPostCard({ post, onShowStore }: { post: FeedPost; on
         <div className="rp-post-price"><strong>{formatPrice(post)}</strong><span>자세히 보기 <Icon name="chevronRight" /></span></div>
       </div>
     </Link>
-    {store && onShowStore && <button className="rp-post-location" type="button" onClick={() => onShowStore(store.id)} aria-label={store.name + ' 지도에서 보기'}>
+    {store && <button className="rp-post-location" type="button" onClick={() => onShowStore(store.id)} aria-label={store.name + ' 지도에서 보기'}>
       <Icon name="pin" /><span>{store.address.replace(/^서울(특별)?시?\s*노원구\s*/, '')}</span><strong>지도에서 보기</strong><Icon name="chevronRight" />
     </button>}
   </article>;

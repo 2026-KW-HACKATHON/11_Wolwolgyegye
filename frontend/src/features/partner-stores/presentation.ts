@@ -46,11 +46,6 @@ export function estimatePrice(menu: PartnerStoreMenuItem, college: CollegeKey | 
   if (discount.type === 'amount' && Number.isInteger(discount.value) && discount.value <= menu.price) return menu.price - discount.value;
   return null;
 }
-export function mapUrl(view: PartnerStoreView): string | null {
-  const { lat, lng } = view.store.location;
-  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
-  return `https://map.kakao.com/link/${view.dataMode === 'demo' ? 'map' : 'to'}/${encodeURIComponent(view.store.name)},${lat},${lng}`;
-}
 export function phoneUrl(view: PartnerStoreView): string | null {
   if (view.dataMode === 'demo') return null;
   const phone = view.store.phone.replace(/[\s()-]/g, '');

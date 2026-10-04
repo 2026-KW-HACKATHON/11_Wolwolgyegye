@@ -1,6 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import type { Store } from '../../core/types/place';
-import { fetchFeedStores, saveFeedPost, validatePost } from './feedSource';
+import { useState, type FormEvent } from 'react';
+import { feedStores, saveFeedPost, validatePost } from './feedSource';
 import { FEED_CATEGORIES, type FeedKind, type FeedPost, type PostInput } from './types';
 
 function localDateTime(value: string) {
@@ -11,8 +10,8 @@ function localDateTime(value: string) {
 export default function PostForm({ kind, existing, onSaved, onCancel }: {
   kind: FeedKind; existing?: FeedPost; onSaved: (post: FeedPost) => void; onCancel: () => void;
 }) {
-  const [stores, setStores] = useState<Store[]>([]);
-  const [storeId, setStoreId] = useState(existing?.storeId ?? '');
+  const stores = feedStores(kind);
+  const [storeId, setStoreId] = useState(existing?.storeId ?? stores[0]?.id ?? '');
   const [title, setTitle] = useState(existing?.title ?? '');
   const [description, setDescription] = useState(existing?.description ?? '');
   const [category, setCategory] = useState(existing?.category ?? FEED_CATEGORIES[kind][0]);
@@ -29,16 +28,6 @@ export default function PostForm({ kind, existing, onSaved, onCancel }: {
   const [busy, setBusy] = useState(false);
   const [readingImage, setReadingImage] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchFeedStores(kind).then((rows) => {
-      if (cancelled) return;
-      setStores(rows);
-      setStoreId((current) => current || rows[0]?.id || '');
-    }).catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : '가게를 불러오지 못했어요.'); });
-    return () => { cancelled = true; };
-  }, [kind]);
 
   function uploadImage(file?: File) {
     if (!file) return;
@@ -71,9 +60,9 @@ export default function PostForm({ kind, existing, onSaved, onCancel }: {
 
   return (
     <form className="sf-form" onSubmit={submit}>
-      <p className="sf-notice">승인된 사장님 가게의 게시글로 DB에 저장되며 모든 사용자에게 공유됩니다.</p>
+      <p className="sf-notice">사장님 등록 체험 · 실제 인증 전입니다. 글과 사진은 이 브라우저에만 저장되며 다른 팀원에게 공유되지 않습니다.</p>
       <div className="sf-form-grid">
-        <label>가게<select value={storeId} onChange={(e) => setStoreId(e.target.value)} required><option value="">가게를 선택해 주세요</option>{stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
+        <label>가게<select value={storeId} onChange={(e) => setStoreId(e.target.value)} required>{stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
         <label>분류<select value={category} onChange={(e) => setCategory(e.target.value)}>{FEED_CATEGORIES[kind].map((c) => <option key={c}>{c}</option>)}</select></label>
       </div>
       <label>게시글 제목<input autoFocus required maxLength={70} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={kind === 'space-rental' ? '우리끼리 보내는 특별한 시간' : '사장님과 함께하는 첫 도전'} /></label>
@@ -97,7 +86,7 @@ export default function PostForm({ kind, existing, onSaved, onCancel }: {
         <label>모집 상태<select value={status} onChange={(e) => setStatus(e.target.value as 'open' | 'closed')}><option value="open">모집 중</option><option value="closed">모집 마감</option></select></label>
       </div>
       {error && <p role="alert" className="sf-error">{error}</p>}
-      <div className="sf-actions"><button type="button" className="sf-secondary" onClick={onCancel} disabled={busy}>취소</button><button className="sf-primary" type="submit" disabled={busy || readingImage || !stores.length}>{readingImage ? '사진 읽는 중…' : busy ? '저장 중…' : existing ? '수정 저장' : stores.length ? '게시글 등록' : '등록 가능한 가게 없음'}</button></div>
+      <div className="sf-actions"><button type="button" className="sf-secondary" onClick={onCancel} disabled={busy}>취소</button><button className="sf-primary" type="submit" disabled={busy || readingImage}>{readingImage ? '사진 읽는 중…' : busy ? '저장 중…' : existing ? '수정 저장' : '체험 글 등록'}</button></div>
     </form>
   );
 }

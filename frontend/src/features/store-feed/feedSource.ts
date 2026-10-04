@@ -1,30 +1,22 @@
-import { fetchStoresByIds } from '../../core/source/storeSource';
-import { getSupabaseClient } from '../../core/supabase/client';
-import { toStore } from '../../core/supabase/storeMapper';
 import type { Store } from '../../core/types/place';
 import { FEED_CATEGORIES, type FeedKind, type FeedPost, type PostInput } from './types';
 
+export const POST_STORAGE_KEY = 'wol-owner-posts-v1';
 export const FEED_CHANGE_EVENT = 'wol-owner-posts-changed';
-const storeCache = new Map<string, Store>();
+type StoragePort = Pick<Storage, 'getItem' | 'setItem'>;
+
+/**
+ * 글에 연결할 수 있는 가게 목록. TODO(DB): stores 테이블 연결.
+ * 그 전까지는 가게가 없어서 글을 새로 올릴 수 없다. (가짜 가게를 쓰지 않는다)
+ */
+const FEED_STORES: Store[] = [];
 
 export function findFeedStore(id: string): Store | undefined {
-  return storeCache.get(id);
+  return FEED_STORES.find((store) => store.id === id);
 }
 
-/** 현재 로그인한 사장님이 소유하고, 해당 기능을 켠 가게만 글 작성 후보로 돌려준다. */
-export async function fetchFeedStores(kind: FeedKind): Promise<Store[]> {
-  const client = getSupabaseClient();
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) return [];
-  const { data, error } = await client.from('stores')
-    .select('id, name, cuisine_type, address, lat, lng, phone, business_hours, thumbnail_path, supported_features')
-    .eq('owner_id', user.id)
-    .contains('supported_features', [kind])
-    .order('name');
-  if (error) throw new Error('글을 등록할 가게를 불러오지 못했어요.');
-  const stores = (data ?? []).map((row) => toStore(row));
-  for (const store of stores) storeCache.set(store.id, store);
-  return stores;
+export function feedStores(kind: FeedKind): Store[] {
+  return FEED_STORES.filter((store) => store.supports[kind]);
 }
 
 function text(value: unknown, max: number, required = true): value is string {
@@ -33,17 +25,18 @@ function text(value: unknown, max: number, required = true): value is string {
 function integer(value: unknown, min: number, max: number): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
 }
-export function validImage(value: string): boolean {
+function validImage(value: string): boolean {
   if (!value) return true;
   if (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(value)) return value.length <= 1_400_000;
   try { return new URL(value).protocol === 'https:' && value.length <= 2048; } catch { return false; }
 }
 
+/** UI 검증과 별도로 저장 경계에서 검사한다. 서버 연동 후에는 서버에서도 검증해야 한다. */
 export function validatePost(value: unknown, checkFuture = true): string | null {
   if (!value || typeof value !== 'object') return '게시글 형식이 올바르지 않아요.';
   const p = value as Record<string, unknown>;
   if (p.kind !== 'space-rental' && p.kind !== 'oneday-class') return '카테고리를 선택해 주세요.';
-  if (typeof p.storeId !== 'string' || !p.storeId) return '등록할 가게를 선택해 주세요.';
+  if (typeof p.storeId !== 'string' || !feedStores(p.kind).some((s) => s.id === p.storeId)) return '등록할 가게를 선택해 주세요.';
   if (!text(p.title, 70) || !text(p.description, 2000)) return '제목(70자 이내)과 소개(2,000자 이내)를 입력해 주세요.';
   if (!text(p.category, 30) || !FEED_CATEGORIES[p.kind].includes(p.category)) return '올바른 세부 분류를 선택해 주세요.';
   if (!integer(p.price, 0, 10000000) || !integer(p.capacity, 1, 1000)) return '금액과 인원을 올바르게 입력해 주세요.';
@@ -60,76 +53,42 @@ export function validatePost(value: unknown, checkFuture = true): string | null 
   return null;
 }
 
-interface FeedRow {
-  id: string; store_id: string; kind: FeedKind; title: string; description: string;
-  category: string; price: number; capacity: number; contact_phone: string;
-  image_path: string | null; notes: string; status: 'open' | 'closed';
-  schedule: string | null; minimum_hours: number | null; starts_at: string | null;
-  duration_minutes: number | null; created_at: string;
+function browserStorage(): StoragePort {
+  try { return window.localStorage; } catch { throw new Error('브라우저 저장소를 사용할 수 없어요. 저장소 설정을 확인해 주세요.'); }
 }
-
-function toFeedPost(row: FeedRow): FeedPost {
-  const common = {
-    id: row.id, storeId: row.store_id, title: row.title, description: row.description,
-    category: row.category, price: row.price, capacity: row.capacity,
-    contactPhone: row.contact_phone, imageUrl: row.image_path ?? '', notes: row.notes,
-    status: row.status, createdAt: row.created_at, origin: 'db' as const,
-  };
-  return row.kind === 'space-rental'
-    ? { ...common, kind: row.kind, schedule: row.schedule ?? '', minimumHours: row.minimum_hours ?? 1 }
-    : { ...common, kind: row.kind, startsAt: row.starts_at ?? '', durationMinutes: row.duration_minutes ?? 15 };
-}
-
-const SELECT_FIELDS = 'id, store_id, kind, title, description, category, price, capacity, contact_phone, image_path, notes, status, schedule, minimum_hours, starts_at, duration_minutes, created_at';
-
-export async function fetchFeedPosts(kind: FeedKind): Promise<FeedPost[]> {
-  const { data, error } = await getSupabaseClient().from('feed_posts')
-    .select(SELECT_FIELDS).eq('kind', kind).eq('is_published', true)
-    .order('created_at', { ascending: false });
-  if (error) throw new Error('동네 소식을 불러오지 못했어요.');
-  const rows = (data ?? []) as FeedRow[];
-  const stores = await fetchStoresByIds(rows.map((row) => row.store_id));
-  for (const store of stores.values()) storeCache.set(store.id, store);
-  return rows.filter((row) => stores.has(row.store_id)).map(toFeedPost);
-}
-
-function toPayload(input: PostInput, authorId?: string) {
-  return {
-    store_id: input.storeId, ...(authorId ? { author_id: authorId } : {}), kind: input.kind,
-    title: input.title, description: input.description, category: input.category, price: input.price,
-    capacity: input.capacity, contact_phone: input.contactPhone, image_path: input.imageUrl || null,
-    notes: input.notes, status: input.status, is_published: true,
-    schedule: input.kind === 'space-rental' ? input.schedule : null,
-    minimum_hours: input.kind === 'space-rental' ? input.minimumHours : null,
-    starts_at: input.kind === 'oneday-class' ? input.startsAt : null,
-    duration_minutes: input.kind === 'oneday-class' ? input.durationMinutes : null,
-  };
-}
-
-function toUpdatePayload(input: PostInput) {
-  const { store_id: _storeId, kind: _kind, ...allowed } = toPayload(input);
-  return allowed;
-}
-
-export async function saveFeedPost(input: PostInput, existingId?: string): Promise<FeedPost> {
-  const validation = validatePost(input);
-  if (validation) throw new Error(validation);
-  const client = getSupabaseClient();
-  let result;
-  if (existingId) {
-    result = await client.from('feed_posts').update(toUpdatePayload(input)).eq('id', existingId).select(SELECT_FIELDS).single();
-  } else {
-    const { data: { user } } = await client.auth.getUser();
-    if (!user) throw new Error('사장님 계정으로 로그인해 주세요.');
-    result = await client.from('feed_posts').insert(toPayload(input, user.id)).select(SELECT_FIELDS).single();
+function readLocalPosts(storage?: StoragePort): FeedPost[] {
+  const raw = (storage ?? browserStorage()).getItem(POST_STORAGE_KEY);
+  if (!raw) return [];
+  let rows: unknown;
+  try { rows = JSON.parse(raw); } catch { throw new Error('저장된 게시글을 읽을 수 없어요. 브라우저 데이터를 확인해 주세요.'); }
+  if (!Array.isArray(rows) || !rows.every((p) => p && p.origin === 'local' && typeof p.id === 'string' && p.id.startsWith('local-') && typeof p.createdAt === 'string' && Number.isFinite(Date.parse(p.createdAt)) && !validatePost(p, false))) {
+    throw new Error('저장된 게시글 형식이 올바르지 않아요. 기존 데이터는 덮어쓰지 않았어요.');
   }
-  if (result.error) throw new Error('게시글을 저장하지 못했어요. 가게 권한과 입력 내용을 확인해 주세요.');
-  window.dispatchEvent(new Event(FEED_CHANGE_EVENT));
-  return toFeedPost(result.data as FeedRow);
+  return rows;
+}
+function persist(posts: FeedPost[], storage?: StoragePort) {
+  try { (storage ?? browserStorage()).setItem(POST_STORAGE_KEY, JSON.stringify(posts)); }
+  catch { throw new Error('저장 공간이 부족하거나 저장이 차단됐어요. 사진 용량을 줄이거나 브라우저 설정을 확인해 주세요.'); }
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(FEED_CHANGE_EVENT));
 }
 
-export async function deleteFeedPost(id: string): Promise<void> {
-  const { error } = await getSupabaseClient().from('feed_posts').delete().eq('id', id);
-  if (error) throw new Error('게시글을 삭제하지 못했어요. 가게 권한을 확인해 주세요.');
-  window.dispatchEvent(new Event(FEED_CHANGE_EVENT));
+/** Supabase 연결 시 이 모듈의 조회/저장 구현을 교체한다. 현재 데이터는 브라우저별로 분리된다. */
+export async function fetchFeedPosts(kind: FeedKind, storage?: StoragePort): Promise<FeedPost[]> {
+  // TODO(DB): space_rentals · oneday_classes 테이블 연결. 지금은 이 브라우저에서 만든 글만 돌려준다.
+  return readLocalPosts(storage).filter((p) => p.kind === kind);
+}
+export async function saveFeedPost(input: PostInput, existingId?: string, storage?: StoragePort): Promise<FeedPost> {
+  const error = validatePost(input);
+  if (error) throw new Error(error);
+  const posts = readLocalPosts(storage);
+  const existing = existingId ? posts.find((p) => p.id === existingId && p.kind === input.kind) : undefined;
+  if (existingId && !existing) throw new Error('이 브라우저에서 등록한 글만 수정할 수 있어요.');
+  const post = { ...input, id: existing?.id ?? 'local-' + crypto.randomUUID(), createdAt: existing?.createdAt ?? new Date().toISOString(), origin: 'local' as const } as FeedPost;
+  persist([post, ...posts.filter((p) => p.id !== post.id)], storage);
+  return post;
+}
+export async function deleteFeedPost(id: string, storage?: StoragePort): Promise<void> {
+  const posts = readLocalPosts(storage);
+  if (!posts.some((p) => p.id === id)) throw new Error('이 브라우저에서 등록한 글만 삭제할 수 있어요.');
+  persist(posts.filter((p) => p.id !== id), storage);
 }

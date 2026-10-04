@@ -12,23 +12,12 @@ export interface ClosingSale {
   storeId: string;
   /** 어떤 상품을 얼마나 깎아 주는지 한 줄 설명 */
   desc: string;
-  /** 0 ~ 1 사이 소수. 예: 0.3 = 30% 할인 (ClosingSaleItem 과 같은 규칙) */
+  /** 0 ~ 1 사이 소수. 예: 0.3 = 30% 할인 */
   discountRate: number;
   /** 세일이 끝나는 시각 (ISO 문자열) */
   closeAt: string;
   /** 관심 등록한 사람 수. 로그인 연동 후에는 사용자별 관심 테이블에서 세어 온다 */
   likeCount: number;
-}
-
-/** 마감세일 중인 상품 하나. 할인가는 저장하지 않고 discount.ts 의 함수로 계산해서 쓴다 */
-export interface ClosingSaleItem {
-  id: string;
-  storeId: string;
-  name: string;
-  /** 원 단위 정수 */
-  originalPrice: number;
-  /** 0 ~ 1 사이 소수. 예: 0.3 = 30% 할인 */
-  discountRate: number;
 }
 
 /** 화면이 받는 모양: 세일 + 가게 공통 정보 + 사용자 위치 기준 도보 시간 (source.ts 가 조합) */

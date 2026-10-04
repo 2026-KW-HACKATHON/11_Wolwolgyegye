@@ -21,7 +21,7 @@ function authMessage(error: unknown): string {
 }
 
 export default function LoginPage() {
-  const { status, userId, userName, email: accountEmail, hasEmailLogin, emailVerified, isAdmin, passwordRecovery, finishPasswordRecovery, ownedStores, ownerApplication, error: accountError, refresh, logout } = useAuth();
+  const { status, userId, userName, email: accountEmail, hasEmailLogin, emailVerified, passwordRecovery, finishPasswordRecovery, ownedStores, ownerApplication, error: accountError, refresh, logout } = useAuth();
   const [searchParams] = useSearchParams();
   const ownerIntent = searchParams.get('intent') === 'owner';
   const [ownerFlow, setOwnerFlow] = useState(false);
@@ -160,7 +160,6 @@ export default function LoginPage() {
         {accountError && <p className="lp-error" role="alert">{accountError}</p>}
         {passwordRecovery && <form className="lp-name-form lp-account-section" onSubmit={handleNewPassword}><h3>새 비밀번호 설정</h3><label>새 비밀번호<input className="lp-name-input" required type="password" minLength={6} autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></label><button className="lp-submit" type="submit" disabled={busy}>비밀번호 변경</button></form>}
         {status === 'owner' && <div className="lp-account-section"><p>관리할 가게: {ownedStores.map((store) => store.name).join(', ')}</p><Link className="lp-link-button" to="/owner">사장님 화면 열기</Link></div>}
-        {isAdmin && <div className="lp-account-section"><strong>관리자 계정</strong><p>사장님 가입 신청과 가게 공개 상태를 관리할 수 있어요.</p><Link className="lp-link-button" to="/admin">관리자 페이지 열기</Link></div>}
         {ownerApplication?.status === 'pending' && <div className="lp-account-section"><strong>사장님 승인 대기 중</strong><p>{ownerApplication.store_name} 신청을 검토하고 있어요.</p></div>}
         {ownerApplication?.status === 'rejected' && <div className="lp-account-section"><strong>이전 신청이 반려됐어요</strong><p>{ownerApplication.review_note || '입력 내용을 확인한 뒤 다시 신청해 주세요.'}</p></div>}
         {ownerApplication?.status === 'approved' && status !== 'owner' && <div className="lp-account-section"><p>승인된 신청은 있지만 현재 연결된 가게가 없어요. 운영자에게 문의해 주세요.</p></div>}

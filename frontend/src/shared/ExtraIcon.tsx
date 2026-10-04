@@ -19,7 +19,7 @@ const EXTRA_ICONS = {
     '<svg class="icon" viewBox="0 0 24 24"><path d="M9.5 3.5h5l-.8 6.2c2.9.4 5.3 1.8 5.3 3.8v1.5H5v-1.5c0-2 2.4-3.4 5.3-3.8L9.5 3.5Z"/><path d="M5 18.5h14"/></svg>',
 } as const;
 
-export type ExtraIconName = keyof typeof EXTRA_ICONS;
+type ExtraIconName = keyof typeof EXTRA_ICONS;
 
 /** 고정 문자열 SVG만 그리므로 안전하다 (shared/Icon.tsx 와 같은 방식) */
 export default function ExtraIcon({ name, className }: { name: ExtraIconName; className?: string }) {

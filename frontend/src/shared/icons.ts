@@ -50,6 +50,9 @@ export const ICONS = {
     '<svg class="icon" viewBox="0 0 24 24"><path d="M3 10v4a1 1 0 0 0 1 1h2l2.5 5.5V3.5L6 9H4a1 1 0 0 0-1 1Z"/><path d="M9.5 5.5 19 3v18l-9.5-2.5"/><path d="M19 9.5a3 3 0 0 1 0 5"/></svg>',
   compass:
     '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.8 9.2 13 13l-3.8 1.8L11 11l3.8-1.8Z"/></svg>',
+  user: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  locate:
+    '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',
 } as const;
 
 export type IconName = keyof typeof ICONS;

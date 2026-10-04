@@ -3,13 +3,13 @@
 ## 범위
 
 `frontend/src/core/supabase/`에 공통 클라이언트와 공개 가게 조회 함수를 준비했다.
-기존 mock 데이터와 브라우저 저장 게시글은 아직 교체하지 않았다. 로그인·회원가입은 Supabase Auth로 연결했다.
-`fetchPublicStores()`는 공개 가게를 이름·ID 순으로 최대 100개 조회한다.
-카테고리 데이터와 DB의 UUID를 대응한 뒤 화면별로 연결해야 한다.
+로그인·회원가입은 Supabase Auth로 연결했다. 가짜(mock) 데이터는 두지 않는다.
+`fetchMapStores()`(`core/supabase/stores.ts`)가 공개 가게 전부를 지도 핀으로 읽는다. 표 구조는 `database/schema.md` 참고.
+메뉴·세일·공간대여 등 카테고리 화면은 아직 DB와 연결하지 않았다.
 
 ## 로컬 설정
 
-기존 `frontend/.env.local`의 카카오맵 설정을 유지하고 다음 변수를 추가한다.
+`frontend/.env.local`에 다음 변수를 추가한다.
 
 ```dotenv
 VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
@@ -50,14 +50,12 @@ npm run build
 
 ## 다음 단계
 
-1. 실제 주소·좌표·공개 동의를 확인한 가게를 등록한다. 예시 데이터는 실제 가게로 표시하지 않는다.
-2. 공개 가게 조회 함수를 화면에 연결한다. 기존 mock ID와 UUID가 다르므로 단순 전환하지 않는다.
-3. 관리자 승인 API와 화면을 만들고, 승인된 사장님 계정으로 본인 가게의 게시글 등록을 검증한다.
-4. 배포할 때 Vercel에도 동일한 공개용 환경변수를 설정하고 새 빌드를 실행한다.
+1. 메뉴·영업시간·사진·세일·공간대여·클래스를 2차 탭과 카테고리 화면에 연결한다.
+2. 관리자 승인 API와 화면을 만들고, 승인된 사장님 계정으로 본인 가게의 게시글 등록을 검증한다.
+3. 배포할 때 Vercel에도 동일한 공개용 환경변수를 설정하고 새 빌드를 실행한다.
 
 ## SQL 수동 적용 주의
 
-사용자가 Supabase SQL Editor에서 초기 SQL 6개를 순서대로 실행했다고 확인했다.
-수동 실행은 CLI migration 이력 등록과 별개다. 이후 `db push` 전에 실제 스키마와 migration 이력을 대조해야 한다.
-초기 SQL을 재실행하거나 원격 `db reset`을 실행하지 않는다.
-`database/tests/bootstrap.sql`과 개발용 `seed.sql`은 운영 DB에 실행하지 않는다.
+DB 구조는 SQL Editor에서 수동으로 적용한다. 2026-10-04 구조를 새로 설계해 `database/supabase/migrations/20261004000100_schema.sql` 하나로 바꿨다. 적용 순서는 `database/README.md` 참고.
+수동 실행은 CLI migration 이력 등록과 별개다. 이후 `db push`를 쓰려면 먼저 실제 스키마와 migration 이력을 대조해야 한다.
+`database/tests/bootstrap.sql`은 운영 DB에 실행하지 않는다.

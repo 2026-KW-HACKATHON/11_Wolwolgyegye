@@ -19,14 +19,13 @@
 
 ## 지도 (`shared/map/StoreMap.tsx`)
 
-- **실제 지도**: `VITE_KAKAO_MAP_KEY`가 있으면 카카오맵에 가게 마커와 이름표를 찍는다. 홈 지도와 같은 키를 쓰며, 이미 SDK를 불러왔으면 다시 불러오지 않는다.
-- **위치 약도**: 키가 없거나 SDK를 불러오지 못하면 약도를 그린다. 기준점과 가게 좌표로 방향·직선거리만 계산한 그림이고, 도로는 그리지 않는다고 화면에 표시한다.
-- **카카오맵에서 보기**: 지도 아래 이 링크는 키 없이도 동작한다.
+- **지도**: 카카오맵은 쓰지 않는다. 상세에는 위치 약도만 그리고, 실제 위치는 앱 뒤의 배경 지도에서 보여준다.
+- **위치 약도**: 기준점과 가게 좌표로 방향·직선거리만 계산한 그림이고, 도로는 그리지 않는다고 화면에 표시한다.
+- **지도에서 보기**: 제휴 가게 상세의 위치 버튼은 상세 창을 닫고 배경 지도에서 그 가게를 선택한다.
 
 ## 바꾼 파일
 
 - `features/coupon/*`: 화면을 새로 만들었다. `StampList`, `StampDetail`, `StampSeal`, `constants`를 추가했다.
 - `features/partner-stores/PartnerStoresPage.tsx`, `features/partner-stores/partner.css`
-- 새 공용 파일: `shared/map/StoreMap.tsx`, `shared/map/StoreMap.css`, `shared/map/kakaoSdk.ts`, `shared/ExtraIcon.tsx`
+- 새 공용 파일: `shared/map/StoreMap.tsx`, `shared/map/StoreMap.css`, `shared/ExtraIcon.tsx`
 - 다른 팀원 폴더, `core` 규격, 공용 `icons.ts`·`theme.css`는 바꾸지 않았다. 색은 `theme.css` 토큰을 화면별 변수(`--st-*`, `--ps-*`)로 연결해서 쓴다.
-- `shared/store-list/store-list.css`: 이제 어디에서도 쓰지 않는다. 필요 없으면 지워도 된다.

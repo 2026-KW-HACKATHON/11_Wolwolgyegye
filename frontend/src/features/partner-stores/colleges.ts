@@ -1,6 +1,6 @@
 import type { College } from './types';
 
-/** 화면 필터에 사용하는 광운대학교 단과대 분류. 운영 혜택 데이터는 Supabase에서 조회한다. */
+/** 광운대학교 단과대학 목록 (실제 학교 구성. 예시 데이터가 아니다). DB 연결 후 partners 테이블 초기값으로 쓴다 */
 export const COLLEGES: College[] = [
   { key: 'eie', label: '전자정보', name: '전자정보공과대학' },
   { key: 'ai', label: 'AI융합', name: '인공지능융합대학' },

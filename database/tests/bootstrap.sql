@@ -5,7 +5,6 @@ create role service_role nologin bypassrls;
 create schema auth;
 create table auth.users (
   id uuid primary key,
-  email text,
   raw_user_meta_data jsonb,
   email_confirmed_at timestamptz
 );

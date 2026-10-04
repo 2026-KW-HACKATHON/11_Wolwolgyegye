@@ -1,18 +1,26 @@
+import type { IconName } from '../../shared/icons';
+
 /** 화면(경로)을 가진 모든 항목의 최소 공통 정보 */
-export interface PageMeta {
+interface PageMeta {
   id: string;
   name: string;
   path: string;
-  /** ? 안내창에 표시할 기능 설명 */
-  help: string;
 }
 
-/** 네비게이션에 나열되는 카테고리 */
-export interface Category extends PageMeta {
-  /** 아이콘 자리 (지금은 글자 하나짜리 임시 기호, 추후 아이콘으로 교체) */
-  icon: string;
+/**
+ * 지도 위에 올라오는 1차 탭(스와이프 탭) 정보.
+ * 탭은 닫힘(바에 붙음) / 반쯤 열림 / 전체 3단계이며, 반쯤 열린 크기는 정보량에 따라 카테고리마다 다르다.
+ */
+export interface PanelMeta extends PageMeta {
+  /** 세로 화면: 반쯤 열렸을 때 높이 (지도 영역 높이 대비 비율, 0 ~ 1) */
+  sheetHalf: number;
+  /** 가로 화면: 반쯤 열렸을 때 폭 (px). 화면이 좁으면 자동으로 줄어든다 */
+  panelHalf: number;
+}
+
+/** 카테고리 네비게이션 바에 나열되는 카테고리 */
+export interface Category extends PanelMeta {
+  icon: IconName;
   /** true 면 사용자가 끌 수 없이 항상 노출 */
   isFixed: boolean;
-  /** 고정 카테고리의 위치. 모바일 하단바에서 left=왼쪽 끝, right=오른쪽 끝 */
-  fixedSide?: 'left' | 'right';
 }

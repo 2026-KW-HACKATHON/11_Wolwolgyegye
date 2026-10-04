@@ -1,0 +1,352 @@
+/* =====================================================================
+   배경 지도. 색상은 모두 아래 CSS 변수에서 관리한다. (V_World/style.css 와 같은 변수 이름)
+   MainMap.tsx 가 지도를 만들 때 이 변수들을 읽어 지도 스타일에 사용하므로, 색을 바꾸려면 여기만 고치면 된다.
+   색은 동네 소식·원데이클래스·공간대여 테마(theme.css)에 맞췄다.
+   ===================================================================== */
+.mm-root {
+  /* 배경 (타일 대신 단색) */
+  --map-bg: #efe8dc;
+  /* 건물 */
+  --building-fill: #e2d5c3;
+  --building-stroke: #c9b8a1;
+  --building-hover: #e9b36a;
+  /* 도로 (등급별, OpenStreetMap) */
+  --road-major: #ffffff;
+  --road-medium: #fffdf8;
+  --road-minor: #fbf7f0;
+  --road-service: #f7f1e7;
+  --road-path: #cbbda9;
+  /* 철도 (바탕 선 + 흰 점선) */
+  --rail-base: #9c9087;
+  --rail-dash: #ffffff;
+  /* 영역 (건물·도로 아래에 깔리는 면) */
+  --mountain-fill: #d4e2c9; /* 산: 동네 소식 초록 계열 */
+  --water-fill: #c6dbe2; /* 강·하천 */
+  --school-fill: #e3d9c9; /* 학교: 바탕보다 조금 진하게 (아파트보다 한 단계 더) */
+  --apartment-fill: #e8e0d2; /* 아파트 단지: 바탕보다 조금 진하게 */
+  /* 경계 */
+  --admin-dong: #802d40; /* 월계1동(행정동): 브랜드 색 */
+  /* 가게 점 (그 외 카테고리 묶음별). 한 건물에 여러 묶음이 있으면 음식점 → 카페 → 편의점 → 그 외 순으로 색을 고른다 */
+  --place-restaurant: #d8473f; /* 음식점: 빨강 */
+  --place-cafe: #e2a514; /* 카페·베이커리: 노랑 */
+  --place-convenience: #2f6fd0; /* 편의점: 파랑 */
+  --place-etc: #8a7b6e; /* 그 외: 갈회색 */
+
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  isolation: isolate; /* Leaflet 내부 z-index 가 앱의 탭·버튼 위로 올라오지 않게 가둔다 */
+  overflow: hidden;
+  background: var(--map-bg);
+}
+
+.mm-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* Leaflet 기본 배경(밝은 회색)을 지도 바탕색으로 덮어쓴다 */
+.mm-canvas.leaflet-container {
+  background: var(--map-bg);
+  font-family: inherit;
+}
+
+/* 데이터 출처 라벨: 보이는 지도의 아래쪽 가운데, 최대한 작게 */
+.mm-source {
+  position: absolute;
+  z-index: 1000;
+  right: var(--inset-right, 0px);
+  bottom: calc(var(--inset-bottom, 0px) + 2px);
+  left: var(--inset-left, 0px);
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 9px;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 0 2px var(--map-bg), 0 0 2px var(--map-bg);
+  opacity: 0.8;
+  pointer-events: none; /* 지도 조작을 막지 않도록 */
+  transition: right 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), bottom 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), left 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 불러오는 중 / 데이터 없음 안내: 화면 가운데 */
+.mm-state {
+  position: absolute;
+  z-index: 1001;
+  top: 30%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-card);
+  font-size: 14px;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+.mm-state span {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.mm-state code {
+  color: var(--color-brand);
+}
+
+/* ---------- Leaflet 기본 컨트롤 ---------- */
+.mm-root .leaflet-control-zoom {
+  margin: 0 0 12px calc(var(--inset-left, 0px) + 12px);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  transition: margin-left 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.mm-root .leaflet-bar a,
+.mm-root .leaflet-bar a:hover {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-bottom-color: var(--color-border);
+}
+
+.mm-root .leaflet-control-scale {
+  margin-left: calc(var(--inset-left, 0px) + 12px);
+}
+
+.mm-root .leaflet-control-scale-line {
+  background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+  color: var(--color-text-muted);
+  border-color: var(--color-text-muted);
+}
+
+/* 팝업 */
+.mm-root .leaflet-popup-content-wrapper,
+.mm-root .leaflet-popup-tip {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-float);
+}
+
+.mm-root .popup-kind {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.mm-root .popup-title {
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.mm-root .popup-table td:first-child {
+  padding-right: 8px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* 경계 라벨 (Leaflet tooltip 을 라벨처럼 사용) */
+.mm-root .boundary-label.leaflet-tooltip {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--admin-dong);
+  font-weight: 700;
+  font-size: 13px;
+  text-shadow: 0 0 3px var(--map-bg), 0 0 3px var(--map-bg), 0 0 3px var(--map-bg);
+}
+
+.mm-root .boundary-label.leaflet-tooltip::before {
+  display: none; /* 말풍선 꼬리 제거 */
+}
+
+/* ---------- 가게 핀 ---------- */
+.mm-pin-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: visible;
+}
+
+.mm-pin {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-surface);
+  border-radius: 16px 16px 16px 4px;
+  background: var(--color-neighborhood);
+  color: var(--color-surface);
+  box-shadow: 0 3px 12px rgba(37, 61, 51, 0.25);
+  font-size: 19px;
+  transition: transform 0.15s;
+}
+
+.mm-pin .icon {
+  display: block;
+}
+
+.mm-pin--class {
+  background: var(--color-brand);
+}
+
+.mm-pin.is-selected {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px var(--color-brand-soft), 0 4px 14px rgba(43, 31, 23, 0.3);
+}
+
+.mm-pin-name {
+  margin-top: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+
+/* ---------- 상가정보 가게 핀 (건물 단위 묶기 + 줌에 따른 묶기) ---------- */
+.pl-wrap {
+  display: grid;
+  place-items: center;
+}
+
+.pl--restaurant { --pl-color: var(--place-restaurant); }
+.pl--cafe { --pl-color: var(--place-cafe); }
+.pl--convenience { --pl-color: var(--place-convenience); }
+.pl--etc { --pl-color: var(--place-etc); }
+
+/* 가게 1곳: 작은 점 */
+.pl-dot {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: var(--pl-color);
+  box-shadow: 0 1px 4px rgba(43, 31, 23, 0.3);
+}
+
+/* 한 건물에 여럿: 가게 수 */
+.pl-building {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border: 2px solid #ffffff;
+  border-radius: 13px;
+  background: var(--pl-color);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(43, 31, 23, 0.3);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* 여러 건물 묶음 (줌을 줄였을 때): 누르면 확대. 색은 건물 핀과 같은 우선순위 묶음 색 */
+.pl-cluster {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 3px solid color-mix(in srgb, var(--pl-color) 35%, #ffffff);
+  border-radius: 50%;
+  background: var(--pl-color);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(43, 31, 23, 0.35);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pl-dot.is-selected,
+.pl-building.is-selected,
+.pl-cluster.is-selected {
+  outline: 3px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* 층별 가게 목록 팝업 */
+.mm-root .pl-popup .leaflet-popup-content {
+  margin: 10px 12px;
+}
+
+.pl-list__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pl-list__head strong {
+  font-size: 14px;
+}
+
+.pl-list__head span {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.pl-list__body {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.pl-list__body h4 {
+  margin: 8px 0 2px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.pl-list__item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 6px 6px 16px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  text-align: left;
+  font-size: 13px;
+  position: relative;
+}
+
+/* 묶음 색 점 */
+.pl-list__item::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pl-color);
+  transform: translateY(-50%);
+}
+
+.pl-list__item span {
+  font-weight: 700;
+}
+
+.pl-list__item small {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.pl-list__item:hover,
+.pl-list__item:focus-visible {
+  background: var(--color-surface-alt);
+  outline: none;
+}
