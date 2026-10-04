@@ -25,7 +25,15 @@ after(async () => { await db.close(); });
 test('예시 데이터가 카테고리마다 10개 이상 들어간다', async () => {
   const seed = await sqlFile('../mock/seed_mock.sql');
   await db.exec(seed);
-  const row = (await db.query(seed.slice(seed.lastIndexOf('select\n')))).rows[0];
+  const row = (await db.query(`select
+    (select count(*) from public.stores where is_mock) as stores,
+    (select count(*) from public.store_menus m join public.stores s on s.id = m.store_id where s.is_mock) as menus,
+    (select count(*) from public.store_hours h join public.stores s on s.id = h.store_id where s.is_mock) as hours,
+    (select count(*) from public.closing_sales c join public.stores s on s.id = c.store_id where s.is_mock) as closing_sales,
+    (select count(*) from public.partner_benefits b join public.stores s on s.id = b.store_id where s.is_mock) as benefits,
+    (select count(*) from public.space_rentals r join public.stores s on s.id = r.store_id where s.is_mock) as space_rentals,
+    (select count(*) from public.one_day_classes k join public.stores s on s.id = k.store_id where s.is_mock) as classes,
+    (select count(*) from public.stamp_policies p join public.stores s on s.id = p.store_id where s.is_mock) as stamps`)).rows[0];
   assert.deepEqual(Object.fromEntries(Object.entries(row).map(([k, v]) => [k, Number(v)])), {
     stores: 14, menus: 40, hours: 98, closing_sales: 12, benefits: 12, space_rentals: 12, classes: 12, stamps: 10,
   });

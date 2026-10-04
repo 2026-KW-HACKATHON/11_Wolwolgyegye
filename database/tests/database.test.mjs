@@ -168,6 +168,19 @@ test('사장님 신청: 이메일 인증 계정 본인만, 승인은 서버만',
   assert.equal((await as('authenticated', applicant, "update public.stores set phone='010-0000-0000' where id=$1", [freeShop])).affectedRows, 1);
 });
 
+test('관리자 RPC는 서버 권한표를 확인하고 일반 로그인 사용자를 차단', async () => {
+  await db.query('insert into private.admin_users(user_id) values ($1)', [owner]);
+  assert.equal((await as('authenticated', owner, 'select public.is_current_user_admin() as allowed')).rows[0].allowed, true);
+  assert.equal((await as('authenticated', neighbor, 'select public.is_current_user_admin() as allowed')).rows[0].allowed, false);
+  await rejectsCode(as('authenticated', neighbor, "select * from public.admin_list_owner_applications('all')"), '42501');
+  assert.ok((await as('authenticated', owner, "select * from public.admin_list_owner_applications('all')")).rows.length > 0);
+  const stores = (await as('authenticated', owner, 'select * from public.admin_list_stores()')).rows;
+  assert.equal(stores.find((store) => store.id === hidden).is_demo, false);
+  await as('authenticated', owner, 'select public.admin_set_store_published($1,true)', [hidden]);
+  assert.equal((await as('anon', null, 'select id from public.stores where id=$1', [hidden])).rows.length, 1);
+  await as('authenticated', owner, 'select public.admin_set_store_published($1,false)', [hidden]);
+});
+
 test('가게 찜: 본인 것만, 공개 가게만, 중복 금지', async () => {
   await as('authenticated', neighbor, 'insert into public.store_favorites(user_id,store_id) values ($1,$2)', [neighbor, shopA]);
   await rejectsCode(as('authenticated', neighbor, 'insert into public.store_favorites(user_id,store_id) values ($1,$2)', [neighbor, shopA]), '23505');

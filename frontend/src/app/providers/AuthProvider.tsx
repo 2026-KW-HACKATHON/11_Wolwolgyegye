@@ -2,11 +2,11 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { AuthContext, type AuthContextValue, type OwnerApplication } from '../../core/auth/AuthContext';
 import { getSupabaseClient } from '../../core/supabase/client';
 
-type AuthSnapshot = Pick<AuthContextValue, 'status' | 'userId' | 'userName' | 'email' | 'hasEmailLogin' | 'emailVerified' | 'ownedStores' | 'ownerApplication' | 'error'>;
+type AuthSnapshot = Pick<AuthContextValue, 'status' | 'userId' | 'userName' | 'email' | 'hasEmailLogin' | 'emailVerified' | 'isAdmin' | 'ownedStores' | 'ownerApplication' | 'error'>;
 
 const GUEST: AuthSnapshot = {
   status: 'guest', userId: null, userName: null, email: null,
-  hasEmailLogin: false, emailVerified: false,
+  hasEmailLogin: false, emailVerified: false, isAdmin: false,
   ownedStores: [], ownerApplication: null, error: null,
 };
 
@@ -32,10 +32,11 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const [profile, stores, applications] = await Promise.all([
+      const [profile, stores, applications, admin] = await Promise.all([
         client.from('profiles').select('display_name').eq('user_id', user.id).maybeSingle(),
         client.from('stores').select('id, name').eq('owner_id', user.id),
         client.from('owner_applications').select('id, status, review_note, store_name').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1),
+        client.rpc('is_current_user_admin'),
       ]);
       if (current !== revision.current) return;
       const ownedStores = stores.error ? [] : (stores.data ?? []) as { id: string; name: string }[];
@@ -47,9 +48,10 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         hasEmailLogin: user.identities?.some((identity) => identity.provider === 'email') ??
           (Array.isArray(user.app_metadata?.providers) && user.app_metadata.providers.includes('email')),
         emailVerified: Boolean(user.email_confirmed_at),
+        isAdmin: admin.error ? false : admin.data === true,
         ownedStores,
         ownerApplication: applications.error ? null : (applications.data?.[0] as OwnerApplication | undefined) ?? null,
-        error: profile.error || stores.error || applications.error ? '계정 정보를 일부 불러오지 못했어요. 새로고침해 주세요.' : null,
+        error: profile.error || stores.error || applications.error || admin.error ? '계정 정보를 일부 불러오지 못했어요. 새로고침해 주세요.' : null,
       });
     } catch {
       if (current === revision.current) setSnapshot({ ...GUEST, error: '인증 연결을 확인해 주세요.' });
