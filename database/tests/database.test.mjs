@@ -153,16 +153,19 @@ test('이메일/소셜 가입 시 프로필 자동 생성, 이름 정리', async
   assert.equal((await rows('authenticated', owner, 'select user_id from public.profiles')).length, 1);
 });
 
-test('사장님 신청: 이메일 인증 계정 본인만, 승인은 서버만', async () => {
-  const apply = "insert into public.owner_applications(user_id,applicant_name,contact_phone,store_name,store_address) values ($1,'신청자','000-0000-0000','신청 가게','주소') returning id";
-  await rejectsCode(as('authenticated', unverified, apply, [unverified]), '42501');
-  await rejectsCode(as('authenticated', socialUser, apply, [socialUser]), '42501');
-  await rejectsCode(as('authenticated', applicant, apply, [owner]), '42501');
-  applicationId = (await rows('authenticated', applicant, apply, [applicant]))[0].id;
-  await rejectsCode(as('authenticated', applicant, apply, [applicant]), '23505');
+test('사장님 신청: 인증 계정이 실제 DB 가게를 선택하고 관리자는 그 가게만 승인', async () => {
+  const apply = "insert into public.owner_applications(user_id,applicant_name,contact_phone,requested_store_id,business_registration_number) values ($1,'신청자','000-0000-0000',$2,'123-45-67890') returning id";
+  await rejectsCode(as('authenticated', unverified, apply, [unverified, freeShop]), '42501');
+  await rejectsCode(as('authenticated', socialUser, apply, [socialUser, freeShop]), '42501');
+  await rejectsCode(as('authenticated', applicant, apply, [owner, freeShop]), '42501');
+  await rejectsCode(as('authenticated', applicant, apply, [applicant, shopA]), '22023');
+  applicationId = (await rows('authenticated', applicant, apply, [applicant, freeShop]))[0].id;
+  assert.equal(await scalar('select store_name from public.owner_applications where id=$1', [applicationId]), '주인 없는 가게');
+  assert.equal(await scalar('select business_registration_number from public.owner_applications where id=$1', [applicationId]), '1234567890');
+  await rejectsCode(as('authenticated', applicant, apply, [applicant, freeShop]), '23505');
   await rejectsCode(as('authenticated', applicant, "select public.review_owner_application($1,'approved',$2)", [applicationId, freeShop]), '42501');
-  // 다른 사장님 가게는 넘겨줄 수 없다
-  await rejectsCode(as('service_role', null, "select public.review_owner_application($1,'approved',$2)", [applicationId, shopA]), '23505');
+  // 신청자가 고르지 않은 다른 가게로 바꾸어 승인할 수 없다.
+  await rejectsCode(as('service_role', null, "select public.review_owner_application($1,'approved',$2)", [applicationId, shopA]), '22023');
   await as('service_role', null, "select public.review_owner_application($1,'approved',$2,'확인')", [applicationId, freeShop]);
   assert.equal(await scalar('select owner_id from public.stores where id=$1', [freeShop]), applicant);
   assert.equal((await as('authenticated', applicant, "update public.stores set phone='010-0000-0000' where id=$1", [freeShop])).affectedRows, 1);

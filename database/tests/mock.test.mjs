@@ -63,7 +63,7 @@ test('예시 가게는 사장님 승인 대상이 될 수 없다', async () => {
   const user = 'a0000000-0000-4000-8000-000000000009';
   await db.query("insert into auth.users(id,email_confirmed_at) values ($1,now())", [user]);
   await db.query("insert into auth.identities(user_id,provider) values ($1,'email')", [user]);
-  const app = (await db.query("insert into public.owner_applications(user_id,applicant_name,contact_phone,store_name,store_address) values ($1,'신청','000-0000-0000','가게','주소') returning id", [user])).rows[0].id;
+  const app = (await db.query("insert into public.owner_applications(user_id,applicant_name,contact_phone,requested_store_id,business_registration_number) values ($1,'신청','000-0000-0000',$2,'1234567890') returning id", [user, realStore])).rows[0].id;
   await assert.rejects(db.query("select public.review_owner_application($1,'approved','eeeeeeee-0000-4000-8000-000000000001')", [app]), (e) => e.code === '22023');
   await db.query("select public.review_owner_application($1,'approved',$2)", [app, realStore]);
 });

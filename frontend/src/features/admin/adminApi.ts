@@ -8,6 +8,9 @@ export interface AdminOwnerApplication {
   contact_phone: string;
   store_name: string;
   store_address: string;
+  requested_store_id: string | null;
+  requested_store_phone: string | null;
+  business_registration_number: string | null;
   status: 'pending' | 'approved' | 'rejected';
   approved_store_id: string | null;
   review_note: string;
@@ -62,28 +65,6 @@ export async function reviewWithExistingStore(applicationId: string, storeId: st
     p_note: note,
   });
   if (error) throw new Error(message(error, '승인하지 못했어요. 입력 내용과 가게 상태를 확인해 주세요.'));
-}
-
-export async function createStoreAndApprove(applicationId: string, input: {
-  name: string;
-  address: string;
-  lat: number;
-  lng: number;
-  cuisineType: string;
-  phone: string;
-  note: string;
-}): Promise<void> {
-  const { error } = await getSupabaseClient().rpc('admin_create_store_and_approve', {
-    p_application_id: applicationId,
-    p_name: input.name,
-    p_address: input.address,
-    p_lat: input.lat,
-    p_lng: input.lng,
-    p_cuisine_type: input.cuisineType,
-    p_phone: input.phone,
-    p_note: input.note,
-  });
-  if (error) throw new Error(message(error, '가게를 만들고 승인하지 못했어요. 입력 내용을 확인해 주세요.'));
 }
 
 export async function rejectApplication(applicationId: string, note: string): Promise<void> {

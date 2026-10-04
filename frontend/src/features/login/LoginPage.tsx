@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { DEFAULT_LANDING_PATH } from '../../core/categories/categories';
 import { useAuth } from '../../core/auth/AuthContext';
@@ -9,6 +9,14 @@ import './login.css';
 type Mode = 'login' | 'customer-signup' | 'owner-signup' | 'reset';
 const KAKAO_PROVIDER = 'custom:kakao-no-email' as const;
 
+interface ClaimableStore {
+  id: string;
+  name: string;
+  address: string;
+  phone: string;
+  industry: string;
+}
+
 function authMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : '';
   if (/Invalid login credentials/i.test(message)) return '이메일 또는 비밀번호를 확인해 주세요.';
@@ -16,6 +24,9 @@ function authMessage(error: unknown): string {
   if (/already registered/i.test(message)) return '이미 가입된 이메일이에요. 로그인해 주세요.';
   if (/Password should/i.test(message)) return '비밀번호 조건을 확인해 주세요.';
   if (/provider.*(not enabled|disabled|unsupported)|unsupported provider/i.test(message)) return '카카오 로그인이 아직 설정되지 않았어요.';
+  if (/Invalid business registration number/i.test(message)) return '사업자등록번호 10자리를 확인해 주세요.';
+  if (/Store is not available for owner application/i.test(message)) return '현재 신청할 수 없는 가게예요. 목록을 다시 검색해 주세요.';
+  if (/duplicate key.*owner_applications_one_pending/i.test(message)) return '이미 검토 중인 사장님 신청이 있어요.';
   if (/rate limit/i.test(message)) return '잠시 후 다시 시도해 주세요.';
   return message || '요청을 처리하지 못했어요. 다시 시도해 주세요.';
 }
@@ -33,13 +44,49 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [phone, setPhone] = useState('');
-  const [storeName, setStoreName] = useState('');
-  const [storeAddress, setStoreAddress] = useState('');
+  const [storeQuery, setStoreQuery] = useState('');
+  const [storeResults, setStoreResults] = useState<ClaimableStore[]>([]);
+  const [selectedStore, setSelectedStore] = useState<ClaimableStore | null>(null);
+  const [storeSearchBusy, setStoreSearchBusy] = useState(false);
+  const [storeSearchError, setStoreSearchError] = useState('');
+  const [businessNumber, setBusinessNumber] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const showToast = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const query = storeQuery.trim();
+    if (!wantsOwner || status === 'guest' || status === 'checking' || query.length < 2) {
+      setStoreResults([]);
+      setStoreSearchBusy(false);
+      setStoreSearchError('');
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setStoreSearchBusy(true);
+      setStoreSearchError('');
+      const { data, error: searchError } = await getSupabaseClient().rpc('search_claimable_stores', {
+        p_query: query,
+      });
+      if (cancelled) return;
+      setStoreSearchBusy(false);
+      if (searchError) {
+        setStoreResults([]);
+        setStoreSearchError('가게를 검색하지 못했어요. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
+      setStoreResults((data ?? []) as ClaimableStore[]);
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [status, storeQuery, wantsOwner]);
 
   function chooseMode(next: Mode) {
     setMode(next);
@@ -119,12 +166,13 @@ export default function LoginPage() {
     event.preventDefault();
     if (!userId) return;
     void run(async () => {
+      if (!selectedStore) throw new Error('DB에 등록된 가게를 검색해서 선택해 주세요.');
       const { error: insertError } = await getSupabaseClient().from('owner_applications').insert({
         user_id: userId,
         applicant_name: name.trim() || userName || '',
         contact_phone: phone.trim(),
-        store_name: storeName.trim(),
-        store_address: storeAddress.trim(),
+        requested_store_id: selectedStore.id,
+        business_registration_number: businessNumber.trim(),
       });
       if (insertError) throw insertError;
       await refresh();
@@ -167,11 +215,16 @@ export default function LoginPage() {
         {status !== 'owner' && ownerApplication?.status !== 'pending' && ownerApplication?.status !== 'approved' && (wantsOwner ? (
           hasEmailLogin && emailVerified ? <form className="lp-name-form lp-account-section" onSubmit={handleApplication}>
             <h3>사장님 신청</h3>
-            <p className="lp-sub">가게 정보 제출 후 관리자 승인을 받아야 가게를 관리할 수 있어요.</p>
+            <p className="lp-sub">DB에 등록된 실제 가게를 선택하고 사업자 정보를 제출해 주세요. 관리자가 확인한 뒤 선택한 가게에만 권한을 연결합니다.</p>
             <label>신청자 이름<input className="lp-name-input" required maxLength={80} value={name} placeholder={userName ?? ''} onChange={(event) => setName(event.target.value)} /></label>
             <label>연락처<input className="lp-name-input" required type="tel" minLength={8} maxLength={25} pattern="[0-9+() -]+" value={phone} onChange={(event) => setPhone(event.target.value)} /></label>
-            <label>가게 이름<input className="lp-name-input" required maxLength={100} value={storeName} onChange={(event) => setStoreName(event.target.value)} /></label>
-            <label>가게 주소<input className="lp-name-input" required maxLength={300} value={storeAddress} onChange={(event) => setStoreAddress(event.target.value)} /></label>
+            <label>내 가게 검색<input className="lp-name-input" type="search" minLength={2} maxLength={100} value={storeQuery} placeholder="가게명 또는 주소 2글자 이상" onChange={(event) => { setStoreQuery(event.target.value); setSelectedStore(null); }} /></label>
+            {storeSearchBusy && <p className="lp-search-note" role="status">가게를 검색하고 있어요…</p>}
+            {storeSearchError && <p className="lp-error" role="alert">{storeSearchError}</p>}
+            {!storeSearchBusy && storeQuery.trim().length >= 2 && !storeSearchError && storeResults.length === 0 && <p className="lp-search-note">검색 결과가 없어요. 관리자에게 가게 등록을 요청해 주세요.</p>}
+            {storeResults.length > 0 && <fieldset className="lp-store-results"><legend>등록된 가게 선택</legend>{storeResults.map((store) => <button key={store.id} type="button" className={selectedStore?.id === store.id ? 'is-selected' : ''} aria-pressed={selectedStore?.id === store.id} onClick={() => setSelectedStore(store)}><strong>{store.name}</strong><span>{store.address}</span>{(store.industry || store.phone) && <small>{[store.industry, store.phone].filter(Boolean).join(' · ')}</small>}</button>)}</fieldset>}
+            {selectedStore && <div className="lp-selected-store" role="status"><strong>선택한 가게</strong><span>{selectedStore.name}</span><small>{selectedStore.address}</small></div>}
+            <label>사업자등록번호<input className="lp-name-input" required inputMode="numeric" autoComplete="off" pattern="[0-9]{3}-?[0-9]{2}-?[0-9]{5}" maxLength={12} value={businessNumber} placeholder="000-00-00000" onChange={(event) => setBusinessNumber(event.target.value)} /><small className="lp-field-help">관리자의 사장님 확인에만 사용되며 일반 사용자에게 공개되지 않아요.</small></label>
             <button className="lp-submit" type="submit" disabled={busy}>신청 제출</button>
           </form> : <div className="lp-account-section"><p>{hasEmailLogin ? '이메일 인증을 마친 뒤 사장님 신청이 가능해요.' : '사장님 신청에는 인증된 이메일 계정이 필요해요. 이메일로 회원가입해 주세요.'}</p></div>
         ) : <button className="lp-logout" type="button" onClick={() => setOwnerFlow(true)}>사장님 신청하기</button>)}
