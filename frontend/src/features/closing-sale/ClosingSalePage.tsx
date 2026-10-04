@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SALE_SORTS, toneForStore, type SaleSortKey } from './constants';
-import { formatDiscountRate } from './discount';
+import { discountSortValue, formatSaleDiscount } from './discount';
 import { fetchClosingSales } from './source';
 import type { ClosingSaleView } from './types';
 import './closing-sale.css';
@@ -50,7 +50,7 @@ function formatCloseTime(sale: ClosingSaleView) {
 
 function sortSales(sales: ClosingSaleView[], key: SaleSortKey) {
   const sorted = [...sales];
-  if (key === 'discount') return sorted.sort((a, b) => b.discountRate - a.discountRate);
+  if (key === 'discount') return sorted.sort((a, b) => discountSortValue(b) - discountSortValue(a));
   if (key === 'near') return sorted.sort((a, b) => a.walkMinutes - b.walkMinutes);
   return sorted.sort((a, b) => a.closeAt.localeCompare(b.closeAt));
 }
@@ -172,8 +172,8 @@ export default function ClosingSalePage() {
                       {formatLeft(left)}
                     </span>
                     <strong className="cs-discount">
-                      {formatDiscountRate(sale.discountRate)}
-                      <span className="cs-discount-off"> OFF</span>
+                      {formatSaleDiscount(sale)}
+                      <span className="cs-discount-off">{sale.discountType === 'free' ? ' 제공' : ' OFF'}</span>
                     </strong>
                   </div>
 

@@ -37,7 +37,7 @@ function storeToSecondary(store: Store): SecondaryPlace {
     name: store.name,
     category: store.cuisineType ?? '',
     address: store.address,
-    facts: [{ label: '영업', value: store.businessHours }, { label: '전화', value: store.phone }].filter((f) => f.value),
+    facts: [{ label: '전화', value: store.phone }].filter((f) => f.value), // 영업시간은 2차 탭 아래쪽에 요일별로 나온다
   };
 }
 
@@ -177,13 +177,17 @@ export default function AppShell() {
     [s.id, mapData ? mapData.stores.filter((p) => p.typeId === s.id).length : 0])), [mapData]);
   // 가게가 한 곳도 없는 항목은 목록에서 뺀다 (데이터가 아직 없으면 전부 보여준다)
   const visibleSubs = useMemo(() => (mapData ? SUB_CATEGORIES.filter((s) => subCounts[s.id] > 0) : SUB_CATEGORIES), [mapData, subCounts]);
-  // 지도 가게: 그 외 카테고리를 고르면 그 유형만, 아니면 전부
-  const places = useMemo(() => (mapData ? (subCategory ? mapData.stores.filter((p) => p.typeId === subCategory.id) : mapData.stores) : []), [mapData, subCategory]);
   const mapStores = useMemo(() => {
     // 그 외 카테고리를 고른 동안에는 카테고리 가게 핀을 숨기고 지도 가게만 보여준다
     const list = subCategory ? [] : storesForPanel(categoryStores, activeId ?? '');
     return selectedStore && !list.includes(selectedStore) ? [...list, selectedStore] : list;
   }, [subCategory, activeId, selectedStore, categoryStores]);
+  // 지도 가게: 그 외 카테고리를 고르면 그 유형만, 아니면 전부. 카테고리 핀으로 이미 나온 가게는 두 번 그리지 않는다
+  const places = useMemo(() => {
+    if (!mapData) return [];
+    const shown = new Set(mapStores.map((s) => s.id));
+    return mapData.stores.filter((p) => !shown.has(p.id) && (!subCategory || p.typeId === subCategory.id));
+  }, [mapData, subCategory, mapStores]);
 
   // ---- 2차 탭: 카테고리 가게 또는 지도 가게 하나만 연다 ----
   const selectStore = useCallback((id: string) => { setSelectedPlace(null); setSelectedStoreId(id); }, []);

@@ -1,22 +1,87 @@
+import { fetchStoresByIds } from '../../core/source/storeSource';
+import { getSupabaseClient } from '../../core/supabase/client';
 import type { Store } from '../../core/types/place';
-import { FEED_CATEGORIES, type FeedKind, type FeedPost, type PostInput } from './types';
+import { FEED_CATEGORIES, type ClassPost, type FeedKind, type FeedPost, type PostInput, type SpacePost } from './types';
 
 export const POST_STORAGE_KEY = 'wol-owner-posts-v1';
 export const FEED_CHANGE_EVENT = 'wol-owner-posts-changed';
 type StoragePort = Pick<Storage, 'getItem' | 'setItem'>;
 
 /**
- * 글에 연결할 수 있는 가게 목록. TODO(DB): stores 테이블 연결.
- * 그 전까지는 가게가 없어서 글을 새로 올릴 수 없다. (가짜 가게를 쓰지 않는다)
+ * 글에 붙는 가게. DB 글을 읽을 때 그 글의 가게를 여기에 모아 두고, 화면은 findFeedStore 로 바로 꺼낸다.
+ * 이 브라우저에서 새 글을 올릴 가게 목록(feedStores)도 여기서 고른다.
+ * TODO(로그인): 글 올리기는 사장님 본인 가게로 바꾼다.
  */
-const FEED_STORES: Store[] = [];
+const feedStoreCache = new Map<string, Store>();
 
 export function findFeedStore(id: string): Store | undefined {
-  return FEED_STORES.find((store) => store.id === id);
+  return feedStoreCache.get(id);
 }
 
 export function feedStores(kind: FeedKind): Store[] {
-  return FEED_STORES.filter((store) => store.supports[kind]);
+  return [...feedStoreCache.values()].filter((store) => store.supports[kind]);
+}
+
+interface ImageRow { image_path: string; sort_order: number }
+interface SpaceRow {
+  id: string; store_id: string; title: string; summary: string; body: string; available_hours: string;
+  price: number; capacity: number; min_hours: number | null; created_at: string;
+  space_rental_categories: { name: string } | null; space_rental_images: ImageRow[];
+}
+interface ClassRow {
+  id: string; store_id: string; title: string; summary: string; body: string; starts_at: string; duration_minutes: number;
+  price: number; current_count: number; max_count: number; created_at: string;
+  one_day_class_categories: { name: string } | null; one_day_class_images: ImageRow[];
+}
+
+/** 사진 경로 → 공개 주소 (첫 장만 쓴다). 없으면 '' */
+function firstImageUrl(images: ImageRow[]): string {
+  const first = [...(images ?? [])].sort((a, b) => a.sort_order - b.sort_order)[0];
+  return first ? getSupabaseClient().storage.from('store-media').getPublicUrl(first.image_path).data.publicUrl : '';
+}
+
+/** DB 의 공간대여·원데이클래스 글 (공개 가게의 공개 글만, RLS). 실패하면 빈 목록 */
+async function fetchDbPosts(kind: FeedKind): Promise<FeedPost[]> {
+  let posts: FeedPost[];
+  try {
+    const client = getSupabaseClient();
+    if (kind === 'space-rental') {
+      const { data, error } = await client.from('space_rentals')
+        .select('id, store_id, title, summary, body, available_hours, price, capacity, min_hours, created_at, space_rental_categories(name), space_rental_images(image_path, sort_order)')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      posts = ((data ?? []) as unknown as SpaceRow[]).map((r): SpacePost => ({
+        id: r.id, kind, storeId: r.store_id, title: r.title,
+        description: r.body || r.summary, notes: r.body ? r.summary : '',
+        category: r.space_rental_categories?.name ?? '', price: r.price, capacity: r.capacity,
+        contactPhone: '', imageUrl: firstImageUrl(r.space_rental_images), createdAt: r.created_at,
+        status: 'open', origin: 'db', schedule: r.available_hours, minimumHours: r.min_hours ?? 1,
+      }));
+    } else {
+      const { data, error } = await client.from('one_day_classes')
+        .select('id, store_id, title, summary, body, starts_at, duration_minutes, price, current_count, max_count, created_at, one_day_class_categories(name), one_day_class_images(image_path, sort_order)')
+        .order('starts_at');
+      if (error) throw error;
+      posts = ((data ?? []) as unknown as ClassRow[]).map((r): ClassPost => ({
+        id: r.id, kind, storeId: r.store_id, title: r.title,
+        description: r.body || r.summary, notes: r.body ? r.summary : '',
+        category: r.one_day_class_categories?.name ?? '', price: r.price, capacity: r.max_count, enrolled: r.current_count,
+        contactPhone: '', imageUrl: firstImageUrl(r.one_day_class_images), createdAt: r.created_at,
+        status: r.current_count >= r.max_count ? 'closed' : 'open', origin: 'db', startsAt: r.starts_at, durationMinutes: r.duration_minutes,
+      }));
+    }
+  } catch {
+    return [];
+  }
+  // 글의 가게를 붙이고(전화번호는 가게 전화), 가게가 없는 글은 뺀다
+  const stores = await fetchStoresByIds(posts.map((p) => p.storeId));
+  return posts.flatMap((post) => {
+    const store = stores.get(post.storeId);
+    if (!store) return [];
+    const cached = feedStoreCache.get(store.id) ?? { ...store, supports: {} };
+    feedStoreCache.set(store.id, { ...cached, supports: { ...cached.supports, [kind]: true } });
+    return [{ ...post, contactPhone: store.phone }];
+  });
 }
 
 function text(value: unknown, max: number, required = true): value is string {
@@ -72,10 +137,13 @@ function persist(posts: FeedPost[], storage?: StoragePort) {
   if (typeof window !== 'undefined') window.dispatchEvent(new Event(FEED_CHANGE_EVENT));
 }
 
-/** Supabase 연결 시 이 모듈의 조회/저장 구현을 교체한다. 현재 데이터는 브라우저별로 분리된다. */
+/**
+ * 글 목록 = DB 글 + 이 브라우저에서 만든 글.
+ * TODO(로그인): 글 저장·수정·삭제(saveFeedPost 등)를 DB 로 옮긴다. 지금은 이 브라우저에만 저장된다.
+ */
 export async function fetchFeedPosts(kind: FeedKind, storage?: StoragePort): Promise<FeedPost[]> {
-  // TODO(DB): space_rentals · oneday_classes 테이블 연결. 지금은 이 브라우저에서 만든 글만 돌려준다.
-  return readLocalPosts(storage).filter((p) => p.kind === kind);
+  const dbPosts = await fetchDbPosts(kind);
+  return [...readLocalPosts(storage).filter((p) => p.kind === kind), ...dbPosts];
 }
 export async function saveFeedPost(input: PostInput, existingId?: string, storage?: StoragePort): Promise<FeedPost> {
   const error = validatePost(input);

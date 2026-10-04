@@ -4,8 +4,9 @@
 
 `frontend/src/core/supabase/`에 공통 클라이언트와 공개 가게 조회 함수를 준비했다.
 로그인·회원가입은 Supabase Auth로 연결했다. 가짜(mock) 데이터는 두지 않는다.
-`fetchMapStores()`(`core/supabase/stores.ts`)가 공개 가게 전부를 지도 핀으로 읽는다. 표 구조는 `database/schema.md` 참고.
-메뉴·세일·공간대여 등 카테고리 화면은 아직 DB와 연결하지 않았다.
+`fetchMapStores()`(`core/supabase/stores.ts`)가 공개 가게 전부를 지도 핀으로 읽는다. 표 구조 그림은 `database/schema.md`.
+카테고리 화면은 각 `features/<카테고리>/source.ts` 에서 DB 를 읽는다: 마감세일(closing_sales), 공간대여(space_rentals), 원데이클래스(one_day_classes), 제휴 가게(partner_benefits·partners·store_menus), 스탬프(stamp_policies), 룰렛(store_menus 이름 검색). 가게 공통 정보·영업시간은 `core/source/storeSource.ts` 가 붙인다.
+글 쓰기·수정, 찜, 스탬프 적립은 아직 이 브라우저에만 저장한다 (로그인 연결 후 DB 로 옮긴다).
 
 ## 로컬 설정
 
@@ -50,7 +51,7 @@ npm run build
 
 ## 다음 단계
 
-1. 메뉴·영업시간·사진·세일·공간대여·클래스를 2차 탭과 카테고리 화면에 연결한다.
+1. 가게 2차 탭에 메뉴·영업시간·사진을 연결하고, 사장님 글쓰기·세일 등록을 DB 저장으로 바꾼다.
 2. 관리자 승인 API와 화면을 만들고, 승인된 사장님 계정으로 본인 가게의 게시글 등록을 검증한다.
 3. 배포할 때 Vercel에도 동일한 공개용 환경변수를 설정하고 새 빌드를 실행한다.
 

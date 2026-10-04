@@ -4,10 +4,11 @@ import 'leaflet/dist/leaflet.css';
 import type { FeatureCollection } from 'geojson';
 import type { GeoPoint, Store } from '../../core/types/place';
 import { ICONS } from '../icons';
-import { buildingListElement, clusterGroups, clusterIcon, CLUSTER_MAX_ZOOM, groupByBuilding } from './placeMarkers';
+import { buildingListElement, clusterGroups, clusterIcon, CLUSTER_MAX_ZOOM, groupByBuilding, pinGroup, PIN_POPUP_OFFSET } from './placeMarkers';
 import type { MapStore } from '../../core/supabase/stores';
 import { ADMIN_DONG_LABEL, AREA_LAYERS, createStyles } from './vworld/config';
-import { drawArea, drawBoundary, drawBuildings, drawRailways, drawRoads, drawSchoolFacilities, visibleSchoolFacilities, type DrawContext } from './vworld/draw';
+import { drawStations, drawSubwayLines } from './osm/drawTransit';
+import { drawArea, drawBoundary, drawBuildings, drawRailways, drawRoads, drawSchoolFacilities, visibleSchoolFacilities, type BuildingOutlines, type DrawContext } from './vworld/draw';
 import { isInWolgye1 } from './vworld/geometry';
 import { loadData } from './vworld/loadData';
 import { LANDSCAPE_MIN_ZOOM_HEIGHT_RATIO, MAP_CENTER, MAP_EXTENT, MAP_HEIGHT_PER_RECT, portraitMinZoomHeightRatio, WOLGYE1_LAT_SPAN } from './vworld/mapExtent';
@@ -115,6 +116,9 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
   const mapRef = useRef<L.Map | null>(null);
   const pinLayerRef = useRef<L.LayerGroup | null>(null);
   const placeLayerRef = useRef<L.LayerGroup | null>(null);
+  const outlinesRef = useRef<BuildingOutlines | null>(null);
+  /** CSS 변수 읽기 (가게 핀 색을 건물 테두리에도 쓴다) */
+  const cssRef = useRef<(name: string) => string>(() => '');
   const onPlaceSelectRef = useRef(onPlaceSelect);
   onPlaceSelectRef.current = onPlaceSelect;
   const meRef = useRef<L.CircleMarker | null>(null);
@@ -174,6 +178,7 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
     placeLayerRef.current = L.layerGroup().addTo(map);
 
     const read = getComputedStyle(container);
+    cssRef.current = (name) => read.getPropertyValue(name).trim();
     const ctx: DrawContext = {
       map,
       featureRenderer: L.canvas(),
@@ -194,8 +199,11 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
       if (data.railways) drawRailways(ctx, data.railways);
       // 학교 건물은 종류별 색으로 그리고, 같은 건물이 일반 건물에도 있으면 일반 건물 쪽을 뺀다
       const schoolBuildings = visibleSchoolFacilities(data.schoolFacilities);
-      drawBuildings(ctx, data.buildings, schoolBuildings);
+      outlinesRef.current = drawBuildings(ctx, data.buildings, schoolBuildings);
       drawSchoolFacilities(ctx, schoolBuildings);
+      // 지하철: 노선은 철도·건물 위에 얇게 한 줄씩, 역 이름표·출구는 그 위 (가게 핀보다는 아래)
+      if (data.subwayLines) drawSubwayLines(ctx, data.subwayLines);
+      if (data.stations) drawStations(ctx, data.stations, data.stationExits);
       if (data.adminDong) drawBoundary(ctx, data.adminDong, ctx.styles.ADMIN_DONG_STYLE, ADMIN_DONG_LABEL, 'admin-dong-label');
       adminDongRef.current = data.adminDong;
 
@@ -228,6 +236,7 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
       mapRef.current = null;
       pinLayerRef.current = null;
       placeLayerRef.current = null;
+      outlinesRef.current = null;
       meRef.current = null;
     };
   }, []);
@@ -251,6 +260,18 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
 
   // 상가정보 가게 핀 — 건물 단위로 묶고(가게 수 숫자), 줌을 줄이면 가까운 건물끼리 다시 묶는다
   const buildingGroups = useMemo(() => groupByBuilding(places), [places]);
+
+  // 핀이 있는 건물은 테두리를 그 핀 색으로 칠한다 (그 외 카테고리를 고르면 그 업종 건물만)
+  useEffect(() => {
+    const outlines = outlinesRef.current;
+    if (!outlines) return;
+    const colors = new Map<string, string>();
+    for (const group of buildingGroups) {
+      const buildingId = group.places[0]?.buildingId;
+      if (buildingId) colors.set(buildingId, cssRef.current(`--place-${pinGroup(group.places)}`));
+    }
+    outlines.set(colors);
+  }, [buildingGroups, status]);
   useEffect(() => {
     const map = mapRef.current;
     const layer = placeLayerRef.current;
@@ -282,7 +303,7 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
               map.closePopup();
               onPlaceSelectRef.current(place);
             });
-            L.popup({ className: 'pl-popup', maxWidth: 280, minWidth: 220, autoPanPadding: [24, 24] })
+            L.popup({ className: 'pl-popup', maxWidth: 280, minWidth: 220, autoPanPadding: [24, 24], offset: [0, -PIN_POPUP_OFFSET] })
               .setLatLng([group.lat, group.lng])
               .setContent(list)
               .openOn(map);

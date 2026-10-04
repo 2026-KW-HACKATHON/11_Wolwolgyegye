@@ -57,4 +57,7 @@ export interface Store {
   reviewCount?: number;
 
   supports: CategorySupport;
+
+  /** 예시(mock) 가게. DB 의 stores.is_mock. 화면에서 "예시" 표시에 쓴다 */
+  isMock?: boolean;
 }

@@ -1,4 +1,5 @@
 import { fetchStoresByIds, getUserLocation } from '../../core/source/storeSource';
+import { getSupabaseClient } from '../../core/supabase/client';
 import { walkMinutes } from '../../core/utils/geo';
 import type { StampPolicy, StampTransaction, StampView } from './types';
 import { isStampPolicy, validBalance } from './policy';
@@ -21,14 +22,20 @@ let unsavedDemo: StampTransaction[] | null = null;
 const recordingStores = new Set<string>();
 
 /**
- * 사장님 설정을 읽는 연결 지점. 현재는 API 응답 모양의 예시 데이터다.
- * 추후 인증된 서버 응답을 StampPolicy로 매핑한다. 손님 화면에는 규칙 편집 UI를 두지 않는다.
- * 잘못된 규칙은 목록에서 제외하며 임의로 10개를 넣지 않는다.
+ * 사장님이 정한 스탬프 규칙: DB stamp_policies (공개 가게만, RLS). 손님 화면에는 규칙 편집 UI를 두지 않는다.
+ * 잘못된 규칙은 목록에서 제외하며 임의로 10개를 넣지 않는다. 연결에 실패하면 빈 목록.
  */
 async function fetchStampPolicies(): Promise<StampPolicy[]> {
-  // TODO(DB·로그인): 스탬프 정책 테이블은 로그인 단계에서 만든다. 그 전까지는 빈 목록이다.
-  const rows: StampPolicy[] = [];
-  return rows.filter(isStampPolicy).map((policy) => ({ ...policy }));
+  try {
+    const { data, error } = await getSupabaseClient().from('stamp_policies')
+      .select('store_id, required_stamps, reward, unit, condition');
+    if (error) throw error;
+    const rows = ((data ?? []) as { store_id: string; required_stamps: number; reward: string; unit: string; condition: string }[])
+      .map((r): StampPolicy => ({ storeId: r.store_id, requiredStamps: r.required_stamps, reward: r.reward, unit: r.unit, condition: r.condition }));
+    return rows.filter(isStampPolicy).map((policy) => ({ ...policy }));
+  } catch {
+    return [];
+  }
 }
 
 function isTransaction(value: unknown): value is StampTransaction {

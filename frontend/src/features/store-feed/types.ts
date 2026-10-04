@@ -18,8 +18,8 @@ interface PostBase {
   notes: string;
   createdAt: string;
   status: FeedStatus;
-  /** 실제 권한이 아닌 로컬 시연 데이터 구분 */
-  origin: 'sample' | 'local';
+  /** 출처: db = DB(공간대여·원데이클래스 표), local = 이 브라우저에서 만든 글 */
+  origin: 'db' | 'local';
 }
 
 export interface SpacePost extends PostBase {
@@ -32,6 +32,8 @@ export interface ClassPost extends PostBase {
   kind: 'oneday-class';
   startsAt: string;
   durationMinutes: number;
+  /** 현재 신청 인원 (DB 글만. capacity 가 마감 인원) */
+  enrolled?: number;
 }
 
 export type FeedPost = SpacePost | ClassPost;

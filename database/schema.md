@@ -1,78 +1,100 @@
-# 표와 관계 (2026-10-04 설계)
+# DB 표 구조
 
-팀 Draw.io 그림을 기준으로 이름을 붙였다. 모든 `id` 는 uuid(대표 유형만 앱 코드와 같은 글자 id).
+가지(├─)가 이어진 표는 위쪽 표에 **딸린** 표입니다. 위쪽 행을 지우면 딸린 행도 함께 지워집니다.
+`→` 는 다른 표를 가리키는 칸입니다.
 
 ```text
-auth.users → profiles
-               ├─ owner_applications          사장님 신청·승인 기록
-               ├─ stores.owner_id             사장님 소유권
-               ├─ store_favorites             가게 찜
-               └─ user_stamps → stamp_transactions
+auth.users                         로그인 계정 (Supabase 가 관리)
+└─ profiles                        사용자 프로필
+   ├─ user_id                      계정 번호
+   ├─ display_name                 표시 이름
+   ├─ owner_applications           사장님 신청서
+   │  ├─ applicant_name            신청자 이름
+   │  ├─ contact_phone             연락처
+   │  ├─ store_name                가게 이름
+   │  ├─ store_address             가게 주소
+   │  ├─ status                    상태 (대기 / 승인 / 반려)
+   │  ├─ approved_store_id → stores  승인된 가게
+   │  └─ review_note               처리 메모
+   └─ store_favorites              가게 찜 (사용자 + 가게)
 
-store_types ← stores.type_id, store_menus.type_id
-stores
-  ├─ store_menus          메뉴 (메뉴마다 유형)
-  ├─ store_hours          요일별 영업시간·휴무
-  ├─ store_images         가게 사진 (여러 장)
-  ├─ partner_benefits ─ benefit_partners ─ partners
-  ├─ closing_sales        마감세일
-  ├─ space_rentals ─ space_rental_images        (분류: space_rental_categories)
-  ├─ one_day_classes ─ one_day_class_images     (분류: one_day_class_categories)
-  └─ stamp_policies → user_stamps
+store_types                        대표 유형 (= 지도 위쪽 "그 외 카테고리": 한식·카페·편의점 …)
+├─ id                              유형 코드 (예: korean)
+├─ name                            유형 이름 (예: 한식)
+└─ group_name                      묶음 (음식점 / 카페 / 편의점 / 그 외)
+
+stores                             가게
+├─ id                              가게 번호
+├─ owner_id → profiles             사장님 (없으면 비어 있음)
+├─ sbiz_id                         상가정보 업소번호 (공공데이터 가게만)
+├─ sbiz_month                      상가정보 기준월 (예: 202606)
+├─ name                            가게 이름
+├─ type_id → store_types           대표 유형
+├─ industry                        원본 업종 (예: 백반/한정식)
+├─ address                         주소
+├─ lat / lng                       위도 / 경도
+├─ floor                           층 (지하는 음수)
+├─ building_id / building_name     건물관리번호 / 건물 이름 (지도에서 같은 건물 묶기)
+├─ phone                           전화번호
+├─ is_published                    공개 여부
+├─ is_mock                         예시 가게 여부
+│
+├─ store_menus                     메뉴
+│  ├─ name                         메뉴 이름
+│  ├─ price                        가격 (원)
+│  ├─ type_id → store_types        메뉴 유형
+│  └─ sort_order                   보여줄 순서
+├─ store_hours                     영업시간 (요일마다 한 줄)
+│  ├─ weekday                      요일 (0=일 … 6=토)
+│  ├─ opens_at / closes_at         여는 / 닫는 시각
+│  └─ is_closed                    휴무
+├─ store_images                    가게 사진
+│  ├─ image_path                   사진 저장 위치
+│  └─ sort_order                   순서
+├─ closing_sales                   마감세일
+│  ├─ discount_type                할인 유형 (amount 금액 / rate 퍼센트 / free 무료 제공)
+│  ├─ discount_amount              할인 금액 (원)
+│  ├─ discount_rate                할인율 (0.3 = 30%)
+│  ├─ condition                    조건
+│  ├─ offer                        제공 내용
+│  └─ starts_at / ends_at          시작 / 끝 시각
+├─ partner_benefits                제휴 혜택
+│  ├─ discount_amount              할인 금액 (원)
+│  ├─ discount_rate                할인율
+│  ├─ condition                    조건
+│  └─ benefit_partners             혜택 ↔ 제휴사 연결
+│     └─ partner_id → partners     제휴사
+├─ space_rentals                   공간대여 글
+│  ├─ category_id → space_rental_categories  분류
+│  ├─ title / summary / body       제목 / 간단 설명 / 본문
+│  ├─ available_hours              이용 가능 시간
+│  ├─ price                        시간당 가격
+│  ├─ capacity                     최대 인원
+│  ├─ min_hours                    최소 이용 시간
+│  ├─ is_published                 공개 여부
+│  └─ space_rental_images          글 사진
+├─ one_day_classes                 원데이클래스 글
+│  ├─ category_id → one_day_class_categories  분류
+│  ├─ title / summary / body       제목 / 간단 설명 / 본문
+│  ├─ starts_at                    수업 일시
+│  ├─ duration_minutes             수업 시간 (분)
+│  ├─ price                        1인 가격
+│  ├─ current_count / max_count    현재 인원 / 마감 인원
+│  ├─ is_published                 공개 여부
+│  └─ one_day_class_images         글 사진
+└─ stamp_policies                  스탬프 규칙 (가게당 하나)
+   ├─ required_stamps              모아야 하는 개수
+   ├─ reward                       받는 선물
+   ├─ unit                         1개가 찍히는 기준
+   ├─ condition                    조건
+   └─ user_stamps                  사용자별 스탬프 수
+      └─ stamp_transactions        적립·사용 기록
+
+partners                           제휴사 (광운대 단과대학 8곳)
+└─ name                            제휴사 이름
+
+space_rental_categories            공간대여 분류 (모임·파티 / 스터디·회의 / 촬영·작업)
+one_day_class_categories           원데이클래스 분류 (요리·베이킹 / 공예·미술 / 커피·음료)
 ```
 
-## 가게
-
-| 표 | 칸 | 그림 |
-|---|---|---|
-| store_types | id, name, group_name(restaurant·cafe·convenience·etc), sort_order | 대표 유형 |
-| stores | id, owner_id, sbiz_id, sbiz_month, name, type_id, industry, address, lng, lat, floor, building_id, building_name, phone, is_published | 가게 |
-| store_menus | id, store_id, name, price, type_id, sort_order | 메뉴 |
-| store_hours | id, store_id, weekday(0=일~6=토), opens_at, closes_at, is_closed | 요일별 시간·휴무 |
-| store_images | id, store_id, image_path, sort_order | 이미지 주소 |
-
-- `industry` 는 상가정보 원본 업종명(예: 백반/한정식), `floor`·`building_*` 는 지도에서 같은 건물 가게를 묶고 층별 목록을 만드는 데 쓴다.
-- 영업시간이 자정을 넘기면 `closes_at` 이 `opens_at` 보다 이르다. 휴무일은 `is_closed=true` 이고 시간은 비운다.
-
-## 제휴
-
-| 표 | 칸 | 그림 |
-|---|---|---|
-| partners | id, name | 제휴사 |
-| partner_benefits | id, store_id, discount_amount, discount_rate, condition | 할인 금액·할인율·조건 |
-| benefit_partners | id, benefit_id, partner_id | 제휴 연결 |
-
-혜택 하나를 여러 제휴사(단과대학 등)에 걸 수 있다. 할인 금액과 할인율 중 하나 이상은 있어야 한다.
-
-## 마감세일
-
-| 칸 | 설명 |
-|---|---|
-| discount_type | `amount` 금액 할인 / `rate` 퍼센트 할인 / `free` 무료 제공 |
-| discount_amount | amount 일 때만 (원) |
-| discount_rate | rate 일 때만 (30% = 0.3) |
-| condition, offer | 조건, 제공 내용 (free 일 때 offer 필수) |
-| starts_at, ends_at | 시작·종료 시각 (종료가 시작보다 뒤) |
-
-## 공간대여·원데이클래스
-
-한 가게가 여러 개를 올릴 수 있다. 그림의 "게시글"은 글 안의 `body` 칸으로 합쳤고, 사진은 글마다 여러 장이다.
-
-| 표 | 칸 |
-|---|---|
-| space_rentals | id, store_id, category_id, title, summary(간단 설명), body(게시글), available_hours(이용 가능 시간), price, capacity(인원), min_hours(최소 이용 시간), is_published |
-| one_day_classes | id, store_id, category_id, title, summary, body, starts_at(수업 일시), duration_minutes(이용 시간), price, current_count(현재 인원), max_count(마감 인원), is_published |
-| *_categories | id, name, sort_order (운영자가 넣는다) |
-| *_images | id, 글 id, image_path, sort_order |
-
-## 스탬프·로그인
-
-스탬프(`stamp_policies`, `user_stamps`, `stamp_transactions`)와 로그인(`profiles`, `owner_applications`)은 이전 구조를 그대로 옮겼다.
-스탬프는 로그인 단계에서 다시 다듬는다. 흐름은 `auth.md` 참고.
-
-## 데이터 규칙
-
-- 가격은 원 단위 정수, 할인율은 0 초과 1 이하.
-- 시각은 `timestamptz` 로 저장하고 화면에서 한국 시간으로 표시.
-- 가게를 지우면 딸린 메뉴·사진·글이 함께 지워진다. 운영 중인 가게는 지우지 말고 `is_published=false` 로 숨긴다.
-- 거리·도보 시간은 사용자 위치로 계산하므로 저장하지 않는다.
+모든 표에는 `id`(번호)와 만든 시각 같은 기본 칸도 있습니다. 위 그림에서는 뺐습니다.

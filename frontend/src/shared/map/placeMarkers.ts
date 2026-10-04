@@ -11,6 +11,12 @@ import L from 'leaflet';
 import { subCategoryById, type SubCategory } from '../../core/categories/subCategories';
 import { floorLabel, type MapStore } from '../../core/supabase/stores';
 
+/** 핀 크기 [가로, 세로] (px). 아래 끝 가운데가 가게 위치. 크기를 바꾸면 MainMap.css 의 .pl-pin 도 같이 */
+const PIN_SINGLE: [number, number] = [22, 29];
+const PIN_BUILDING: [number, number] = [30, 39];
+/** 핀 위에 띄우는 층별 목록이 핀을 가리지 않도록 올리는 높이 (px) */
+export const PIN_POPUP_OFFSET = PIN_BUILDING[1] - 4;
+
 /** 이 줌부터는 건물끼리 묶지 않고 건물 핀을 그대로 보여준다 */
 export const CLUSTER_MAX_ZOOM = 18;
 /** 화면 묶기 격자 한 칸 크기 (px). 같은 칸에 들어온 건물끼리 묶인다 */
@@ -76,12 +82,18 @@ export function clusterGroups(map: L.Map, groups: BuildingGroup[]): PlaceCluster
 const GROUP_PRIORITY: SubCategory['group'][] = ['restaurant', 'cafe', 'convenience', 'etc'];
 
 /** 건물 핀 색: 가게 중 우선순위가 가장 높은 묶음 */
-function pinGroup(places: MapStore[]): SubCategory['group'] {
+export function pinGroup(places: MapStore[]): SubCategory['group'] {
   const groups = new Set(places.map((p) => subCategoryById(p.typeId)?.group ?? 'etc'));
   return GROUP_PRIORITY.find((g) => groups.has(g)) ?? 'etc';
 }
 
-/** 가게 1곳 = 작은 점 / 건물에 여럿 = 숫자 핀 / 건물 여럿 묶음 = 큰 숫자 원. 색은 모두 pinGroup 우선순위 */
+/** 물방울 모양 핀 (아래 뾰족한 끝이 가게 위치). 안쪽 동그라미에 가게 수, 1곳이면 흰 점 */
+const PIN_PATH = 'M12 0C5.4 0 0 5.3 0 11.9 0 20.8 12 32 12 32s12-11.2 12-20.1C24 5.3 18.6 0 12 0z';
+function pinHtml(className: string, label: string): string {
+  return `<span class="pl-pin ${className}"><svg viewBox="-1.5 -1.5 27 35" aria-hidden="true"><path d="${PIN_PATH}"/></svg><span class="pl-pin__label">${label}</span></span>`;
+}
+
+/** 가게 1곳 = 작은 핀 / 건물에 여럿 = 숫자 핀 / 건물 여럿 묶음 = 큰 숫자 원. 색은 모두 pinGroup 우선순위 */
 export function clusterIcon(cluster: PlaceCluster, selected: boolean): L.DivIcon {
   const sel = selected ? ' is-selected' : '';
   if (cluster.groups.length > 1) {
@@ -92,9 +104,9 @@ export function clusterIcon(cluster: PlaceCluster, selected: boolean): L.DivIcon
   const group = cluster.groups[0];
   const color = `pl--${pinGroup(group.places)}`;
   if (group.places.length === 1) {
-    return L.divIcon({ className: 'pl-wrap', html: `<span class="pl-dot ${color}${sel}"></span>`, iconSize: [18, 18], iconAnchor: [9, 9] });
+    return L.divIcon({ className: 'pl-wrap', html: pinHtml(`pl-pin--single ${color}${sel}`, ''), iconSize: PIN_SINGLE, iconAnchor: [PIN_SINGLE[0] / 2, PIN_SINGLE[1]] });
   }
-  return L.divIcon({ className: 'pl-wrap', html: `<span class="pl-building ${color}${sel}">${group.places.length}</span>`, iconSize: [28, 28], iconAnchor: [14, 14] });
+  return L.divIcon({ className: 'pl-wrap', html: pinHtml(`${color}${sel}`, String(group.places.length)), iconSize: PIN_BUILDING, iconAnchor: [PIN_BUILDING[0] / 2, PIN_BUILDING[1]] });
 }
 
 /**
