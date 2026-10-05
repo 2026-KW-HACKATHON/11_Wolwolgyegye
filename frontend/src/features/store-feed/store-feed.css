@@ -105,12 +105,12 @@
 .sf-dialog button:disabled { opacity: .55; cursor: wait; }
 @container (max-width: 900px) { .sf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.sf-hero { grid-template-columns: 1fr 180px; padding: 30px; }.sf-hero-art { width: 160px; height: 160px; }.sf-hero-art > span > .icon { width: 70px; height: 70px; }.sf-art-note { right: -10px; font-size: 10px; padding: 9px 12px; } }
 @container (max-width: 600px) {
-  .sf-hero { padding: 26px 22px; display: block; position: relative; }.sf-hero h1 { font-size: 27px; }.sf-hero p { max-width: 95%; font-size: 13px; }.sf-hero-art { display: none; }
+  .sf-hero { padding: 26px 22px; display: block; position: relative; }.sf-hero h1 { font-size: 27px; margin-bottom: 0; }.sf-hero p { display: none; }.sf-hero .sf-primary { margin-top: 18px; }.sf-hero-art { display: none; }
   .sf-feed-heading { flex-direction: column; align-items: stretch; gap: 18px; }.sf-feed-heading h2 { font-size: 22px; }.sf-search input { width: 100%; }.sf-grid { grid-template-columns: 1fr; gap: 18px; }
   .sf-toolbar { gap: 14px; }.sf-filters { gap: 6px; }.sf-filters button { font-size: 12px; padding: 9px 12px; }.sf-options { justify-content: space-between; width: 100%; gap: 7px; }
   .sf-visual { height: 200px; }.sf-card h3 { min-height: auto; }.sf-excerpt { min-height: auto; }
   .sf-bottom-note { flex-wrap: wrap; padding: 20px; }.sf-bottom-note > .icon { display: none; }.sf-bottom-note .sf-text-btn { margin-left: 0; }
-  .sf-demo { font-size: 11px; }.sf-page { padding-bottom: 16px; }
+  .sf-demo { display: none; }.sf-page { padding-bottom: 16px; }
 }
 /* 대화상자는 탭 밖(최상위 층)에 뜨므로 화면 폭 기준 */
 @media (max-width: 600px) {
