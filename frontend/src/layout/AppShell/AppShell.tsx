@@ -69,7 +69,7 @@ const NO_INSETS: MapInsets = { top: 0, right: 0, bottom: 0, left: 0 };
  *
  * - portrait (모바일·태블릿 세로) : [지도 + 1차 탭(아래→위)] / [하단 카테고리 바 + 최우측 유저]
  * - mobile-landscape (모바일 가로) : [지도 + 1차 탭(우→좌)] [우측 카테고리 바 + 최하단 유저]
- * - wide (태블릿 가로·PC)          : [지도 + 1차 탭(우→좌)] [우측 카테고리 바(고정) + 맨 아래 유저]
+ * - wide (태블릿 가로·PC)          : [지도 + 1차 탭(우→좌, 눌러서 닫기/열기만)] [우측 카테고리 바(고정) + 맨 아래 유저]
  *
  * 지도 버튼(내 위치)은 항상 "탭에 가려지지 않은 지도"의 우측 하단에 붙는다.
  * 그 기준이 되는 가림 크기는 .app-stage 의 CSS 변수(--inset-*)로 관리한다.
@@ -318,6 +318,7 @@ export default function AppShell() {
             states={panelStates}
             onStateChange={setPanelState}
             onVisibleChange={reportVisible}
+            toggleOnly={mode === 'wide'}
           />
         </div>
 

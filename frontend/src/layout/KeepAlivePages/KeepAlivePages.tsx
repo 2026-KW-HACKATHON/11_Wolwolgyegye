@@ -12,6 +12,8 @@ interface KeepAlivePagesProps {
   states: Record<string, PanelState>;
   onStateChange: (id: string, state: PanelState) => void;
   onVisibleChange: (size: number) => void;
+  /** PC·태블릿 가로: 1차 탭을 끌지 않고 눌러서 닫기 / 열기만 */
+  toggleOnly: boolean;
 }
 
 /** 가로 화면에서 반쯤 열린 탭이 지도 영역을 이 비율 이상 덮지 않게 한다 */
@@ -21,7 +23,7 @@ const MAX_HALF_RATIO_X = 0.8;
  * 카테고리마다 하나씩 있는 1차 탭(스와이프 탭)들.
  * 한 번이라도 연 탭은 언마운트하지 않고 숨기기만 해서, 다른 카테고리에 갔다가 돌아와도 내용·열림 상태가 그대로 남는다.
  */
-export default function KeepAlivePages({ activeId, axis, stage, states, onStateChange, onVisibleChange }: KeepAlivePagesProps) {
+export default function KeepAlivePages({ activeId, axis, stage, states, onStateChange, onVisibleChange, toggleOnly }: KeepAlivePagesProps) {
   const [visited, setVisited] = useState<string[]>([]);
 
   useEffect(() => {
@@ -54,6 +56,7 @@ export default function KeepAlivePages({ activeId, axis, stage, states, onStateC
             active={isActive}
             title={meta.name}
             onVisibleChange={onVisibleChange}
+            toggleOnly={toggleOnly}
           >
             <PageActiveContext.Provider value={isActive}>
               <div className="panel-page" data-page={id}>

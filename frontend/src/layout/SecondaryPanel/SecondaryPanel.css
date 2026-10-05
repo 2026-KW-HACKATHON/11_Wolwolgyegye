@@ -30,10 +30,20 @@
   max-height: 70%;
 }
 
+/* 예시 표시·닫기(✕) 줄: 탭 안을 스크롤해도 맨 위에 붙어 있다.
+   패널 안쪽 여백만큼 위·좌우로 넓혀서 스크롤되는 내용이 뒤로 비치지 않게 덮는다 */
 .secondary-panel__head {
+  position: sticky;
+  top: calc(-1 * var(--space-4));
+  z-index: 3;
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: space-between;
+  margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) 0;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--color-surface);
 }
 
 .secondary-panel__badge {
