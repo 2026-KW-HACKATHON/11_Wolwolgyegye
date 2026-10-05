@@ -30,10 +30,8 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [query, setQuery] = useState('');
   const [category, setCategory] = useState('전체');
   const [sort, setSort] = useState('latest');
-  const [onlyOpen, setOnlyOpen] = useState(false);
   const [onlyLiked, setOnlyLiked] = useState(false);
   const [likes, setLikes] = useState<string[]>([]);
   const [selected, setSelected] = useState<FeedPost | null>(null);
@@ -81,15 +79,11 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
   }, [active, error, kind, loading, params, posts, setParams]);
 
   const visible = useMemo(() => {
-    const search = query.trim().toLocaleLowerCase();
     return posts.filter((post) => {
-      const store = findFeedStore(post.storeId);
       return (category === '전체' || post.category === category)
-        && (!onlyOpen || isAvailable(post, now))
-        && (!onlyLiked || likes.includes(post.id))
-        && (!search || [post.title, post.description, store?.name, store?.address].join(' ').toLocaleLowerCase().includes(search));
+        && (!onlyLiked || likes.includes(post.id));
     }).sort((a, b) => sort === 'price' ? a.price - b.price : sort === 'date' && a.kind === 'oneday-class' && b.kind === 'oneday-class' ? Date.parse(a.startsAt) - Date.parse(b.startsAt) : Date.parse(b.createdAt) - Date.parse(a.createdAt));
-  }, [posts, query, category, onlyOpen, onlyLiked, likes, sort, now]);
+  }, [posts, category, onlyLiked, likes, sort]);
 
   async function toggleLike(id: string) {
     if (!userId) { showToast('로그인하면 게시글을 찜할 수 있어요.'); return; }
@@ -109,7 +103,7 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
     catch (e) { setDetailError(e instanceof Error ? e.message : '삭제하지 못했어요.'); }
     finally { setDeleting(false); }
   }
-  function resetFilters() { setQuery(''); setCategory('전체'); setOnlyLiked(false); setOnlyOpen(false); }
+  function resetFilters() { setCategory('전체'); setOnlyLiked(false); }
   const selectedStore = selected ? findFeedStore(selected.storeId) : undefined;
 
   return <div className={`sf-page sf-page--${kind}`}>
@@ -121,13 +115,13 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
     </section>
 
     <section className="sf-feed-section" aria-label={copy.label + ' 게시글'}>
-      <div className="sf-feed-heading"><div><span className="sf-eyebrow">FROM OUR NEIGHBORS</span><h2>사장님이 전하는 소식</h2></div><label className="sf-search"><Icon name="search" /><input aria-label="피드 검색" placeholder="가게, 제목, 동네 검색" value={query} onChange={(e) => setQuery(e.target.value)} /></label></div>
+      <div className="sf-feed-heading"><div><span className="sf-eyebrow">FROM OUR NEIGHBORS</span><h2>사장님이 전하는 소식</h2></div></div>
       <div className="sf-toolbar">
         <div className="sf-filters" aria-label="분류">{['전체', ...FEED_CATEGORIES[kind]].map((c) => <button key={c} type="button" aria-pressed={category === c} className={category === c ? 'is-active' : ''} onClick={() => setCategory(c)}>{c}</button>)}</div>
-        <div className="sf-options"><label><input type="checkbox" checked={onlyOpen} onChange={(e) => setOnlyOpen(e.target.checked)} /> 모집 중만</label><button type="button" className={`sf-saved-toggle ${onlyLiked ? 'is-active' : ''}`} aria-pressed={onlyLiked} onClick={() => setOnlyLiked(!onlyLiked)}>♡ 찜한 글</button><label className="sf-sort">정렬<select value={sort} onChange={(e) => setSort(e.target.value)}><option value="latest">최신순</option><option value="price">가격 낮은순</option>{kind === 'oneday-class' && <option value="date">수업일순</option>}</select></label></div>
+        <div className="sf-options"><button type="button" className={`sf-saved-toggle ${onlyLiked ? 'is-active' : ''}`} aria-pressed={onlyLiked} onClick={() => setOnlyLiked(!onlyLiked)}>♡ 찜한 글</button><label className="sf-sort">정렬<select value={sort} onChange={(e) => setSort(e.target.value)}><option value="latest">최신순</option><option value="price">가격 낮은순</option>{kind === 'oneday-class' && <option value="date">수업일순</option>}</select></label></div>
       </div>
       <p className="sf-count" aria-live="polite">{loading ? '소식을 불러오고 있어요…' : <>총 <b>{visible.length}</b>개의 이야기</>}</p>
-      {error ? <div className="sf-empty" role="alert"><p>{error}</p><button type="button" className="sf-secondary" onClick={() => void reload()}>다시 불러오기</button></div> : !loading && visible.length === 0 ? <div className="sf-empty"><Icon name={copy.icon} /><h3>아직 보여드릴 소식이 없어요</h3><p>검색 조건을 바꾸거나, 동네의 첫 이야기를 올려보세요.</p><button type="button" className="sf-secondary" onClick={resetFilters}>검색 조건 초기화</button></div> : <ul className="sf-grid">
+      {error ? <div className="sf-empty" role="alert"><p>{error}</p><button type="button" className="sf-secondary" onClick={() => void reload()}>다시 불러오기</button></div> : !loading && visible.length === 0 ? <div className="sf-empty"><Icon name={copy.icon} /><h3>아직 보여드릴 소식이 없어요</h3><p>분류나 찜한 글 조건을 바꾸거나, 동네의 첫 이야기를 올려보세요.</p><button type="button" className="sf-secondary" onClick={resetFilters}>조건 초기화</button></div> : <ul className="sf-grid">
         {visible.map((post) => {
           const store = findFeedStore(post.storeId);
           const available = isAvailable(post, now);
