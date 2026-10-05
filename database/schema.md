@@ -43,6 +43,11 @@ stores                             가게
 │  ├─ name                         메뉴 이름
 │  ├─ price                        가격 (원)
 │  ├─ type_id → store_types        메뉴 유형
+│  ├─ section                      메뉴판 구역 제목 (가게마다 다름. 예: 면류, COFFEE)
+│  ├─ kind                         공통 분류 (식사 / 세트 / 사이드 / 추가·토핑 / 음료 / 주류 / 디저트)
+│  ├─ description                  옵션·비고 (예: HOT, ICE 변경가능)
+│  ├─ board_date                   메뉴판 등록일
+│  ├─ board_image                  메뉴판 사진 파일 이름
 │  └─ sort_order                   보여줄 순서
 ├─ store_hours                     영업시간 (요일마다 한 줄)
 │  ├─ weekday                      요일 (0=일 … 6=토)
