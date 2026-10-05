@@ -34,17 +34,25 @@ interface SwipePanelProps {
   title: string;
   /** 드러난 크기가 바뀔 때마다 (드래그 중 포함) 알려준다. 지도 버튼 위치·가운데 맞추기에 쓴다 */
   onVisibleChange?: (size: number) => void;
+  /**
+   * true 면 끌기 없이 손잡이를 누를 때마다 닫힘 ↔ 열림만 바뀐다 (PC·태블릿 가로).
+   * 열림 크기는 half 이고, 지도 전체를 덮는 단계(full)는 쓰지 않는다.
+   */
+  toggleOnly?: boolean;
   children: ReactNode;
 }
 
 /**
  * 지도 위로 끌어올리는 1차 탭.
- * 손잡이 줄을 끌어 크기를 바꾸고, 놓으면 가까운 단계(닫힘/반/전체)로 붙는다. 빠르게 튕기면 그 방향의 다음 단계로 간다.
- * 손잡이를 누르면 닫힘 <-> 반 으로 바뀐다.
+ * - 모바일·태블릿 세로: 손잡이 줄을 끌어 크기를 바꾸고, 놓으면 가까운 단계(닫힘/반/전체)로 붙는다.
+ *   빠르게 튕기면 그 방향의 다음 단계로 간다. 손잡이를 누르면 닫힘 <-> 반 으로 바뀐다.
+ * - toggleOnly (PC·태블릿 가로): 끌기 없이 손잡이를 누르면 닫힘 <-> 열림.
  */
 export default function SwipePanel({
-  id, axis, state, onStateChange, half, full, active, title, onVisibleChange, children,
+  id, axis, state: rawState, onStateChange, half, full, active, title, onVisibleChange, toggleOnly = false, children,
 }: SwipePanelProps) {
+  // 클릭형에서는 '전체' 단계가 없다. 다른 곳에서 full 로 바꿔도 열림(half)으로 보여준다
+  const state: PanelState = toggleOnly && rawState === 'full' ? 'half' : rawState;
   const [drag, setDrag] = useState<number | null>(null);
   const start = useRef<{ pos: number; visible: number; time: number } | null>(null);
   const moved = useRef(false);
@@ -62,6 +70,7 @@ export default function SwipePanel({
   const pointerPos = (event: PointerEvent) => (axis === 'y' ? event.clientY : event.clientX);
 
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
+    if (toggleOnly) return; // 클릭형은 끌지 않는다 (누르면 onGripClick)
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     start.current = { pos: pointerPos(event), visible: visibleSize(state, half, full), time: performance.now() };
     moved.current = false;
@@ -111,6 +120,7 @@ export default function SwipePanel({
   // 포인터를 손잡이 줄이 붙잡고 있어서 클릭은 줄 전체에서 받는다. 끌기 직후의 클릭은 무시한다
   function onGripClick() {
     if (suppressClick.current) return;
+    if (toggleOnly) { onStateChange(state === 'closed' ? 'half' : 'closed'); return; }
     onStateChange(state === 'half' ? 'closed' : 'half');
   }
 
@@ -119,6 +129,7 @@ export default function SwipePanel({
     const closeKey = axis === 'y' ? 'ArrowDown' : 'ArrowRight';
     if (event.key !== openKey && event.key !== closeKey) return;
     event.preventDefault();
+    if (toggleOnly) { onStateChange(event.key === openKey ? 'half' : 'closed'); return; }
     const index = ORDER.indexOf(state) + (event.key === openKey ? 1 : -1);
     onStateChange(ORDER[clamp(index, 0, ORDER.length - 1)]);
   }
@@ -130,6 +141,7 @@ export default function SwipePanel({
       data-axis={axis}
       data-state={state}
       data-dragging={drag !== null}
+      data-toggle-only={toggleOnly}
       hidden={!active}
       aria-label={title}
       // 드러난 크기만큼만 차지해서, 내용이 실제 보이는 폭에 맞춰 배치되고 끝까지 스크롤된다
@@ -143,7 +155,10 @@ export default function SwipePanel({
         onPointerCancel={onPointerCancel}
         onClick={onGripClick}
       >
-        <span className="swipe-panel__handle" aria-hidden="true" />
+        {toggleOnly
+          // 클릭형: 누르면 어느 쪽으로 움직이는지 화살표로 보여준다 (닫힘 = 〈 열기, 열림 = 〉 닫기)
+          ? <svg className="swipe-panel__chevron" viewBox="0 0 16 40" aria-hidden="true"><path d="M4 6l8 14-8 14" /></svg>
+          : <span className="swipe-panel__handle" aria-hidden="true" />}
         <button
           type="button"
           className="swipe-panel__toggle"
