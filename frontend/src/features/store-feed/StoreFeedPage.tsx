@@ -118,9 +118,9 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
       <div className="sf-feed-heading"><div><span className="sf-eyebrow">FROM OUR NEIGHBORS</span><h2>사장님이 전하는 소식</h2></div></div>
       <div className="sf-toolbar">
         <div className="sf-filters" aria-label="분류">{['전체', ...FEED_CATEGORIES[kind]].map((c) => <button key={c} type="button" aria-pressed={category === c} className={category === c ? 'is-active' : ''} onClick={() => setCategory(c)}>{c}</button>)}</div>
-        <div className="sf-options"><button type="button" className={`sf-saved-toggle ${onlyLiked ? 'is-active' : ''}`} aria-pressed={onlyLiked} onClick={() => setOnlyLiked(!onlyLiked)}>♡ 찜한 글</button><label className="sf-sort">정렬<select value={sort} onChange={(e) => setSort(e.target.value)}><option value="latest">최신순</option><option value="price">가격 낮은순</option>{kind === 'oneday-class' && <option value="date">수업일순</option>}</select></label></div>
+        <div className="sf-options"><button type="button" className={`sf-saved-toggle ${onlyLiked ? 'is-active' : ''}`} aria-pressed={onlyLiked} onClick={() => setOnlyLiked(!onlyLiked)}>♡ 찜한 글</button></div>
       </div>
-      <p className="sf-count" aria-live="polite">{loading ? '소식을 불러오고 있어요…' : <>총 <b>{visible.length}</b>개의 이야기</>}</p>
+      <div className="sf-count-row"><p className="sf-count" aria-live="polite">{loading ? '소식을 불러오고 있어요…' : <>총 <b>{visible.length}</b>개의 이야기</>}</p><label className="sf-sort">정렬<select value={sort} onChange={(e) => setSort(e.target.value)}><option value="latest">최신순</option><option value="price">가격 낮은순</option>{kind === 'oneday-class' && <option value="date">수업일순</option>}</select></label></div>
       {error ? <div className="sf-empty" role="alert"><p>{error}</p><button type="button" className="sf-secondary" onClick={() => void reload()}>다시 불러오기</button></div> : !loading && visible.length === 0 ? <div className="sf-empty"><Icon name={copy.icon} /><h3>아직 보여드릴 소식이 없어요</h3><p>분류나 찜한 글 조건을 바꾸거나, 동네의 첫 이야기를 올려보세요.</p><button type="button" className="sf-secondary" onClick={resetFilters}>조건 초기화</button></div> : <ul className="sf-grid">
         {visible.map((post) => {
           const store = findFeedStore(post.storeId);
