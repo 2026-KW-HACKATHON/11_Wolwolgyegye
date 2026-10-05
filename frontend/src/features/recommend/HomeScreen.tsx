@@ -50,7 +50,7 @@ export default function HomeScreen({ onShowNearby, onShowStore }: { onShowNearby
 
   const searchedPosts = useMemo(() => {
     const term = query.trim().toLocaleLowerCase();
-    return posts.filter((post) => !term || [post.title, post.description, post.category, findFeedStore(post.storeId)?.name ?? ''].join(' ').toLocaleLowerCase().includes(term));
+    return posts.filter((post) => !term || [post.title, post.summary, post.description, post.category, findFeedStore(post.storeId)?.name ?? ''].join(' ').toLocaleLowerCase().includes(term));
   }, [posts, query]);
   const visiblePosts = searchedPosts.filter((post) => filter === 'all' || (filter === 'saved' ? isFavorite(post.storeId) : post.kind === filter));
 

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../core/auth/AuthContext';
-import { getSupabaseClient } from '../../core/supabase/client';
 import { useShell } from '../../layout/AppShell/ShellContext';
 import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
 import Icon from '../../shared/Icon';
@@ -28,7 +27,7 @@ const COPY = {
  */
 export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loadPosts: () => Promise<FeedPost[]> }) {
   const copy = COPY[kind];
-  const { status, userId } = useAuth();
+  const { status } = useAuth();
   const canWrite = status === 'owner';
   const active = usePageActive();
   const showToast = useToast();
@@ -39,8 +38,6 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
   const [error, setError] = useState('');
   const [category, setCategory] = useState('전체');
   const [sort, setSort] = useState('latest');
-  const [onlyLiked, setOnlyLiked] = useState(false);
-  const [likes, setLikes] = useState<string[]>([]);
   const [editing, setEditing] = useState<FeedPost | null | undefined>(undefined);
   const [now, setNow] = useState(Date.now);
 
@@ -51,20 +48,14 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
     finally { setLoading(false); }
   }, [loadPosts]);
 
-  const reloadLikes = useCallback(async () => {
-    if (!userId) { setLikes([]); return; }
-    const { data, error: likesError } = await getSupabaseClient().from('post_favorites').select('post_id').eq('user_id', userId);
-    if (!likesError) setLikes((data ?? []).map((row) => row.post_id));
-  }, [userId]);
-
   useEffect(() => {
     if (!active) return;
-    void reload(); void reloadLikes(); setNow(Date.now());
+    void reload(); setNow(Date.now());
     const onChange = () => { void reload(); };
     window.addEventListener(FEED_CHANGE_EVENT, onChange);
     const timer = window.setInterval(() => setNow(Date.now()), 30000);
     return () => { window.removeEventListener(FEED_CHANGE_EVENT, onChange); window.clearInterval(timer); };
-  }, [active, reload, reloadLikes]);
+  }, [active, reload]);
 
   const openPost = useCallback((post: FeedPost) => {
     openStore(post.storeId, { category: kind, target: `post-${post.id}` });
@@ -92,39 +83,25 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
 
   const visible = useMemo(() => {
     return posts.filter((post) => {
-      return (category === '전체' || post.category === category)
-        && (!onlyLiked || likes.includes(post.id));
+      return category === '전체' || post.category === category;
     }).sort((a, b) => sort === 'price' ? a.price - b.price : sort === 'date' && a.kind === 'oneday-class' && b.kind === 'oneday-class' ? Date.parse(a.startsAt) - Date.parse(b.startsAt) : Date.parse(b.createdAt) - Date.parse(a.createdAt));
-  }, [posts, category, onlyLiked, likes, sort]);
+  }, [posts, category, sort]);
 
-  async function toggleLike(id: string) {
-    if (!userId) { showToast('로그인하면 게시글을 찜할 수 있어요.'); return; }
-    const exists = likes.includes(id);
-    setLikes((current) => exists ? current.filter((value) => value !== id) : [...current, id]);
-    const query = exists
-      ? getSupabaseClient().from('post_favorites').delete().eq('user_id', userId).eq('post_id', id)
-      : getSupabaseClient().from('post_favorites').insert({ user_id: userId, post_id: id });
-    const { error: likeError } = await query;
-    if (likeError) { await reloadLikes(); showToast('찜을 저장하지 못했어요.'); }
-  }
-  function resetFilters() { setCategory('전체'); setOnlyLiked(false); }
+  function resetFilters() { setCategory('전체'); }
 
   return <div className={`sf-page sf-page--${kind}`}>
     <section className="sf-hero">
       <div><span className="sf-eyebrow">{copy.eyebrow}</span><h1>{copy.title}</h1><p>{copy.description}</p>
         {canWrite && <button type="button" className="sf-primary" onClick={() => setEditing(null)}>＋ 사장님 글쓰기</button>}
       </div>
-      <div className="sf-hero-art" aria-hidden="true"><span className="sf-art-ring" /><Icon name={copy.icon} /><span className="sf-art-note">{kind === 'space-rental' ? '함께 쓰는 즐거움' : '새로운 나를 만나는 날'}</span></div>
     </section>
 
     <section className="sf-feed-section" aria-label={copy.label + ' 게시글'}>
-      <div className="sf-feed-heading"><h2>사장님이 전하는 소식</h2></div>
       <div className="sf-toolbar">
         <div className="sf-filters" aria-label="분류">{['전체', ...FEED_CATEGORIES[kind]].map((c) => <button key={c} type="button" aria-pressed={category === c} className={category === c ? 'is-active' : ''} onClick={() => setCategory(c)}>{c}</button>)}</div>
-        <div className="sf-options"><button type="button" className={`sf-saved-toggle ${onlyLiked ? 'is-active' : ''}`} aria-pressed={onlyLiked} onClick={() => setOnlyLiked(!onlyLiked)}>♡ 찜한 글</button></div>
       </div>
       <div className="sf-count-row"><p className="sf-count" aria-live="polite">{loading ? '소식을 불러오고 있어요…' : <>총 <b>{visible.length}</b>개의 이야기</>}</p><label className="sf-sort">정렬<select value={sort} onChange={(e) => setSort(e.target.value)}><option value="latest">최신순</option><option value="price">가격 낮은순</option>{kind === 'oneday-class' && <option value="date">수업일순</option>}</select></label></div>
-      {error ? <div className="sf-empty" role="alert"><p>{error}</p><button type="button" className="sf-secondary" onClick={() => void reload()}>다시 불러오기</button></div> : !loading && visible.length === 0 ? <div className="sf-empty"><Icon name={copy.icon} /><h3>아직 보여드릴 소식이 없어요</h3><p>분류나 찜한 글 조건을 바꾸거나, 동네의 첫 이야기를 올려보세요.</p><button type="button" className="sf-secondary" onClick={resetFilters}>조건 초기화</button></div> : <ul className="sf-grid">
+      {error ? <div className="sf-empty" role="alert"><p>{error}</p><button type="button" className="sf-secondary" onClick={() => void reload()}>다시 불러오기</button></div> : !loading && visible.length === 0 ? <div className="sf-empty"><Icon name={copy.icon} /><h3>아직 보여드릴 소식이 없어요</h3><p>분류 조건을 바꾸거나, 동네의 첫 이야기를 올려보세요.</p><button type="button" className="sf-secondary" onClick={resetFilters}>조건 초기화</button></div> : <ul className="sf-grid">
         {visible.map((post) => {
           const store = findFeedStore(post.storeId);
           const available = isAvailable(post, now);
@@ -132,10 +109,9 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
             <button type="button" className="sf-card-open" aria-label={post.title + ' 상세보기'} onClick={() => openPost(post)}>
               <PostVisual post={post} />
               <div className="sf-card-content"><div className="sf-byline"><span className="sf-avatar">{store?.name.slice(0, 1) ?? '가'}</span><span>{store?.name ?? '가게'}</span></div>
-                <h3>{post.title}</h3><p className="sf-excerpt">{post.description}</p><p className="sf-schedule"><Icon name={kind === 'space-rental' ? 'pin' : 'calendar'} />{kind === 'space-rental' ? store?.address : scheduleLabel(post)}</p><div className="sf-price-row"><strong>{formatPrice(post)}</strong><span className={`sf-status ${available ? '' : 'is-closed'}`}>{available ? '모집 중' : '모집 마감'}</span></div>
+                <h3>{post.title}</h3><p className="sf-excerpt">{post.summary || post.description}</p><p className="sf-schedule"><Icon name={kind === 'space-rental' ? 'pin' : 'calendar'} />{kind === 'space-rental' ? store?.address : scheduleLabel(post)}</p><div className="sf-price-row"><strong>{formatPrice(post)}</strong><span className="sf-capacity">{!available && <span className="sf-status is-closed">모집 마감</span>}{kind === 'space-rental' ? '최대' : '정원'} {post.capacity}명{store?.isMock ? ' · 예시 글' : ''}</span></div>
               </div>
             </button>
-            <div className="sf-card-footer"><span>{kind === 'space-rental' ? '최대' : '정원'} {post.capacity}명{store?.isMock ? ' · 예시 글' : ''}</span><button type="button" className={`sf-like ${likes.includes(post.id) ? 'is-liked' : ''}`} aria-label={post.title + ' 찜'} aria-pressed={likes.includes(post.id)} onClick={() => void toggleLike(post.id)}>{likes.includes(post.id) ? '♥' : '♡'}</button></div>
           </li>;
         })}
       </ul>}

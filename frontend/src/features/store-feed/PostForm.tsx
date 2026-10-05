@@ -18,7 +18,7 @@ export default function PostForm({ kind, existing, onSaved, onCancel }: {
   const [category, setCategory] = useState(existing?.category ?? FEED_CATEGORIES[kind][0]);
   const [price, setPrice] = useState(existing ? String(existing.price) : '');
   const [capacity, setCapacity] = useState(existing ? String(existing.capacity) : '');
-  const [notes, setNotes] = useState(existing?.notes ?? '');
+  const [summary, setSummary] = useState(existing?.summary ?? '');
   const [status, setStatus] = useState(existing?.status ?? 'open');
   const [imageUrl, setImageUrl] = useState(existing?.imageUrl ?? '');
   const [schedule, setSchedule] = useState(existing?.kind === 'space-rental' ? existing.schedule : '');
@@ -57,7 +57,7 @@ export default function PostForm({ kind, existing, onSaved, onCancel }: {
     e.preventDefault();
     if (busy || readingImage) return;
     if (!price.trim() || !capacity.trim()) { setError('가격과 인원을 입력해 주세요.'); return; }
-    const common = { storeId, title: title.trim(), description: description.trim(), category, price: Number(price), capacity: Number(capacity), imageUrl, notes: notes.trim(), status };
+    const common = { storeId, title: title.trim(), description: description.trim(), category, price: Number(price), capacity: Number(capacity), imageUrl, summary: summary.trim(), status };
     const parsed = startsAt ? new Date(startsAt) : null;
     const input: PostInput = kind === 'space-rental'
       ? { ...common, kind, schedule: schedule.trim(), minimumHours: minimumHours.trim() ? Number(minimumHours) : null }
@@ -77,7 +77,8 @@ export default function PostForm({ kind, existing, onSaved, onCancel }: {
         <label>분류<select value={category} onChange={(e) => setCategory(e.target.value)}>{FEED_CATEGORIES[kind].map((c) => <option key={c}>{c}</option>)}</select></label>
       </div>
       <label>게시글 제목<input autoFocus required maxLength={70} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={kind === 'space-rental' ? '우리끼리 보내는 특별한 시간' : '사장님과 함께하는 첫 도전'} /></label>
-      <label>소개<textarea required rows={4} maxLength={2000} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="어떤 경험을 할 수 있는지 이웃에게 알려주세요." /></label>
+      <label>한 줄 요약<input required maxLength={200} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder={kind === 'space-rental' ? '조명·음향 갖춘 12인 파티룸' : '반죽부터 굽기까지, 빵 2개를 가져가요'} /><small>목록 카드에 보여요. {summary.length} / 200자</small></label>
+      <label>상세 설명<textarea required rows={6} maxLength={5000} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="시설, 포함 사항, 준비물, 주의할 점 등을 알려주세요." /><small>가게 화면의 '오시기 전에 알아두세요'에 보여요.</small></label>
       <label>대표 사진 (선택)<input type="file" accept="image/jpeg,image/png,image/webp" disabled={readingImage} onChange={(e) => uploadImage(e.target.files?.[0])} /><small>JPG · PNG · WebP / 최대 1MB. 직접 사용 권한이 있는 사진을 올려주세요.</small></label>
       {imageUrl && <div className="sf-image-preview"><img src={imageUrl} alt="등록할 대표 사진 미리보기" /><button type="button" className="sf-text-btn" onClick={() => setImageUrl('')}>사진 제거</button></div>}
       <div className="sf-form-grid">
@@ -91,7 +92,6 @@ export default function PostForm({ kind, existing, onSaved, onCancel }: {
         <label>수업 시작 (현재 기기 시간 기준)<input type="datetime-local" required value={startsAt} onChange={(e) => setStartsAt(e.target.value)} /></label>
         <label>수업 시간 (분)<input type="number" required min={15} max={1440} step={1} value={durationMinutes} onChange={(e) => setDurationMinutes(e.target.value)} /></label>
       </div>}
-      <label>이용 안내 / 포함 사항<textarea rows={3} maxLength={200} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="제공되는 시설, 재료비 포함 여부, 준비물 등을 알려주세요." /><small>{notes.length} / 200자</small></label>
       <div className="sf-form-grid">
         <label>문의 전화<input value={stores.find((s) => s.id === storeId)?.phone || '가게 전화번호 미등록'} readOnly disabled /><small>가게 전화번호로 안내돼요.</small></label>
         <label>모집 상태<select value={status} onChange={(e) => setStatus(e.target.value as 'open' | 'closed')}><option value="open">모집 중</option><option value="closed">모집 마감</option></select></label>
