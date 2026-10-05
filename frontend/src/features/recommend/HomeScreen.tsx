@@ -84,7 +84,7 @@ export default function HomeScreen({ onShowNearby, onShowStore }: { onShowNearby
     </section>
     {sales.length > 0 && <section className="rp-promotions" aria-labelledby="rp-deals-title">
       <div className="rp-section-heading"><div><p className="rp-eyebrow">가까운 가게에서 알뜰하게</p><h2 id="rp-deals-title">놓치기 아쉬운 혜택</h2></div><Link to="/closing-sale">더 보기 <Icon name="chevronRight" /></Link></div>
-      <div className="rp-promotion-row">{sales.slice(0, 3).map((sale) => <Link key={sale.id} to="/closing-sale" className="rp-promotion"><span className="rp-promotion-icon"><Icon name="tag" /></span><strong>{formatSaleDiscount(sale)}<small>{sale.discountType === 'free' ? ' 제공' : ' 할인'}</small></strong><b>{sale.store.name}</b><p>{sale.desc}</p><span className="rp-promotion-footer">할인 내용 보기 <Icon name="chevronRight" /></span></Link>)}</div>
+      <div className="rp-promotion-row">{sales.slice(0, 3).map((sale) => <Link key={sale.id} to={`/closing-sale?sale=${encodeURIComponent(sale.id)}`} className="rp-promotion"><span className="rp-promotion-icon"><Icon name="tag" /></span><strong>{formatSaleDiscount(sale)}<small>{sale.discountType === 'free' ? ' 제공' : ' 할인'}</small></strong><b>{sale.store.name}</b><p>{sale.desc}</p><span className="rp-promotion-footer">할인 내용 보기 <Icon name="chevronRight" /></span></Link>)}</div>
     </section>}
     <button className="rp-map-teaser" type="button" onClick={onShowNearby}><span className="rp-map-teaser-icon"><Icon name="compass" /></span><span><strong>이번엔 지도로 둘러볼까요?</strong><small>가까운 가게를 한눈에 찾아보세요.</small></span><Icon name="chevronRight" /></button>
     <p className="rp-demo-note">사장님 글과 로그인 사용자의 찜은 DB에 안전하게 저장돼요.</p>

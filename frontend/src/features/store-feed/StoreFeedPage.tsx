@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../core/auth/AuthContext';
 import { getSupabaseClient } from '../../core/supabase/client';
+import { useShell } from '../../layout/AppShell/ShellContext';
 import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
 import Icon from '../../shared/Icon';
 import { useToast } from '../../shared/toast/ToastContext';
-import { deleteFeedPost, FEED_CHANGE_EVENT, findFeedStore } from './feedSource';
+import { FEED_CHANGE_EVENT, findFeedStore } from './feedSource';
+import { scheduleLabel } from './FeedPostDetail';
 import { FEED_CATEGORIES, formatPrice, isAvailable, type FeedKind, type FeedPost } from './types';
 import FeedDialog from './FeedDialog';
 import PostForm from './PostForm';
@@ -16,16 +18,21 @@ const COPY = {
   'space-rental': { label: '공간 대여', eyebrow: '우리 동네, 우리만의 공간', title: '좋은 공간을 나누면,\n일상이 조금 특별해져요.', description: '쉬는 날의 카페부터 조용한 작업실까지. 사장님이 직접 소개하는 동네 공간을 만나보세요.', icon: 'house' as const },
   'oneday-class': { label: '원데이클래스', eyebrow: '동네에서 발견하는 새로운 취향', title: '처음이라 더 즐거운,\n하루의 작은 배움.', description: '반죽을 만지고, 커피를 내리고, 나만의 작품을 만들어요. 동네 사장님이 오늘은 선생님이 됩니다.', icon: 'paletteColor' as const },
 };
-function scheduleLabel(post: FeedPost) {
-  return post.kind === 'space-rental' ? post.schedule : new Date(post.startsAt).toLocaleString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' });
-}
 
+/**
+ * 공간대여 / 원데이클래스 화면 (1차 탭).
+ * 글을 누르면 그 가게의 2차 탭이 열리고, 2차 탭의 이 카테고리 글(누른 글)이 맨 위에 오도록 스크롤된다.
+ * - ?post=ID : 그 글의 2차 탭을 연다 (홈 화면 등에서 연결)
+ * - ?edit=ID : 그 글의 수정 창을 연다 (2차 탭의 "글 수정" 버튼)
+ * - ?compose=1 : 글쓰기 창을 연다
+ */
 export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loadPosts: () => Promise<FeedPost[]> }) {
   const copy = COPY[kind];
-  const { status, userId, ownedStores } = useAuth();
+  const { status, userId } = useAuth();
   const canWrite = status === 'owner';
   const active = usePageActive();
   const showToast = useToast();
+  const { openStore } = useShell();
   const [params, setParams] = useSearchParams();
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,11 +41,7 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
   const [sort, setSort] = useState('latest');
   const [onlyLiked, setOnlyLiked] = useState(false);
   const [likes, setLikes] = useState<string[]>([]);
-  const [selected, setSelected] = useState<FeedPost | null>(null);
   const [editing, setEditing] = useState<FeedPost | null | undefined>(undefined);
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [detailError, setDetailError] = useState('');
   const [now, setNow] = useState(Date.now);
 
   const reload = useCallback(async () => {
@@ -63,6 +66,10 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
     return () => { window.removeEventListener(FEED_CHANGE_EVENT, onChange); window.clearInterval(timer); };
   }, [active, reload, reloadLikes]);
 
+  const openPost = useCallback((post: FeedPost) => {
+    openStore(post.storeId, { category: kind, target: `post-${post.id}` });
+  }, [openStore, kind]);
+
   useEffect(() => {
     if (active && params.get('compose') === '1') {
       setEditing(null);
@@ -70,13 +77,18 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
     }
   }, [active, params, setParams]);
 
+  // ?post=ID → 그 글의 2차 탭, ?edit=ID → 그 글의 수정 창
   useEffect(() => {
     const postId = params.get('post');
-    if (!active || !postId || loading || error) return;
-    const post = posts.find((item) => item.id === postId && item.kind === kind);
-    if (post) { setSelected(post); setDeleteConfirm(false); setDetailError(''); }
-    const next = new URLSearchParams(params); next.delete('post'); setParams(next, { replace: true });
-  }, [active, error, kind, loading, params, posts, setParams]);
+    const editId = params.get('edit');
+    if (!active || (!postId && !editId) || loading || error) return;
+    const find = (id: string | null) => (id ? posts.find((item) => item.id === id && item.kind === kind) : undefined);
+    const post = find(postId);
+    const edit = find(editId);
+    if (post) openPost(post);
+    if (edit) setEditing(edit);
+    const next = new URLSearchParams(params); next.delete('post'); next.delete('edit'); setParams(next, { replace: true });
+  }, [active, error, kind, loading, params, posts, setParams, openPost]);
 
   const visible = useMemo(() => {
     return posts.filter((post) => {
@@ -95,16 +107,7 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
     const { error: likeError } = await query;
     if (likeError) { await reloadLikes(); showToast('찜을 저장하지 못했어요.'); }
   }
-  function openPost(post: FeedPost) { setSelected(post); setDeleteConfirm(false); setDetailError(''); }
-  async function remove() {
-    if (!selected || deleting) return;
-    setDeleting(true); setDetailError('');
-    try { await deleteFeedPost(selected.id, selected.kind); setSelected(null); await reload(); showToast('게시글을 삭제했어요.'); }
-    catch (e) { setDetailError(e instanceof Error ? e.message : '삭제하지 못했어요.'); }
-    finally { setDeleting(false); }
-  }
   function resetFilters() { setCategory('전체'); setOnlyLiked(false); }
-  const selectedStore = selected ? findFeedStore(selected.storeId) : undefined;
 
   return <div className={`sf-page sf-page--${kind}`}>
     <section className="sf-hero">
@@ -139,22 +142,8 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
     </section>
     <aside className="sf-bottom-note"><Icon name="storefront" /><div><strong>가게의 또 다른 매력을 나눠주세요.</strong><p>비어 있는 공간도, 사장님의 노하우도 이웃에게는 특별한 경험이 됩니다.</p></div>{canWrite && <button type="button" className="sf-text-btn" onClick={() => setEditing(null)}>글쓰기 →</button>}</aside>
 
-    {active && selected && editing === undefined && <FeedDialog title={copy.label + ' 이야기'} onDismiss={() => setSelected(null)}>
-      <PostVisual post={selected} />
-      <div className="sf-detail"><p className="sf-eyebrow">{selectedStore?.name} · 사장님이 올린 글</p><h2>{selected.title}</h2><strong className="sf-detail-price">{formatPrice(selected)}</strong>
-        <p className="sf-description">{selected.description}</p>
-        <dl className="sf-facts"><div><dt>위치</dt><dd>{selectedStore?.address}</dd></div><div><dt>{kind === 'space-rental' ? '이용 가능 시간' : '수업 일시'}</dt><dd>{scheduleLabel(selected)}{selected.kind === 'oneday-class' && <small>현재 기기 시간대 기준</small>}</dd></div><div><dt>인원</dt><dd>{selected.capacity}명 {kind === 'oneday-class' ? '(전체 정원 · 잔여석은 전화 문의)' : '까지'}</dd></div><div><dt>이용 시간</dt><dd>{selected.kind === 'space-rental' ? '최소 ' + selected.minimumHours + '시간' : selected.durationMinutes + '분'}</dd></div></dl>
-        {selected.notes && <section className="sf-detail-notes"><h3>오시기 전에 알아두세요</h3><p>{selected.notes}</p></section>}
-        <p className="sf-notice">일정·이용 가능 여부·취소 조건은 사장님과 전화로 확인해 주세요. 이 화면에서는 예약이나 결제가 이루어지지 않습니다.</p>
-        {selectedStore?.isMock ? <button type="button" className="sf-primary sf-contact" onClick={() => showToast('예시 게시글이라 실제 전화는 연결되지 않아요.')}>전화 문의 · 예시</button> : isAvailable(selected, now) ? <a className="sf-primary sf-contact" href={`tel:${selected.contactPhone.replace(/[^+\d]/g, '')}`}>전화 문의 · {selected.contactPhone}</a> : <p className="sf-notice">모집이 마감된 글입니다.</p>}
-        {ownedStores.some((store) => store.id === selected.storeId) && <div className="sf-manage"><p>내 가게 게시글</p><div className="sf-actions"><button className="sf-secondary" type="button" onClick={() => setEditing(selected)}>글 수정</button><button type="button" className="sf-text-btn sf-danger" onClick={() => setDeleteConfirm(true)}>글 삭제</button></div>
-          {deleteConfirm && <div className="sf-delete-confirm" role="alert"><p>이 글을 삭제할까요? 저장된 글과 사진을 되돌릴 수 없습니다.</p><button type="button" className="sf-secondary" onClick={() => setDeleteConfirm(false)} disabled={deleting}>취소</button> <button type="button" className="sf-primary" onClick={() => void remove()} disabled={deleting}>{deleting ? '삭제 중…' : '삭제 확인'}</button></div>}
-        </div>}
-        {detailError && <p className="sf-error" role="alert">{detailError}</p>}
-      </div>
-    </FeedDialog>}
     {active && canWrite && editing !== undefined && <FeedDialog title={editing ? copy.label + ' 글 수정' : copy.label + ' 글쓰기'} onDismiss={() => setEditing(undefined)}>
-      <PostForm kind={kind} existing={editing ?? undefined} onCancel={() => setEditing(undefined)} onSaved={(post) => { setEditing(undefined); resetFilters(); setSort('latest'); openPost(post); void reload(); showToast('게시글을 DB에 저장했어요.'); }} />
+      <PostForm kind={kind} existing={editing ?? undefined} onCancel={() => setEditing(undefined)} onSaved={(post) => { setEditing(undefined); resetFilters(); setSort('latest'); void reload().then(() => openPost(post)); showToast('게시글을 DB에 저장했어요.'); }} />
     </FeedDialog>}
   </div>;
 }

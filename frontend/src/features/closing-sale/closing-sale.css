@@ -474,3 +474,94 @@
     font-size: 2.3rem;
   }
 }
+/* 카드 전체를 누르면 세일 상세: 가게 이름 버튼을 카드 크기로 늘린다. 관심 버튼은 그 위에 둔다 */
+.cs-card {
+  position: relative;
+}
+
+.cs-card-open {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cs-card-open::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.cs-card-open:focus-visible {
+  outline: none;
+}
+
+.cs-card:has(.cs-card-open:focus-visible) {
+  outline: 3px solid var(--color-brand, #802d40);
+  outline-offset: 2px;
+}
+
+.cs-card .cs-like {
+  position: relative;
+  z-index: 2;
+}
+
+/* 2차 탭 안의 마감세일 묶음 (ClosingSaleSection) */
+.cs-section-sale {
+  overflow: hidden;
+  margin-bottom: 10px;
+  border: 1px solid var(--color-border, #e7dfd4);
+  border-radius: 14px;
+  background: var(--color-surface, #fff);
+}
+
+.cs-page--detail .cs-card-top {
+  padding: 14px 16px;
+}
+
+.cs-detail-body {
+  display: grid;
+  gap: 8px;
+  padding: 12px 16px 14px;
+}
+
+.cs-detail-facts {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+}
+
+.cs-detail-facts div {
+  display: flex;
+  gap: 12px;
+}
+
+.cs-detail-facts dt {
+  flex: none;
+  width: 56px;
+  color: var(--color-text-muted, #8a7b6e);
+  font-weight: 700;
+}
+
+.cs-detail-facts dd {
+  margin: 0;
+}
+
+.cs-page--detail .cs-like {
+  justify-self: start;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border, #e7dfd4);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--color-surface, #fff);
+}
+
+.cs-detail-tip {
+  margin: 0;
+  color: var(--color-text-muted, #8a7b6e);
+  font-size: 0.78rem;
+}

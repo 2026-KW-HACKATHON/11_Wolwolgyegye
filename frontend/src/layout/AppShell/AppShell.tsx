@@ -20,7 +20,7 @@ import SecondaryPanel, { type SecondaryPlace } from '../SecondaryPanel/Secondary
 import SubCategoryList from '../SubCategories/SubCategoryList';
 import type { PanelState } from '../SwipePanel/SwipePanel';
 import UserButton from '../UserButton/UserButton';
-import { ShellContext, type ShellApi } from './ShellContext';
+import { ShellContext, type SecondaryFocus, type ShellApi } from './ShellContext';
 import './AppShell.css';
 
 /** 지도에 표시할 가게: 가게가 지원하는 카테고리면 그 가게만, 아니면(동네 소식·유저) 전체 */
@@ -97,6 +97,8 @@ export default function AppShell() {
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   /** 2차 탭에 연 지도 가게 (카테고리 가게와 동시에 열리지 않는다) */
   const [selectedPlace, setSelectedPlace] = useState<MapStore | null>(null);
+  /** 2차 탭을 1차 탭에서 열었을 때 처음 보여줄 카테고리(항목). seq 는 같은 곳을 다시 눌러도 스크롤하도록 */
+  const [focus, setFocus] = useState<(SecondaryFocus & { seq: number }) | null>(null);
   const [locating, setLocating] = useState(false);
 
   // 지도 영역 크기 (1차 탭 크기 계산용)
@@ -121,10 +123,13 @@ export default function AppShell() {
 
   // 2차 탭이 좌측에 열리면 그만큼을 왼쪽 가림으로 기록한다
   const selectedStore = categoryStores.find((store) => store.id === selectedStoreId) ?? null;
-  const secondaryPlace = useMemo(
-    () => (selectedPlace ? placeToSecondary(selectedPlace) : selectedStore ? storeToSecondary(selectedStore) : null),
-    [selectedPlace, selectedStore],
-  );
+  const secondaryPlace = useMemo(() => {
+    if (selectedPlace) return placeToSecondary(selectedPlace);
+    if (selectedStore) return storeToSecondary(selectedStore);
+    // 카테고리 가게 목록에 아직 없는 가게면(불러오는 중 등) 이름·주소는 2차 탭이 DB 에서 읽어 채운다
+    if (selectedStoreId) return { id: selectedStoreId, name: '', category: '', address: '', facts: [] };
+    return null;
+  }, [selectedPlace, selectedStore, selectedStoreId]);
   useLayoutEffect(() => {
     const node = stageRef.current;
     if (!node) return;
@@ -192,7 +197,20 @@ export default function AppShell() {
   // ---- 2차 탭: 카테고리 가게 또는 지도 가게 하나만 연다 ----
   const selectStore = useCallback((id: string) => { setSelectedPlace(null); setSelectedStoreId(id); }, []);
   const selectPlace = useCallback((place: MapStore) => { setSelectedStoreId(null); setSelectedPlace(place); }, []);
-  const closeSecondary = useCallback(() => { setSelectedStoreId(null); setSelectedPlace(null); }, []);
+  const closeSecondary = useCallback(() => { setFocus(null); setSelectedStoreId(null); setSelectedPlace(null); }, []);
+  // 지도에서 가게를 직접 고르면 2차 탭을 가게 정보(맨 위)부터 보여준다
+  const pickStoreOnMap = useCallback((id: string) => { setFocus(null); selectStore(id); }, [selectStore]);
+  const pickPlaceOnMap = useCallback((place: MapStore) => { setFocus(null); selectPlace(place); }, [selectPlace]);
+
+  // 1차 탭에서 가게를 열 때 가게를 찾는 곳 (카테고리 가게 → 지도 가게 순)
+  const lookupRef = useRef({ categoryStores, mapData });
+  lookupRef.current = { categoryStores, mapData };
+  const selectAnyStore = useCallback((storeId: string) => {
+    const { categoryStores: list, mapData: data } = lookupRef.current;
+    const place = list.some((s) => s.id === storeId) ? null : data?.stores.find((p) => p.id === storeId) ?? null;
+    if (place) selectPlace(place);
+    else selectStore(storeId);
+  }, [selectPlace, selectStore]);
 
   // 지도 가게를 열면 그 자리를 탭에 가려지지 않은 영역 가운데로 (2차 탭 폭이 반영된 뒤에)
   useEffect(() => {
@@ -223,20 +241,33 @@ export default function AppShell() {
     );
   }
 
+  // 가게를 보여줄 때 1차 탭이 지도를 가리지 않게 접는다 (세로 화면: 닫기 / 가로 화면: 전체면 반으로)
+  const layoutRef = useRef({ activeId, axis });
+  layoutRef.current = { activeId, axis };
+  const revealMap = useCallback(() => {
+    const { activeId: id, axis: dir } = layoutRef.current;
+    if (!id) return;
+    setPanelStates((prev) => {
+      const current = prev[id] ?? 'half';
+      const next = dir === 'y' ? 'closed' : current === 'full' ? 'half' : current;
+      return next === current ? prev : { ...prev, [id]: next };
+    });
+  }, []);
+
+  /** 1차 탭에서 가게를 연다: 2차 탭을 열고, focus 가 있으면 그 카테고리(항목)를 맨 위로 스크롤한다 */
+  const openStore = useCallback((storeId: string, target?: SecondaryFocus) => {
+    selectAnyStore(storeId);
+    setFocus(target ? { ...target, seq: Date.now() } : null);
+    revealMap();
+  }, [selectAnyStore, revealMap]);
+
   const api = useMemo<ShellApi>(() => ({
-    showStoreOnMap(storeId) {
-      selectStore(storeId);
-      if (!activeId) return;
-      setPanelStates((prev) => {
-        const current = prev[activeId] ?? 'half';
-        const next = axis === 'y' ? 'closed' : current === 'full' ? 'half' : current;
-        return next === current ? prev : { ...prev, [activeId]: next };
-      });
-    },
+    showStoreOnMap: (storeId) => openStore(storeId),
+    openStore,
     setActivePanelState(state) {
       if (activeId) setPanelState(activeId, state);
     },
-  }), [activeId, axis, setPanelState]);
+  }), [activeId, setPanelState, openStore]);
 
   if (!active) {
     return <Navigate to={DEFAULT_LANDING_PATH} replace />;
@@ -258,10 +289,10 @@ export default function AppShell() {
             stores={mapStores}
             places={places}
             selectedPlaceId={selectedPlace?.id ?? null}
-            onPlaceSelect={selectPlace}
+            onPlaceSelect={pickPlaceOnMap}
             placesMonth={mapData?.sbizMonth || null}
             selectedId={selectedStoreId}
-            onSelect={selectStore}
+            onSelect={pickStoreOnMap}
             getInsets={getInsets}
             showZoomControl={mode === 'wide' && !window.matchMedia(TOUCH_PRIMARY_QUERY).matches}
             portrait={mode === 'portrait'}
@@ -278,7 +309,7 @@ export default function AppShell() {
             </button>
           </div>
 
-          <SecondaryPanel ref={secondaryRef} place={secondaryPlace} layout={mode} onClose={closeSecondary} />
+          <SecondaryPanel ref={secondaryRef} place={secondaryPlace} layout={mode} onClose={closeSecondary} focus={focus} />
 
           <KeepAlivePages
             activeId={active.id}

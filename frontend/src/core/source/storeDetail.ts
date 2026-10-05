@@ -8,6 +8,8 @@ import type { HoursRow } from '../utils/hours';
  */
 export interface StoreDetail {
   id: string;
+  name: string;
+  address: string;
   isMock: boolean;
   phone: string;
   hours: HoursRow[];
@@ -28,7 +30,7 @@ export interface StoreDetail {
 }
 
 const COLUMNS = [
-  'id, is_mock, phone',
+  'id, name, address, is_mock, phone',
   'store_hours(weekday, opens_at, closes_at, is_closed)',
   'store_menus(id, name, price, type_id, sort_order)',
   'closing_sales(id, discount_type, discount_amount, discount_rate, condition, offer, ends_at)',
@@ -52,6 +54,8 @@ export async function fetchStoreDetail(id: string): Promise<StoreDetail | null> 
     const stamp = list(row.stamp_policies)[0];
     return {
       id: row.id,
+      name: row.name ?? '',
+      address: row.address ?? '',
       isMock: Boolean(row.is_mock),
       phone: row.phone ?? '',
       hours: list(row.store_hours) as HoursRow[],
