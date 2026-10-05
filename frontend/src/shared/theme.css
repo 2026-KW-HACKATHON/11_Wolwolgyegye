@@ -8,7 +8,7 @@
      지도의 산(녹색 쪽)·강(파란 쪽)은 팔레트마다 따로 정해 바탕·서로와 구별되게 한다
    2층 의미 토큰 (--color-…): 화면은 이것만 쓴다. 1층 이름만 가리키므로 팔레트를 바꾸면 함께 바뀐다.
 
-   팔레트 고르기: <html data-palette="1|2|3|4|5"> (없으면 1번). 설정 화면이 바꾸고 이 기기에 저장한다.
+   팔레트 고르기: <html data-palette="1|2|3|4|5|6|7|8|9"> (없으면 1번). 설정 화면이 바꾸고 이 기기에 저장한다.
    다크 모드: <html data-theme="dark"> (토글 UI 는 아직 없음).
    단계 값은 원색 5개를 섞어 만들고, 대비(본문 4.5:1)를 검사해 계산한 값이다.
    ========================================================================== */
@@ -308,6 +308,242 @@
   --map-line-default: #948092;
   --mountain-fill: #b3d9ac;
   --water-fill: #9fd0cf;
+}
+
+/* ---------- 6번: #010736 · #0d1c42 · #22396f · #fcf1d0 ---------- */
+[data-palette='6'] {
+  --primary-50: #e6dfc6;
+  --primary-100: #d0ccbd;
+  --primary-200: #a5a7a9;
+  --primary-300: #798396;
+  --primary-400: #4e5e82;
+  --primary-500: #22396f;
+  --primary-600: #16285b;
+  --primary-700: #0d184a;
+  --deep-800: #091444;
+  --deep-900: #010736;
+  --deep-950: #010420;
+  --base-50: #fcf1d0;
+  --base-100: #f5ebcd;
+  --base-200: #ebe2c8;
+  --accent-50: #f7f7f6;
+  --accent-100: #ededea;
+  --accent-200: #deddd9;
+  --accent-300: #cecdc7;
+  --accent-400: #bfbdb5;
+  --accent-500: #666c7c;
+  --accent-800: #696864;
+  --strong-100: #d3d6dd;
+  --strong-300: #56607b;
+  --strong-400: #2f3c5c;
+  --strong-500: #0d1c42;
+  --strong-600: #0a1635;
+  --strong-700: #081129;
+  --support-100: #ded8c5;
+  --support-400: #64749a;
+  --support-600: #46537c;
+  --ink-muted: #686775;
+  --ink-faint: #938f8f;
+  --line: #e2dbc4;
+  --wheel-1: #cbc7ba;
+  --wheel-2: #99a0ad;
+  --wheel-3: #797c82;
+  --wheel-4: #dfdeda;
+  --wheel-5: #8f95a0;
+  --wheel-6: #8a8d92;
+  --wheel-7: #bfbfba;
+  --wheel-8: #7c8391;
+  --map-bg: #eae2c8;
+  --building-fill: #d6d1bf;
+  --building-stroke: #b8b8b2;
+  --road-medium: #fefbf1;
+  --road-minor: #fdf7e3;
+  --road-service: #f0ebd8;
+  --rail-base: #848c9b;
+  --station-exit-link: #7e7c83;
+  --school-fill: #e5dec6;
+  --apartment-fill: #e0dac4;
+  --place-etc: #7e7c83;
+  --map-line-default: #7e7c83;
+  --mountain-fill: #c1cbaa;
+  --water-fill: #a6b9cd;
+}
+
+/* ---------- 7번: #790d16 · #e5d3af · #f5efe1 · #aec4d4 ---------- */
+[data-palette='7'] {
+  --primary-50: #e9d8cd;
+  --primary-100: #dcc2b8;
+  --primary-200: #c39590;
+  --primary-300: #ab6767;
+  --primary-400: #923a3f;
+  --primary-500: #790d16;
+  --primary-600: #620b12;
+  --primary-700: #4d080e;
+  --deep-800: #47080d;
+  --deep-900: #36060a;
+  --deep-950: #200406;
+  --base-50: #f5efe1;
+  --base-100: #f3ecdb;
+  --base-200: #f1e7d3;
+  --accent-50: #fcfaf5;
+  --accent-100: #f8f3e9;
+  --accent-200: #f1e8d5;
+  --accent-300: #ebdec2;
+  --accent-400: #e5d3af;
+  --accent-500: #af7062;
+  --accent-800: #766d5a;
+  --strong-100: #e7d3d5;
+  --strong-300: #a1565c;
+  --strong-400: #8c2f37;
+  --strong-500: #790d16;
+  --strong-600: #610a12;
+  --strong-700: #4b080e;
+  --support-100: #e7e6de;
+  --support-400: #aec4d4;
+  --support-600: #587186;
+  --ink-muted: #80615e;
+  --ink-faint: #a58d87;
+  --line: #e6d4c9;
+  --wheel-1: #e8d9b9;
+  --wheel-2: #c7d3d9;
+  --wheel-3: #b17371;
+  --wheel-4: #f2e9d7;
+  --wheel-5: #b77e7c;
+  --wheel-6: #c59881;
+  --wheel-7: #d9dedc;
+  --wheel-8: #b57b7c;
+  --map-bg: #ede1d1;
+  --building-fill: #e1ccbe;
+  --building-stroke: #d0aca2;
+  --road-medium: #fcfaf6;
+  --road-minor: #f9f5ed;
+  --road-service: #f2eadf;
+  --rail-base: #b17371;
+  --station-exit-link: #967a76;
+  --school-fill: #ecdfcd;
+  --apartment-fill: #e7d6c8;
+  --place-etc: #967a76;
+  --map-line-default: #967a76;
+  --mountain-fill: #c4ccad;
+  --water-fill: #aec0cc;
+}
+
+/* ---------- 8번: #6e3511 · #91ac67 · #597928 · #fcecd8 ---------- */
+[data-palette='8'] {
+  --primary-50: #ece0c6;
+  --primary-100: #dbd5b5;
+  --primary-200: #bbbe92;
+  --primary-300: #9aa76e;
+  --primary-400: #7a904b;
+  --primary-500: #557426;
+  --primary-600: #4f591d;
+  --primary-700: #473d14;
+  --deep-800: #443411;
+  --deep-900: #3d1d09;
+  --deep-950: #251105;
+  --base-50: #fcecd8;
+  --base-100: #efe4ca;
+  --base-200: #dedab8;
+  --accent-50: #f2f5ed;
+  --accent-100: #e0e8d4;
+  --accent-200: #c6d4b0;
+  --accent-300: #abc08b;
+  --accent-400: #91ac67;
+  --accent-500: #80703c;
+  --accent-800: #505f39;
+  --strong-100: #e5dbd4;
+  --strong-300: #9a7258;
+  --strong-400: #825132;
+  --strong-500: #6e3511;
+  --strong-600: #582a0e;
+  --strong-700: #44210b;
+  --support-100: #e7dfc1;
+  --support-400: #91ac67;
+  --support-600: #717946;
+  --ink-muted: #785d49;
+  --ink-faint: #ac9581;
+  --line: #e8dec3;
+  --wheel-1: #a6b97e;
+  --wheel-2: #b6c28f;
+  --wheel-3: #ae876b;
+  --wheel-4: #c8d6b3;
+  --wheel-5: #aab280;
+  --wheel-6: #90925b;
+  --wheel-7: #d1d2ab;
+  --wheel-8: #aa866d;
+  --map-bg: #e7dfc2;
+  --building-fill: #d9d5b3;
+  --building-stroke: #c4c69c;
+  --road-medium: #fef9f3;
+  --road-minor: #fdf4e8;
+  --road-service: #eee9d4;
+  --rail-base: #a2ad77;
+  --station-exit-link: #9c8470;
+  --school-fill: #ddd9b7;
+  --apartment-fill: #e0daba;
+  --place-etc: #9c8470;
+  --map-line-default: #9c8470;
+  --mountain-fill: #bbc99e;
+  --water-fill: #aac0cd;
+}
+
+/* ---------- 9번: #f5ebdd · #f2765e · #315b8c · #413333 ---------- */
+[data-palette='9'] {
+  --primary-50: #e1ddd5;
+  --primary-100: #cececd;
+  --primary-200: #a7b1bd;
+  --primary-300: #7f95ac;
+  --primary-400: #58789c;
+  --primary-500: #315b8c;
+  --primary-600: #374d6d;
+  --primary-700: #3b4152;
+  --deep-800: #3d3d49;
+  --deep-900: #413333;
+  --deep-950: #271f1f;
+  --base-50: #f5ebdd;
+  --base-100: #f5ddce;
+  --base-200: #f4cab9;
+  --accent-50: #fdefec;
+  --accent-100: #fbd9d2;
+  --accent-200: #f8b8ab;
+  --accent-300: #f59785;
+  --accent-400: #f2765e;
+  --accent-500: #ed745c;
+  --accent-800: #854134;
+  --strong-100: #fbe5e1;
+  --strong-300: #ef9c8c;
+  --strong-400: #eb8571;
+  --strong-500: #e8715a;
+  --strong-600: #a44f3f;
+  --strong-700: #8a4336;
+  --support-100: #dad8d4;
+  --support-400: #6f8cae;
+  --support-600: #617189;
+  --ink-muted: #6a5d5a;
+  --ink-faint: #a99e96;
+  --line: #dddad3;
+  --wheel-1: #f38d77;
+  --wheel-2: #9eadbe;
+  --wheel-3: #eea895;
+  --wheel-4: #f8baae;
+  --wheel-5: #93a3b4;
+  --wheel-6: #f07f6a;
+  --wheel-7: #bfc5ca;
+  --wheel-8: #eb907b;
+  --map-bg: #ebd6cb;
+  --building-fill: #d8cac5;
+  --building-stroke: #bcb7bb;
+  --road-medium: #fcf9f5;
+  --road-minor: #f9f3eb;
+  --road-service: #f1e2db;
+  --rail-base: #899cb0;
+  --station-exit-link: #9b8f88;
+  --school-fill: #eccabe;
+  --apartment-fill: #e2d0c8;
+  --place-etc: #9b8f88;
+  --map-line-default: #9b8f88;
+  --mountain-fill: #c1c6ab;
+  --water-fill: #a6b5cb;
 }
 
 /* 팔레트와 상관없는 색 */

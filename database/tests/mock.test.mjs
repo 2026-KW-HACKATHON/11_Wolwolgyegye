@@ -55,7 +55,7 @@ test('한 줄로 지우면 예시 데이터만 사라지고 실제 가게·기�
   }
   assert.equal(await count('select count(*) from public.stores'), 1);
   assert.equal(await count('select count(*) from public.partners'), 8);
-  assert.equal(await count('select count(*) from public.space_rental_categories'), 3);
+  assert.equal(await count('select count(*) from public.space_rental_categories'), 6);
 });
 
 test('예시 가게는 사장님 승인 대상이 될 수 없다', async () => {

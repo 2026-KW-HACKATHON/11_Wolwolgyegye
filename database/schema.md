@@ -108,8 +108,8 @@ stores                             가게
 partners                           제휴사 (광운대 단과대학 8곳)
 └─ name                            제휴사 이름
 
-space_rental_categories            공간대여 분류 (모임·파티 / 스터디·회의 / 촬영·작업)
-one_day_class_categories           원데이클래스 분류 (요리·베이킹 / 공예·미술 / 커피·음료)
+space_rental_categories            공간대여 분류 (모임·파티 / 스터디·회의 / 촬영·작업 / 연습·공연 / 공유주방 / 전시·팝업)
+one_day_class_categories           원데이클래스 분류 (요리·베이킹 / 커피·음료 / 공예·미술 / 꽃·식물 / 향·캔들 / 운동·건강)
 ```
 
 모든 표에는 `id`(번호)와 만든 시각 같은 기본 칸도 있습니다. 위 그림에서는 뺐습니다.

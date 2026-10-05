@@ -50,7 +50,7 @@ export async function fetchFeedPosts(kind: FeedKind): Promise<FeedPost[]> {
     if (error) throw new Error('공간 대여 소식을 불러오지 못했어요.');
     posts = ((data ?? []) as unknown as SpaceRow[]).map((row): SpacePost => ({
       id: row.id, kind, storeId: row.store_id, title: row.title,
-      description: row.body || row.summary, notes: row.body ? row.summary : '',
+      summary: row.summary, description: row.body,
       category: row.space_rental_categories?.name ?? '', price: row.price, capacity: row.capacity,
       contactPhone: '', imageUrl: firstImageUrl(row.space_rental_images), createdAt: row.created_at,
       status: row.status, schedule: row.available_hours, minimumHours: row.min_hours,
@@ -62,7 +62,7 @@ export async function fetchFeedPosts(kind: FeedKind): Promise<FeedPost[]> {
     if (error) throw new Error('원데이클래스 소식을 불러오지 못했어요.');
     posts = ((data ?? []) as unknown as ClassRow[]).map((row): ClassPost => ({
       id: row.id, kind, storeId: row.store_id, title: row.title,
-      description: row.body || row.summary, notes: row.body ? row.summary : '',
+      summary: row.summary, description: row.body,
       category: row.one_day_class_categories?.name ?? '', price: row.price, capacity: row.max_count,
       contactPhone: '', imageUrl: firstImageUrl(row.one_day_class_images), createdAt: row.created_at,
       status: row.status, startsAt: row.starts_at, durationMinutes: row.duration_minutes,
@@ -94,10 +94,10 @@ export function validatePost(value: unknown, checkFuture = true): string | null 
   const post = value as Record<string, unknown>;
   if (post.kind !== 'space-rental' && post.kind !== 'oneday-class') return '카테고리를 선택해 주세요.';
   if (typeof post.storeId !== 'string' || !post.storeId) return '등록할 가게를 선택해 주세요.';
-  if (!text(post.title, 70) || !text(post.description, 5000)) return '제목(70자 이내)과 소개(5,000자 이내)를 입력해 주세요.';
+  if (!text(post.title, 70) || !text(post.summary, 200) || !text(post.description, 5000)) return '제목(70자), 한 줄 요약(200자), 상세 설명(5,000자)을 입력해 주세요.';
   if (!text(post.category, 30) || !FEED_CATEGORIES[post.kind].includes(post.category)) return '올바른 세부 분류를 선택해 주세요.';
   if (!integer(post.price, 0, 10000000) || !integer(post.capacity, 1, 1000)) return '금액과 인원을 올바르게 입력해 주세요.';
-  if (!text(post.notes, 200, false) || typeof post.imageUrl !== 'string' || !validImage(post.imageUrl)) return '안내 문구 또는 이미지 형식을 확인해 주세요.';
+  if (typeof post.imageUrl !== 'string' || !validImage(post.imageUrl)) return '이미지 형식을 확인해 주세요.';
   if (post.status !== 'open' && post.status !== 'closed') return '모집 상태를 확인해 주세요.';
   if (post.kind === 'space-rental') {
     if (!text(post.schedule, 200) || (post.minimumHours !== null && !integer(post.minimumHours, 1, 24))) return '이용 가능 시간과 최소 이용 시간을 입력해 주세요.';
@@ -141,7 +141,7 @@ export async function saveFeedPost(input: PostInput, existingId?: string): Promi
   if (input.kind === 'space-rental') {
     const payload = {
       store_id: input.storeId, category_id: resolvedCategoryId, title: input.title,
-      summary: input.notes, body: input.description, available_hours: input.schedule,
+      summary: input.summary, body: input.description, available_hours: input.schedule,
       price: input.price, capacity: input.capacity, min_hours: input.minimumHours,
       status: input.status, is_published: true,
     };
@@ -153,7 +153,7 @@ export async function saveFeedPost(input: PostInput, existingId?: string): Promi
   } else {
     const payload = {
       store_id: input.storeId, category_id: resolvedCategoryId, title: input.title,
-      summary: input.notes, body: input.description, starts_at: input.startsAt,
+      summary: input.summary, body: input.description, starts_at: input.startsAt,
       duration_minutes: input.durationMinutes, price: input.price, max_count: input.capacity,
       status: input.status, is_published: true,
     };

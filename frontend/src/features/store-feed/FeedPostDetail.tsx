@@ -7,8 +7,6 @@ import { deleteFeedPost } from './feedSource';
 import { formatPrice, isAvailable, type FeedPost } from './types';
 import PostVisual from './PostVisual';
 
-const FEED_LABELS = { 'space-rental': '공간 대여', 'oneday-class': '원데이클래스' } as const;
-
 export function scheduleLabel(post: FeedPost) {
   return post.kind === 'space-rental' ? post.schedule : new Date(post.startsAt).toLocaleString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' });
 }
@@ -37,10 +35,9 @@ export default function FeedPostDetail({ post, store, now }: { post: FeedPost; s
 
   return <>
     <PostVisual post={post} />
-    <div className="sf-detail"><p className="sf-eyebrow">{FEED_LABELS[kind]}</p><h2>{post.title}</h2><strong className="sf-detail-price">{formatPrice(post)}</strong>
-      <p className="sf-description">{post.description}</p>
-      <dl className="sf-facts"><div><dt>{kind === 'space-rental' ? '이용 가능 시간' : '수업 일시'}</dt><dd>{scheduleLabel(post)}</dd></div><div><dt>인원</dt><dd>{kind === 'oneday-class' ? `정원 ${post.capacity}명` : `${post.capacity}명까지`}</dd></div>{(post.kind === 'oneday-class' || post.minimumHours) && <div><dt>이용 시간</dt><dd>{post.kind === 'space-rental' ? '최소 ' + post.minimumHours + '시간' : post.durationMinutes + '분'}</dd></div>}</dl>
-      {post.notes && <section className="sf-detail-notes"><h3>오시기 전에 알아두세요</h3><p>{post.notes}</p></section>}
+    <div className="sf-detail"><div className="sf-detail-head"><h2>{post.title}</h2><strong className="sf-detail-price">{formatPrice(post)}</strong></div>
+      <dl className="sf-facts"><div><dt>{kind === 'space-rental' ? '이용 가능 시간' : '수업 일시'}</dt><dd>{scheduleLabel(post)}</dd></div><div><dt>인원</dt><dd>{kind === 'oneday-class' ? `정원 ${post.capacity}명` : `${post.capacity}명까지`}</dd></div>{(post.kind === 'oneday-class' || post.minimumHours) && <div><dt>{kind === 'space-rental' ? '최소 이용' : '수업 시간'}</dt><dd>{post.kind === 'space-rental' ? post.minimumHours + '시간' : post.durationMinutes + '분'}</dd></div>}</dl>
+      {post.description && <section className="sf-detail-notes"><h3>오시기 전에 알아두세요</h3><p>{post.description}</p></section>}
       {!isAvailable(post, now) ? <p className="sf-notice">모집이 마감된 글입니다.</p> : <>
         <p className="sf-notice">예약·결제는 앱에서 하지 않아요. 일정과 취소 조건은 전화로 확인해 주세요.</p>
         {store?.isMock ? <button type="button" className="sf-primary sf-contact" onClick={() => showToast('예시 게시글이라 실제 전화는 연결되지 않아요.')}>전화 문의 · 예시</button>

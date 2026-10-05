@@ -4,7 +4,7 @@ import { useFavoriteStores } from '../../shared/favorites/useFavoriteStores';
 import { useToast } from '../../shared/toast/ToastContext';
 import { findFeedStore } from '../store-feed/feedSource';
 import { formatPrice, isAvailable, type FeedPost } from '../store-feed/types';
-import FeedArtwork from './FeedArtwork';
+import CategoryArt from '../store-feed/CategoryArt';
 
 export default function FeedPostCard({ post, onShowStore }: { post: FeedPost; onShowStore: (id: string) => void }) {
   const store = findFeedStore(post.storeId);
@@ -28,12 +28,12 @@ export default function FeedPostCard({ post, onShowStore }: { post: FeedPost; on
     <Link className="rp-post-main" to={href}>
       <h3>{post.title}</h3>
       <div className={'rp-post-cover rp-post-cover--' + post.kind}>
-        {post.imageUrl ? <img src={post.imageUrl} alt={post.title} loading="lazy" /> : <FeedArtwork post={post} />}
+        {post.imageUrl ? <img src={post.imageUrl} alt={post.title} loading="lazy" /> : <CategoryArt post={post} className="rp-artwork" />}
         <span className="rp-post-type">{post.kind === 'space-rental' ? '공간 대여' : '원데이클래스'}</span>
       </div>
       <div className="rp-post-body">
         <div className="rp-post-category"><span>{post.category}</span><span className={available ? 'rp-available' : ''}>{available ? (post.kind === 'space-rental' ? '이용 문의 가능' : '모집 중') : '모집 마감'}</span></div>
-        <p className="rp-post-description">{post.description}</p>
+        <p className="rp-post-description">{post.summary || post.description}</p>
         <p className="rp-post-schedule"><Icon name={post.kind === 'space-rental' ? 'house' : 'calendar'} />{schedule}</p>
         <div className="rp-post-price"><strong>{formatPrice(post)}</strong><span>자세히 보기 <Icon name="chevronRight" /></span></div>
       </div>

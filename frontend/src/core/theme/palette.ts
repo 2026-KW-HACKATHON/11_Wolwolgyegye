@@ -4,7 +4,7 @@ import { useSyncExternalStore } from 'react';
  * 색상 팔레트 고르기. 고른 팔레트는 <html data-palette="…"> 로 달고 이 기기에 저장한다.
  * 색 값은 shared/theme.css 의 [data-palette='N'] 블록에 있다 (여기는 id 와 이름만).
  */
-export type PaletteId = '1' | '2' | '3' | '4' | '5';
+export type PaletteId = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
 
 export interface PaletteOption {
   id: PaletteId;
@@ -18,6 +18,10 @@ export const PALETTES: PaletteOption[] = [
   { id: '3', name: '레드 블루', desc: '딥 블루 · 브릭 레드 · 스틸 블루 · 파파야' },
   { id: '4', name: '코랄 틸', desc: '틸 · 코랄 · 허니 · 로즈 · 리넨' },
   { id: '5', name: '인디고 팝', desc: '인디고 · 워터멜론 · 골드 · 그린 · 터콰이즈' },
+  { id: '6', name: '미드나잇 네이비', desc: '네이비 · 크림' },
+  { id: '7', name: '와인 샌드', desc: '와인 · 샌드 · 하늘 · 아이보리' },
+  { id: '8', name: '올리브 브라운', desc: '올리브 · 연두 · 브라운 · 피치 크림' },
+  { id: '9', name: '코랄 네이비', desc: '코랄 · 네이비 · 차콜 · 리넨' },
 ];
 
 /** 팔레트 번호가 바뀌어(2026-10) 이전 저장값과 섞이지 않게 v2 */

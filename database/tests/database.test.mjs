@@ -122,7 +122,7 @@ test('마감세일: 금액·퍼센트·무료 제공 세 유형과 각 유형의
 });
 
 test('공간대여·원데이클래스: 한 가게에 여러 개, 비공개 글은 사장님만 보고 사진은 글을 따른다', async () => {
-  const category = (await rows('service_role', null, "insert into public.space_rental_categories(name) values ('스터디·회의') returning id"))[0].id;
+  const category = (await rows('service_role', null, "select id from public.space_rental_categories where name = '스터디·회의'"))[0].id;
   const insertRental = "insert into public.space_rentals(store_id,category_id,title,price,capacity,min_hours,is_published) values ($1,$2,$3,10000,4,2,$4) returning id";
   const open = (await rows('authenticated', owner, insertRental, [shopA, category, '공간 1', true]))[0].id;
   const closed = (await rows('authenticated', owner, insertRental, [shopA, category, '공간 2', false]))[0].id;

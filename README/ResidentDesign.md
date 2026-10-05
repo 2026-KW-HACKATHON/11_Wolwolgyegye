@@ -26,7 +26,7 @@
 - `frontend/src/features/recommend/RecommendPage.tsx`: 동네 소식 1차 탭 내용 (가게 선택 시 지도에 표시)
 - `HomeScreen.tsx`: 기존 소스에서 소식 조회, 검색·분류, 바로가기
 - `FeedPostCard.tsx`: 주민이 읽는 게시글 카드와 가게 찜·지도 연결
-- `FeedArtwork.tsx`: 사진 없는 게시글의 설명용 SVG 일러스트
+- 사진 없는 게시글의 그림은 `features/store-feed/CategoryArt.tsx`(세부 분류별 SVG 일러스트)를 함께 쓴다
 - `recommend.css`: 동네 소식 전용 스타일 (탭 폭 기준 @container)
 
 공통 테마와 헤더·내비게이션 아이콘만 함께 다듬었다. 다른 팀원의 카테고리 폴더, 데이터 타입, DB 계층, 배포 설정은 바꾸지 않는다.
