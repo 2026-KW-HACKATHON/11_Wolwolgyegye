@@ -4,22 +4,9 @@ import { getSupabaseClient } from '../../core/supabase/client';
 import { toneForStore } from './constants';
 import { formatSaleDiscount } from './discount';
 import { fetchClosingSales } from './source';
+import { TICK_MS, URGENT_MINUTES, formatLeft, hhmm, minutesLeft } from './time';
 import type { ClosingSaleView } from './types';
 import './closing-sale.css';
-
-/** 이 시간보다 적게 남으면 "곧 마감" 으로 강조한다 */
-const URGENT_MINUTES = 60;
-const TICK_MS = 30_000;
-
-const minutesLeft = (sale: ClosingSaleView, now: number) => Math.floor((new Date(sale.closeAt).getTime() - now) / 60_000);
-/** 42 -> "42분", 78 -> "1시간 18분" */
-function formatLeft(minutes: number) {
-  if (minutes < 60) return `${minutes}분`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m === 0 ? `${h}시간` : `${h}시간 ${String(m).padStart(2, '0')}분`;
-}
-const hhmm = (iso: string) => { const at = new Date(iso); return `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`; };
 
 /**
  * 2차 탭 안의 "마감세일" 묶음: 그 가게의 진행 중인 세일을 전부 상세로 이어서 보여준다.
@@ -81,7 +68,6 @@ export default function ClosingSaleSection({ storeId }: { storeId: string }) {
             </div>
             <div className="cs-detail-body">
               <dl className="cs-detail-facts">
-                <div><dt>할인</dt><dd>{sale.discountType === 'free' ? '무료 제공' : `${formatSaleDiscount(sale)} 할인`}</dd></div>
                 {sale.offer && <div><dt>제공</dt><dd>{sale.offer}</dd></div>}
                 {sale.condition && <div><dt>조건</dt><dd>{sale.condition}</dd></div>}
                 <div><dt>세일 시간</dt><dd>{hhmm(sale.startsAt)} ~ {hhmm(sale.closeAt)}</dd></div>

@@ -6,8 +6,8 @@
   align-items: center;
   justify-content: center;
   gap: 24px;
-  background: #7a2333;
-  color: #ffffff;
+  background: var(--color-header);
+  color: var(--color-on-dark);
 }
 
 .splash__logo {
@@ -19,8 +19,8 @@
 .splash__spinner {
   width: 28px;
   height: 28px;
-  border: 3px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #ffffff;
+  border: 3px solid color-mix(in srgb, var(--color-on-dark) 35%, transparent);
+  border-top-color: var(--color-on-dark);
   border-radius: 50%;
   animation: splash-spin 0.8s linear infinite;
 }

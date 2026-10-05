@@ -13,16 +13,13 @@ export interface SecondaryFocus {
 
 /** 카테고리 화면(1차 탭 내용)에서 지도·탭을 조작할 때 쓰는 기능 */
 export interface ShellApi {
-  /** 가게를 지도에서 선택하고 보이게 한다 (2차 탭 열림). 세로 화면에서는 1차 탭을 접어 지도를 보여준다 */
-  showStoreOnMap: (storeId: string) => void;
-  /** 가게의 2차 탭을 열고, focus 가 있으면 그 카테고리(항목)가 맨 위에 오도록 스크롤한다 */
+  /** 가게를 지도에서 선택하고 2차 탭을 연다 (1차 탭은 지도를 가리지 않게 접는다). focus 가 있으면 그 카테고리(항목)가 맨 위에 오도록 스크롤한다 */
   openStore: (storeId: string, focus?: SecondaryFocus) => void;
   /** 지금 열린 1차 탭의 상태를 바꾼다 (예: 'closed' = 지도 크게 보기) */
   setActivePanelState: (state: PanelState) => void;
 }
 
 export const ShellContext = createContext<ShellApi>({
-  showStoreOnMap: () => {},
   openStore: () => {},
   setActivePanelState: () => {},
 });

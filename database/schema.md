@@ -13,10 +13,18 @@ auth.users                         로그인 계정 (Supabase 가 관리)
    │  ├─ contact_phone             연락처
    │  ├─ store_name                가게 이름
    │  ├─ store_address             가게 주소
+   │  ├─ requested_store_id → stores  신청한 기존 가게 (가게 이름·주소는 여기서 복사)
+   │  ├─ business_registration_number  사업자등록번호 (숫자 10자리)
    │  ├─ status                    상태 (대기 / 승인 / 반려)
    │  ├─ approved_store_id → stores  승인된 가게
-   │  └─ review_note               처리 메모
-   └─ store_favorites              가게 찜 (사용자 + 가게)
+   │  ├─ review_note               처리 메모
+   │  └─ reviewed_at               처리 시각
+   ├─ store_favorites              가게 찜 (사용자 + 가게)
+   ├─ sale_likes                   마감세일 관심 (사용자 + 세일 → closing_sales)
+   └─ post_favorites               공간대여·클래스 글 찜 (사용자 + 글 번호. 글 표를 가리키는 연결은 없음)
+
+private.admin_users                운영 관리자 (일반 사용자는 볼 수 없는 표)
+└─ user_id → auth.users            관리자 계정
 
 store_types                        대표 유형 (= 지도 위쪽 "그 외 카테고리": 한식·카페·편의점 …)
 ├─ id                              유형 코드 (예: korean)
@@ -75,7 +83,8 @@ stores                             가게
 │  ├─ available_hours              이용 가능 시간
 │  ├─ price                        시간당 가격
 │  ├─ capacity                     최대 인원
-│  ├─ min_hours                    최소 이용 시간
+│  ├─ min_hours                    최소 이용 시간 (비어 있을 수 있음)
+│  ├─ status                       모집 상태 (open 모집 중 / closed 마감)
 │  ├─ is_published                 공개 여부
 │  └─ space_rental_images          글 사진
 ├─ one_day_classes                 원데이클래스 글
@@ -85,6 +94,7 @@ stores                             가게
 │  ├─ duration_minutes             수업 시간 (분)
 │  ├─ price                        1인 가격
 │  ├─ current_count / max_count    현재 인원 / 마감 인원
+│  ├─ status                       모집 상태 (open 모집 중 / closed 마감)
 │  ├─ is_published                 공개 여부
 │  └─ one_day_class_images         글 사진
 └─ stamp_policies                  스탬프 규칙 (가게당 하나)
@@ -92,8 +102,8 @@ stores                             가게
    ├─ reward                       받는 선물
    ├─ unit                         1개가 찍히는 기준
    ├─ condition                    조건
-   └─ user_stamps                  사용자별 스탬프 수
-      └─ stamp_transactions        적립·사용 기록
+   └─ user_stamps                  사용자별 스탬프 수 (사용자 + 가게)
+      └─ stamp_transactions        적립·사용 기록 (서버에서만 기록)
 
 partners                           제휴사 (광운대 단과대학 8곳)
 └─ name                            제휴사 이름
@@ -103,3 +113,15 @@ one_day_class_categories           원데이클래스 분류 (요리·베이킹 
 ```
 
 모든 표에는 `id`(번호)와 만든 시각 같은 기본 칸도 있습니다. 위 그림에서는 뺐습니다.
+
+## 사장님이 앱에서 직접 고치는 칸
+
+내 가게(`stores.owner_id` = 나)에 한해서만 바뀝니다.
+
+| 표 | 고칠 수 있는 것 | 화면 |
+|---|---|---|
+| stores | 가게 이름 · 대표 유형 · 업종 설명 · 전화번호 | 사장님 > 가게 정보 |
+| store_hours | 요일별 여는·닫는 시각, 휴무 | 사장님 > 가게 정보 |
+| store_menus | 메뉴 추가·수정·삭제 (이름 · 가격 · 메뉴판 구역 · 공통 분류 · 설명) | 사장님 > 가게 정보 |
+| closing_sales | 마감세일 등록 · 지금 종료 · 삭제 | 사장님 > 마감세일 |
+| space_rentals / one_day_classes | 글 쓰기 · 수정 · 삭제 | 공간대여 · 원데이클래스 글쓰기 |

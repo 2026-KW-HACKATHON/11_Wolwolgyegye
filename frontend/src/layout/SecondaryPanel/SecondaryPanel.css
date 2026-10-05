@@ -63,6 +63,16 @@
   font-size: 16px;
 }
 
+.secondary-panel__photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  background: var(--color-surface-alt);
+}
+
 .secondary-panel__name {
   margin: 0;
   font-size: 20px;
@@ -199,41 +209,25 @@
   flex: none;
 }
 
-/* 세일·혜택·공간·클래스 한 건 */
-.sd-card {
-  display: grid;
-  gap: 2px;
-  padding: 10px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-alt);
-  font-size: 13px;
-}
-
-.sd-card p {
-  margin: 0;
-}
-
-.sd-card em {
-  color: var(--color-neighborhood);
-  font-size: 11px;
-  font-style: normal;
-  font-weight: 700;
-}
-
-.sd-card small {
+.sd-row-desc {
+  display: block;
+  margin-top: 2px;
   color: var(--color-text-muted);
   font-size: 12px;
+  font-style: normal;
+  line-height: 1.5;
 }
 
-.sd-card small.is-full {
-  color: var(--color-brand);
+/* 메뉴판 묶음 (store_menus.section · kind) */
+.sd-menu-group + .sd-menu-group {
+  margin-top: var(--space-3);
+}
+
+.sd-menu-group h4 {
+  margin: 0 0 6px;
+  color: var(--color-text-muted);
+  font-size: 12px;
   font-weight: 700;
-}
-
-.sd-card--sale strong {
-  color: var(--place-restaurant, var(--color-brand));
-  font-size: 15px;
 }
 
 /* ---------- 카테고리 묶음 (1차 탭의 상세 화면: features/storeSections.tsx) ---------- */

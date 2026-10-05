@@ -34,7 +34,7 @@ async function fetchSaleRows(): Promise<ClosingSale[]> {
       discountType: row.discount_type,
       discountAmount: row.discount_amount,
       // numeric 칸은 문자열로 올 수 있다
-      discountRate: row.discount_rate === null ? 0 : Number(row.discount_rate),
+      discountRate: row.discount_rate === null ? null : Number(row.discount_rate),
       offer: row.offer,
       condition: row.condition,
       desc: [row.offer, row.condition].filter(Boolean).join(' · '),

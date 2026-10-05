@@ -108,7 +108,7 @@ export function createStyles(css: (name: string) => string): MapStyles {
     },
     RAILWAY_BASE_STYLE: { color: css('--rail-base'), weight: 4, opacity: 0.95, lineCap: 'butt' },
     RAILWAY_DASH_STYLE: { color: css('--rail-dash'), weight: 2, opacity: 1, dashArray: '8 8', lineCap: 'butt', interactive: false },
-    SUBWAY_LINE_STYLE: { weight: 3, opacity: 0.9, lineCap: 'round', lineJoin: 'round' },
+    SUBWAY_LINE_STYLE: { color: css('--map-line-default'), weight: 3, opacity: 0.9, lineCap: 'round', lineJoin: 'round' },
     STATION_EXIT_LINK_STYLE: { color: css('--station-exit-link'), weight: 1.5, opacity: 0.9, dashArray: '3 4', interactive: false },
     BUILDING_STYLE: {
       fillColor: css('--building-fill'),

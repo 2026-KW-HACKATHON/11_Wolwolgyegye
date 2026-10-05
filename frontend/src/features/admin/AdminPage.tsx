@@ -125,15 +125,15 @@ export default function AdminPage() {
   }
 
   return <main className="ad-page">
-    <header className="ad-top"><div><span>WOLWOLGYEGYE ADMIN</span><h1>운영 관리자</h1><p>사장님 신청을 검토하고 공개할 가게를 관리합니다.</p></div><nav><Link to="/recommend">서비스 화면</Link><Link to="/login">내 계정</Link></nav></header>
+    <header className="ad-top"><div><h1>운영 관리자</h1><p>사장님 신청을 검토하고 공개할 가게를 관리합니다.</p></div><nav><Link to="/recommend">서비스 화면</Link><Link to="/login">내 계정</Link></nav></header>
     {error && <p className="ad-page-error" role="alert">{error}<button type="button" onClick={() => void reload()}>다시 불러오기</button></p>}
     <section className="ad-section" aria-labelledby="applications-title">
-      <div className="ad-heading"><div><span>OWNER APPLICATIONS</span><h2 id="applications-title">사장님 가입 신청</h2></div><b>{pending.length}건 대기</b></div>
+      <div className="ad-heading"><div><h2 id="applications-title">사장님 가입 신청</h2></div><b>{pending.length}건 대기</b></div>
       {loading ? <p className="ad-empty">신청 목록을 불러오는 중입니다.</p> : pending.length === 0 ? <p className="ad-empty">대기 중인 신청이 없습니다.</p> : <div className="ad-application-list">{pending.map((application) => <ApplicationCard key={application.id} application={application} onChanged={reload} />)}</div>}
     </section>
 
     <section className="ad-section" aria-labelledby="stores-title">
-      <div className="ad-heading"><div><span>STORE DIRECTORY</span><h2 id="stores-title">가게 공개 관리</h2></div><b>전체 {stores.length}곳</b></div>
+      <div className="ad-heading"><div><h2 id="stores-title">가게 공개 관리</h2></div><b>전체 {stores.length}곳</b></div>
       <label className="ad-search">가게 검색<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="가게명·주소·업종" /></label>
       <p className="ad-help">검색 결과는 최대 100곳까지 표시됩니다. 공개된 가게만 일반 사용자 화면에 나타납니다.</p>
       <div className="ad-store-list">{visibleStores.map((store) => <article key={store.id} className="ad-store"><div><h3>{store.name}</h3><p>{store.cuisine_type ? `${store.cuisine_type} · ` : ''}{store.address}</p><small>{store.owner_id ? '사장님 연결됨' : '사장님 미연결'}{store.is_demo ? ' · 예시' : ''}</small></div><button type="button" className={store.is_published ? 'is-public' : ''} aria-pressed={store.is_published} disabled={changingStore === store.id || store.is_demo} onClick={() => void togglePublished(store)}>{changingStore === store.id ? '변경 중…' : store.is_published ? '공개 중' : '비공개'}</button></article>)}</div>

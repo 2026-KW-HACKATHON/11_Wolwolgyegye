@@ -29,7 +29,7 @@ export function drawSubwayLines(ctx: DrawContext, linesGeoJSON: FeatureCollectio
   }
   return L.geoJSON({ type: 'FeatureCollection', features: [...longest.values()] } as FeatureCollection, {
     renderer: ctx.featureRenderer,
-    style: (feature) => ({ ...ctx.styles.SUBWAY_LINE_STYLE, color: normalizeSubwayLine(feature as Feature).colour }),
+    style: (feature) => ({ ...ctx.styles.SUBWAY_LINE_STYLE, color: normalizeSubwayLine(feature as Feature).colour || ctx.styles.SUBWAY_LINE_STYLE.color }),
     onEachFeature(feature, sublayer) {
       const label = subwayLineBase(feature);
       sublayer.bindPopup(() => `<div class="popup-kind">지하철 노선</div><div class="popup-title">${escapeHtml(label || '이름 없는 노선')}</div>`);
@@ -59,7 +59,7 @@ export function drawStations(ctx: DrawContext, stationsGeoJSON: FeatureCollectio
     if (!at) continue;
     const { name, lines } = normalizeStation(feature);
     stationPoints.set(String(feature.id ?? ''), at);
-    const chips = lines.map((l) => `<i style="--line:${l.colour}" title="${escapeHtml(l.label)}">${escapeHtml(shortLineLabel(l.label))}</i>`).join('');
+    const chips = lines.map((l) => `<i style="--line:${l.colour || 'var(--map-line-default)'}" title="${escapeHtml(l.label)}">${escapeHtml(shortLineLabel(l.label))}</i>`).join('');
     const title = name.endsWith('역') ? name : `${name}역`;
     L.marker(at, {
       pane: 'stations',

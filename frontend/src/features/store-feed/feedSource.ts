@@ -30,7 +30,7 @@ interface SpaceRow {
 }
 interface ClassRow {
   id: string; store_id: string; title: string; summary: string; body: string; starts_at: string; duration_minutes: number;
-  price: number; current_count: number; max_count: number; status: 'open' | 'closed'; created_at: string;
+  price: number; max_count: number; status: 'open' | 'closed'; created_at: string;
   one_day_class_categories: { name: string } | null; one_day_class_images: ImageRow[];
 }
 
@@ -50,23 +50,22 @@ export async function fetchFeedPosts(kind: FeedKind): Promise<FeedPost[]> {
     if (error) throw new Error('공간 대여 소식을 불러오지 못했어요.');
     posts = ((data ?? []) as unknown as SpaceRow[]).map((row): SpacePost => ({
       id: row.id, kind, storeId: row.store_id, title: row.title,
-      description: row.body || row.summary, notes: row.summary,
+      description: row.body || row.summary, notes: row.body ? row.summary : '',
       category: row.space_rental_categories?.name ?? '', price: row.price, capacity: row.capacity,
       contactPhone: '', imageUrl: firstImageUrl(row.space_rental_images), createdAt: row.created_at,
-      status: row.status, origin: 'db', schedule: row.available_hours, minimumHours: row.min_hours ?? 1,
+      status: row.status, schedule: row.available_hours, minimumHours: row.min_hours,
     }));
   } else {
     const { data, error } = await client.from('one_day_classes')
-      .select('id, store_id, title, summary, body, starts_at, duration_minutes, price, current_count, max_count, status, created_at, one_day_class_categories(name), one_day_class_images(image_path, sort_order)')
+      .select('id, store_id, title, summary, body, starts_at, duration_minutes, price, max_count, status, created_at, one_day_class_categories(name), one_day_class_images(image_path, sort_order)')
       .order('starts_at');
     if (error) throw new Error('원데이클래스 소식을 불러오지 못했어요.');
     posts = ((data ?? []) as unknown as ClassRow[]).map((row): ClassPost => ({
       id: row.id, kind, storeId: row.store_id, title: row.title,
-      description: row.body || row.summary, notes: row.summary,
+      description: row.body || row.summary, notes: row.body ? row.summary : '',
       category: row.one_day_class_categories?.name ?? '', price: row.price, capacity: row.max_count,
       contactPhone: '', imageUrl: firstImageUrl(row.one_day_class_images), createdAt: row.created_at,
-      status: row.status, origin: 'db', startsAt: row.starts_at, durationMinutes: row.duration_minutes,
-      enrolled: row.current_count,
+      status: row.status, startsAt: row.starts_at, durationMinutes: row.duration_minutes,
     }));
   }
   const stores = await fetchStoresByIds(posts.map((post) => post.storeId));
@@ -98,11 +97,10 @@ export function validatePost(value: unknown, checkFuture = true): string | null 
   if (!text(post.title, 70) || !text(post.description, 5000)) return '제목(70자 이내)과 소개(5,000자 이내)를 입력해 주세요.';
   if (!text(post.category, 30) || !FEED_CATEGORIES[post.kind].includes(post.category)) return '올바른 세부 분류를 선택해 주세요.';
   if (!integer(post.price, 0, 10000000) || !integer(post.capacity, 1, 1000)) return '금액과 인원을 올바르게 입력해 주세요.';
-  if (typeof post.contactPhone !== 'string' || !/^[0-9+()\s-]{8,25}$/.test(post.contactPhone) || post.contactPhone.replace(/\D/g, '').length < 8) return '연락 가능한 전화번호를 입력해 주세요.';
   if (!text(post.notes, 200, false) || typeof post.imageUrl !== 'string' || !validImage(post.imageUrl)) return '안내 문구 또는 이미지 형식을 확인해 주세요.';
   if (post.status !== 'open' && post.status !== 'closed') return '모집 상태를 확인해 주세요.';
   if (post.kind === 'space-rental') {
-    if (!text(post.schedule, 200) || !integer(post.minimumHours, 1, 24)) return '이용 가능 시간과 최소 이용 시간을 입력해 주세요.';
+    if (!text(post.schedule, 200) || (post.minimumHours !== null && !integer(post.minimumHours, 1, 24))) return '이용 가능 시간과 최소 이용 시간을 입력해 주세요.';
   } else {
     if (typeof post.startsAt !== 'string' || !Number.isFinite(Date.parse(post.startsAt))) return '수업 날짜와 시간을 입력해 주세요.';
     if (checkFuture && post.status === 'open' && Date.parse(post.startsAt) <= Date.now()) return '수업 시작 시간은 현재 이후로 선택해 주세요.';
@@ -182,7 +180,8 @@ export async function saveFeedPost(input: PostInput, existingId?: string): Promi
   }
 
   window.dispatchEvent(new Event(FEED_CHANGE_EVENT));
-  return { ...input, id: row.id, imageUrl, createdAt: row.created_at, origin: 'db' } as FeedPost;
+  const contactPhone = findFeedStore(input.storeId)?.phone ?? '';
+  return { ...input, id: row.id, imageUrl, createdAt: row.created_at, contactPhone } as FeedPost;
 }
 
 export async function deleteFeedPost(id: string, kind: FeedKind): Promise<void> {

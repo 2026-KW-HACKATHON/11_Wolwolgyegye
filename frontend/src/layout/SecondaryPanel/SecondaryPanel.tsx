@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { subCategoryById } from '../../core/categories/subCategories';
 import type { LayoutMode } from '../../core/device/layoutMode';
-import { fetchStoreDetail, type StoreDetail } from '../../core/source/storeDetail';
+import { fetchStoreDetail, groupMenus, type StoreDetail } from '../../core/source/storeDetail';
 import { groupBusinessHours } from '../../core/utils/hours';
 import { STORE_SECTIONS } from '../../features/storeSections';
 import Icon from '../../shared/Icon';
@@ -105,6 +105,7 @@ const SecondaryPanel = forwardRef<HTMLElement, SecondaryPanelProps>(function Sec
       </div>
 
       {/* ① 가게 정보 */}
+      {detail?.thumbnailUrl && <img className="secondary-panel__photo" src={detail.thumbnailUrl} alt={`${name} 대표 사진`} loading="lazy" />}
       <h2 className="secondary-panel__name">{name}</h2>
       {place.category && <p className="secondary-panel__category">{place.category}</p>}
       <p className="secondary-panel__meta">
@@ -128,14 +129,22 @@ const SecondaryPanel = forwardRef<HTMLElement, SecondaryPanelProps>(function Sec
       {showMenus && detail && (
         <section className="sd-section" aria-label="메뉴">
           <h3>메뉴 <span>{detail.menus.length}</span></h3>
-          <ul className="sd-list">
-            {detail.menus.map((m) => (
-              <li key={m.id} className="sd-row">
-                <span>{m.name}{m.typeId && <small>{subCategoryById(m.typeId)?.label}</small>}</span>
-                <b>{won(m.price)}</b>
-              </li>
-            ))}
-          </ul>
+          {groupMenus(detail.menus).map((group) => (
+            <div key={group.label} className="sd-menu-group">
+              {group.label && <h4>{group.label}</h4>}
+              <ul className="sd-list">
+                {group.items.map((m) => (
+                  <li key={m.id} className="sd-row">
+                    <span>
+                      {m.name}{m.typeId && <small>{subCategoryById(m.typeId)?.label}</small>}
+                      {m.description && <em className="sd-row-desc">{m.description}</em>}
+                    </span>
+                    <b>{won(m.price)}</b>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </section>
       )}
       {detail && !hours.length && !detail.menus.length && !sections.length && <p className="sd-empty">아직 사장님이 등록한 정보가 없어요.</p>}

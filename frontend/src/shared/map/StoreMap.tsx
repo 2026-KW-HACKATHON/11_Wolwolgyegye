@@ -18,7 +18,7 @@ interface StoreMapProps {
   className?: string;
 }
 
-export default function StoreMap({ store, origin, originLabel = '기준점', demo = true, className }: StoreMapProps) {
+export default function StoreMap({ store, origin, originLabel = '기준점', demo = store.isMock, className }: StoreMapProps) {
   return (
     <figure className={`smap${className ? ` ${className}` : ''}`}>
       <div className="smap-box">

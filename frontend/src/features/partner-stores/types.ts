@@ -7,18 +7,8 @@ import type { Store } from '../../core/types/place';
 
 /** 광운대학교 단과대학 */
 export type CollegeKey = 'eie' | 'ai' | 'eng' | 'sci' | 'hss' | 'law' | 'biz' | 'chambit';
-export type PartnerAudience = CollegeKey | 'all' | 'resident';
+export type PartnerAudience = CollegeKey | 'all';
 export type PartnerIndustry = '전체' | '음식점' | '카페·베이커리' | '생활·문화';
-
-export interface PartnerBenefitDetails {
-  status: 'demo' | 'verified' | 'needs-check';
-  sourceUrl?: string;
-  verifiedAt?: string;
-  validUntil?: string;
-  condition?: string;
-  minimumSpend?: number;
-  stampStacking?: 'allowed' | 'not-allowed' | 'unknown';
-}
 
 export interface College {
   key: CollegeKey;
@@ -35,13 +25,11 @@ export interface PartnerBenefit {
   benefits: Partial<Record<CollegeKey, string>>;
   /** 이용 조건 (예: 학생증 제시) */
   condition: string;
-  details?: Partial<Record<CollegeKey, PartnerBenefitDetails>>;
 }
 
-/** 제휴 정보 + 가게 정보 + 기준점 직선거리. walkMinutes는 기존 호환 필드. */
+/** 제휴 정보 + 가게 정보 + 기준점 직선거리 */
 export interface PartnerStoreView extends PartnerBenefit {
   store: Store;
-  walkMinutes: number;
   referenceDistanceMeters: number;
   menus: PartnerStoreMenuItem[];
   dataMode: 'demo' | 'live';

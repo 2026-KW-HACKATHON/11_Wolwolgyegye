@@ -87,8 +87,10 @@ function centerInVisibleArea(map: L.Map, point: GeoPoint, insets: MapInsets) {
   map.panTo(map.unproject(target, zoom));
 }
 
-/** 내 위치 점 (Canvas 로 그려져 CSS 클래스가 적용되지 않으므로 색을 직접 지정) */
-const MY_LOCATION_STYLE: L.CircleMarkerOptions = { radius: 8, color: '#ffffff', weight: 3, fillColor: '#2f7cf6', fillOpacity: 1, interactive: false };
+/** 내 위치 점. Canvas 로 그려져 CSS 클래스가 적용되지 않으므로 theme.css 토큰 값을 읽어 넘긴다 */
+const myLocationStyle = (css: (name: string) => string): L.CircleMarkerOptions => ({
+  radius: 8, color: css('--map-me-ring'), weight: 3, fillColor: css('--map-me'), fillOpacity: 1, interactive: false,
+});
 
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 
@@ -143,7 +145,7 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
       const map = mapRef.current;
       if (!map) return;
       if (meRef.current) meRef.current.setLatLng([point.lat, point.lng]);
-      else meRef.current = L.circleMarker([point.lat, point.lng], MY_LOCATION_STYLE).addTo(map);
+      else meRef.current = L.circleMarker([point.lat, point.lng], myLocationStyle(cssRef.current)).addTo(map);
     },
   }), []);
 

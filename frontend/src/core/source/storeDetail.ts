@@ -6,14 +6,33 @@ import type { HoursRow } from '../utils/hours';
  * stores 한 행과 거기 딸린 표(메뉴·영업시간·마감세일·제휴·공간대여·원데이클래스·스탬프)를 한 번에 읽는다.
  * 공개 가게만 읽힌다 (RLS). 없거나 연결에 실패하면 null.
  */
+/** 메뉴 종류 (store_menus.kind) */
+export type MenuKind = 'main' | 'set' | 'side' | 'extra' | 'drink' | 'alcohol' | 'dessert';
+export const MENU_KIND_LABELS: Record<MenuKind, string> = {
+  main: '메인', set: '세트', side: '사이드', extra: '추가', drink: '음료', alcohol: '주류', dessert: '디저트',
+};
+
+export interface StoreMenu {
+  id: string;
+  name: string;
+  price: number;
+  typeId: string | null;
+  /** 메뉴판의 묶음 이름 (예: 식사류). 없으면 kind 로 묶는다 */
+  section: string | null;
+  kind: MenuKind | null;
+  description: string | null;
+}
+
 export interface StoreDetail {
   id: string;
   name: string;
   address: string;
   isMock: boolean;
   phone: string;
+  /** 대표 사진 공개 URL (store_images 첫 장). 없으면 '' */
+  thumbnailUrl: string;
   hours: HoursRow[];
-  menus: { id: string; name: string; price: number; typeId: string | null }[];
+  menus: StoreMenu[];
   sales: {
     id: string;
     discountType: 'amount' | 'rate' | 'free';
@@ -32,7 +51,8 @@ export interface StoreDetail {
 const COLUMNS = [
   'id, name, address, is_mock, phone',
   'store_hours(weekday, opens_at, closes_at, is_closed)',
-  'store_menus(id, name, price, type_id, sort_order)',
+  'store_images(image_path, sort_order)',
+  'store_menus(id, name, price, type_id, sort_order, section, kind, description)',
   'closing_sales(id, discount_type, discount_amount, discount_rate, condition, offer, ends_at)',
   'partner_benefits(id, discount_amount, discount_rate, condition, benefit_partners(partners(name)))',
   'space_rentals(id, title, summary, price, capacity, min_hours, available_hours, created_at, space_rental_categories(name))',
@@ -44,6 +64,20 @@ const COLUMNS = [
 type Row = Record<string, any>;
 const list = (v: unknown): Row[] => (Array.isArray(v) ? v : v ? [v as Row] : []);
 const num = (v: unknown): number | null => (v === null || v === undefined ? null : Number(v));
+function thumbnailOf(images: Row[]): string {
+  const first = [...images].sort((a, b) => a.sort_order - b.sort_order)[0];
+  return first ? getSupabaseClient().storage.from('store-media').getPublicUrl(first.image_path).data.publicUrl : '';
+}
+
+/** 메뉴를 메뉴판 묶음(section, 없으면 kind) 순서대로 나눈다. 묶음 정보가 하나도 없으면 이름 없는 한 묶음 */
+export function groupMenus(menus: StoreMenu[]): { label: string; items: StoreMenu[] }[] {
+  const groups = new Map<string, StoreMenu[]>();
+  for (const menu of menus) {
+    const label = menu.section ?? (menu.kind ? MENU_KIND_LABELS[menu.kind] : '');
+    groups.set(label, [...(groups.get(label) ?? []), menu]);
+  }
+  return [...groups].map(([label, items]) => ({ label, items }));
+}
 
 export async function fetchStoreDetail(id: string): Promise<StoreDetail | null> {
   try {
@@ -58,10 +92,14 @@ export async function fetchStoreDetail(id: string): Promise<StoreDetail | null> 
       address: row.address ?? '',
       isMock: Boolean(row.is_mock),
       phone: row.phone ?? '',
+      thumbnailUrl: thumbnailOf(list(row.store_images)),
       hours: list(row.store_hours) as HoursRow[],
       menus: list(row.store_menus)
         .sort((a, b) => a.sort_order - b.sort_order)
-        .map((m) => ({ id: m.id, name: m.name, price: m.price, typeId: m.type_id })),
+        .map((m) => ({
+          id: m.id, name: m.name, price: m.price, typeId: m.type_id,
+          section: m.section || null, kind: m.kind ?? null, description: m.description || null,
+        })),
       sales: list(row.closing_sales)
         .filter((s) => Date.parse(s.ends_at) > now)
         .sort((a, b) => a.ends_at.localeCompare(b.ends_at))

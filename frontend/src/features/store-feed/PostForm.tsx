@@ -18,12 +18,11 @@ export default function PostForm({ kind, existing, onSaved, onCancel }: {
   const [category, setCategory] = useState(existing?.category ?? FEED_CATEGORIES[kind][0]);
   const [price, setPrice] = useState(existing ? String(existing.price) : '');
   const [capacity, setCapacity] = useState(existing ? String(existing.capacity) : '');
-  const [contactPhone, setContactPhone] = useState(existing?.contactPhone ?? '');
   const [notes, setNotes] = useState(existing?.notes ?? '');
   const [status, setStatus] = useState(existing?.status ?? 'open');
   const [imageUrl, setImageUrl] = useState(existing?.imageUrl ?? '');
   const [schedule, setSchedule] = useState(existing?.kind === 'space-rental' ? existing.schedule : '');
-  const [minimumHours, setMinimumHours] = useState(existing?.kind === 'space-rental' ? String(existing.minimumHours) : '1');
+  const [minimumHours, setMinimumHours] = useState(existing?.kind === 'space-rental' ? String(existing.minimumHours ?? '') : '1');
   const [startsAt, setStartsAt] = useState(existing?.kind === 'oneday-class' ? localDateTime(existing.startsAt) : '');
   const [durationMinutes, setDurationMinutes] = useState(existing?.kind === 'oneday-class' ? String(existing.durationMinutes) : '90');
   const [busy, setBusy] = useState(false);
@@ -58,10 +57,10 @@ export default function PostForm({ kind, existing, onSaved, onCancel }: {
     e.preventDefault();
     if (busy || readingImage) return;
     if (!price.trim() || !capacity.trim()) { setError('가격과 인원을 입력해 주세요.'); return; }
-    const common = { storeId, title: title.trim(), description: description.trim(), category, price: Number(price), capacity: Number(capacity), contactPhone: contactPhone.trim(), imageUrl, notes: notes.trim(), status };
+    const common = { storeId, title: title.trim(), description: description.trim(), category, price: Number(price), capacity: Number(capacity), imageUrl, notes: notes.trim(), status };
     const parsed = startsAt ? new Date(startsAt) : null;
     const input: PostInput = kind === 'space-rental'
-      ? { ...common, kind, schedule: schedule.trim(), minimumHours: Number(minimumHours) }
+      ? { ...common, kind, schedule: schedule.trim(), minimumHours: minimumHours.trim() ? Number(minimumHours) : null }
       : { ...common, kind, startsAt: parsed && Number.isFinite(parsed.getTime()) ? parsed.toISOString() : '', durationMinutes: Number(durationMinutes) };
     const validation = validatePost(input);
     if (validation) { setError(validation); return; }
@@ -73,7 +72,6 @@ export default function PostForm({ kind, existing, onSaved, onCancel }: {
 
   return (
     <form className="sf-form" onSubmit={submit}>
-      <p className="sf-notice">승인된 사장님 가게의 글과 사진이 DB에 저장되어 모든 사용자에게 공유됩니다.</p>
       <div className="sf-form-grid">
         <label>가게<select value={storeId} onChange={(e) => setStoreId(e.target.value)} required>{stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
         <label>분류<select value={category} onChange={(e) => setCategory(e.target.value)}>{FEED_CATEGORIES[kind].map((c) => <option key={c}>{c}</option>)}</select></label>
@@ -88,14 +86,14 @@ export default function PostForm({ kind, existing, onSaved, onCancel }: {
       </div>
       {kind === 'space-rental' ? <div className="sf-form-grid">
         <label>이용 가능 시간<input required maxLength={200} value={schedule} onChange={(e) => setSchedule(e.target.value)} placeholder="월요일 10:00–18:00, 전화 협의" /></label>
-        <label>최소 이용 시간<input type="number" required min={1} max={24} step={1} value={minimumHours} onChange={(e) => setMinimumHours(e.target.value)} /></label>
+        <label>최소 이용 시간 (선택)<input type="number" min={1} max={24} step={1} value={minimumHours} onChange={(e) => setMinimumHours(e.target.value)} /></label>
       </div> : <div className="sf-form-grid">
         <label>수업 시작 (현재 기기 시간 기준)<input type="datetime-local" required value={startsAt} onChange={(e) => setStartsAt(e.target.value)} /></label>
         <label>수업 시간 (분)<input type="number" required min={15} max={1440} step={1} value={durationMinutes} onChange={(e) => setDurationMinutes(e.target.value)} /></label>
       </div>}
-      <label>이용 안내 / 포함 사항<textarea rows={3} maxLength={1000} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="제공되는 시설, 재료비 포함 여부, 준비물 등을 알려주세요." /></label>
+      <label>이용 안내 / 포함 사항<textarea rows={3} maxLength={200} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="제공되는 시설, 재료비 포함 여부, 준비물 등을 알려주세요." /><small>{notes.length} / 200자</small></label>
       <div className="sf-form-grid">
-        <label>문의 전화번호<input type="tel" required maxLength={25} value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="연락 가능한 가게 번호" /><small>게시글 상세에 표시되는 번호입니다.</small></label>
+        <label>문의 전화<input value={stores.find((s) => s.id === storeId)?.phone || '가게 전화번호 미등록'} readOnly disabled /><small>가게 전화번호로 안내돼요.</small></label>
         <label>모집 상태<select value={status} onChange={(e) => setStatus(e.target.value as 'open' | 'closed')}><option value="open">모집 중</option><option value="closed">모집 마감</option></select></label>
       </div>
       {error && <p role="alert" className="sf-error">{error}</p>}
