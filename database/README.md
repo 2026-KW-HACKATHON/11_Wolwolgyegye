@@ -16,7 +16,10 @@ database/
 │  ├─ config.toml       내 컴퓨터에서 Supabase 를 띄울 때 쓰는 설정 (지금은 안 씀)
 │  └─ migrations/       DB 모양을 만드는 SQL. 번호 순서대로 한 번씩 실행
 │     ├─ 20261004000100_schema.sql     표 21개 전체 + 접근 권한 + 함수
-│     └─ 20261005000100_mock_flag.sql  예시 가게 표시 칸(is_mock) 추가
+│     ├─ 20261005000100_mock_flag.sql  예시 가게 표시 칸(is_mock) 추가
+│     └─ 20261005110000_menu_details.sql  메뉴 구역·공통 분류·비고·메뉴판 칸 추가
+├─ scripts/
+│  └─ menu_excel_to_csv.py  팀원이 판독한 메뉴 엑셀 → DB 적재용 CSV
 ├─ mock/
 │  └─ seed_mock.sql     예시(가짜) 데이터 넣기
 └─ tests/
@@ -36,6 +39,19 @@ database/
 |---|---|
 | `20261004000100_schema.sql` | 가게·메뉴·영업시간·사진·제휴·마감세일·공간대여·원데이클래스·스탬프·로그인 표를 만들고, 누가 무엇을 읽고 쓸 수 있는지(권한)를 정한다 |
 | `20261005000100_mock_flag.sql` | 가게 표에 "예시 가게" 표시(`is_mock`)를 추가한다 |
+| `20261005110000_menu_details.sql` | 메뉴 표에 구역 제목·공통 분류·옵션/비고·메뉴판 등록일·메뉴판 파일 칸을 추가한다 |
+
+### scripts/menu_excel_to_csv.py — 메뉴 엑셀 정리
+팀원이 메뉴판 사진을 직접 판독한 엑셀(1행 제목, A~H열)을 DB 에 넣기 좋은 CSV 로 바꿉니다.
+
+```powershell
+pip install openpyxl
+python database/scripts/menu_excel_to_csv.py "엑셀 경로.xlsx"
+```
+
+- 엑셀 옆에 `○○.csv`(넣을 데이터)와 `○○_분류검토.csv`(가게·구역마다 공통 분류가 맞는지 보는 표)가 생깁니다.
+- 분류 이름 괄호 속 판독 메모(천원 단위 표기, 판독 불확실 …)는 지우고, 손님용 설명(곱빼기 +2000 …)은 남깁니다.
+- 공통 분류는 구역 제목과 메뉴 이름으로 자동으로 정합니다. 틀린 것이 있으면 스크립트의 규칙(`SECTION_RULES`, `MENU_RULES`)을 고칩니다.
 
 ### mock/seed_mock.sql — 예시 데이터
 화면을 확인하려고 넣는 가짜 데이터입니다. 이름 앞에 모두 `[예시]` 가 붙습니다.
@@ -65,6 +81,7 @@ npm test   # 검사 16개 실행
 | 데이터 | 넣는 방법 |
 |---|---|
 | 가게 851곳 (월계1동 상가정보) | `frontend` 폴더에서 `npm run fetch:sbiz` → `npm run import:stores` (관리자 키 `SUPABASE_SECRET_KEY` 필요) |
+| 메뉴 3,762개 (팀원이 메뉴판 사진 판독, 가게 94곳) | 엑셀 → `scripts/menu_excel_to_csv.py` → `frontend` 폴더에서 `npm run import:menus -- "CSV 경로"` (미리보기) → 같은 명령 끝에 `--apply` (관리자 키 필요). 가게 이름 연결이 안 되면 `frontend/scripts/import-menus.js` 의 `STORE_ALIASES` 에 상가업소번호를 적는다 |
 | 메뉴·세일·공간대여 등 | 사장님 화면에서 (로그인 연결 후) |
 | 제휴 혜택, 가게 공개/숨김, 사장님 승인 | 운영자가 SQL Editor 에서 |
 
