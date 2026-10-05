@@ -8,36 +8,6 @@
   color: var(--color-text, #2b1f17);
 }
 
-/* --- 상단 문구 --- */
-
-.rl-hero {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4, 16px);
-  margin-bottom: var(--space-5, 24px);
-}
-
-.rl-eyebrow {
-  margin: 0;
-  color: var(--color-primary, #4a3222);
-  font-size: 0.8rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-}
-
-.rl-heading {
-  margin: var(--space-1, 4px) 0 0;
-  font-size: 1.55rem;
-  line-height: 1.34;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-.rl-heading em {
-  font-style: normal;
-  background: linear-gradient(transparent 62%, var(--color-cat-roulette-bg, #ece0c3) 62%);
-}
-
 .rl-filters {
   display: flex;
   flex-wrap: wrap;
@@ -555,26 +525,7 @@
   color: var(--color-text-muted, #8a7b6e);
 }
 
-.rl-tip {
-  margin: var(--space-5, 24px) 0 0;
-  padding: var(--space-4, 16px) var(--space-5, 24px);
-  background: var(--color-tag-space-bg, #e3ecdc);
-  color: var(--color-tag-space-text, #4f7a3a);
-  border-radius: var(--radius-md, 14px);
-  font-size: 0.83rem;
-}
-
 @container (min-width: 720px) {
-  .rl-hero {
-    flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
-  }
-
-  .rl-heading {
-    font-size: 2rem;
-  }
-
   /* 넓은 화면: 왼쪽에 소개+편집, 오른쪽에 원판 */
   .rl-card {
     grid-template-columns: minmax(0, 1fr) auto;

@@ -143,22 +143,13 @@ export default function RoulettePage() {
 
   return (
     <div className="rl-page">
-      <header className="rl-hero">
-        <div>
-          <p className="rl-eyebrow">오늘의 점심 메이트</p>
-          <h1 className="rl-heading">
-            고민은 줄이고, <em>맛있는 한 끼</em>를 고르세요.
-          </h1>
-        </div>
-      </header>
-
       <section className="rl-card">
         <div className="rl-intro">
           <span className="rl-badge">✦ 30초면 결정 끝</span>
           <h2 className="rl-card-title">오늘 뭐 먹지?</h2>
           <p className="rl-card-desc">
-            룰렛에 올릴 메뉴는 직접 고를 수 있어요. 돌리고 나면 그 메뉴를 파는 동네 가게를 함께
-            추천해 드려요.
+            룰렛에 올릴 메뉴는 직접 고를 수 있어요.
+            <br />그 메뉴를 파는 동네 가게를 추천해드려요.
           </p>
         </div>
 
@@ -362,10 +353,6 @@ export default function RoulettePage() {
           )}
         </section>
       )}
-
-      <p className="rl-tip">
-        <b>💡 친구와 함께라면?</b> 룰렛을 한 번 더 돌려 메뉴 후보를 2개로 좁혀보세요.
-      </p>
     </div>
   );
 }
