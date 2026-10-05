@@ -120,7 +120,6 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
       <div className="sf-hero-art" aria-hidden="true"><span className="sf-art-ring" /><Icon name={copy.icon} /><span className="sf-art-note">{kind === 'space-rental' ? '함께 쓰는 즐거움' : '새로운 나를 만나는 날'}</span></div>
     </section>
 
-    <p className="sf-demo">승인된 사장님이 DB에 등록한 소식입니다. 예약·결제는 지원하지 않아요.</p>
     <section className="sf-feed-section" aria-label={copy.label + ' 게시글'}>
       <div className="sf-feed-heading"><div><span className="sf-eyebrow">FROM OUR NEIGHBORS</span><h2>사장님이 전하는 소식</h2></div><label className="sf-search"><Icon name="search" /><input aria-label="피드 검색" placeholder="가게, 제목, 동네 검색" value={query} onChange={(e) => setQuery(e.target.value)} /></label></div>
       <div className="sf-toolbar">
