@@ -113,3 +113,9 @@
   .sf-detail h2 { font-size: 22px; }
 }
 @media (prefers-reduced-motion: reduce) { .sf-card { transition: none; }.sf-card:hover { transform: none; } }
+
+/* 2차 탭 안의 공간대여·원데이클래스 묶음 (StoreFeedSection) */
+.sf-page--detail { max-width: none; margin: 0; padding-bottom: 0; }
+.sf-page--detail .sf-visual { height: 200px; }
+.sf-page--detail .sf-detail { padding: 18px 16px 4px; }
+.sf-page--detail .sf-detail h2 { font-size: 20px; }

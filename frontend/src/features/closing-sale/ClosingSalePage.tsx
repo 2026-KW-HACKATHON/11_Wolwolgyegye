@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../core/auth/AuthContext';
 import { getSupabaseClient } from '../../core/supabase/client';
+import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
+import { useShell } from '../../layout/AppShell/ShellContext';
 import { SALE_SORTS, toneForStore, type SaleSortKey } from './constants';
 import { discountSortValue, formatSaleDiscount } from './discount';
 import { fetchClosingSales } from './source';
@@ -38,9 +40,17 @@ function sortSales(sales: ClosingSaleView[], key: SaleSortKey) {
   return sorted.sort((a, b) => a.closeAt.localeCompare(b.closeAt));
 }
 
+/**
+ * 마감세일 화면 (/closing-sale). 세일 카드를 누르면 그 가게의 2차 탭이 열리고, 2차 탭의 마감세일(누른 세일)이 맨 위에 오도록 스크롤된다.
+ * /closing-sale?sale=ID 로 들어오면 그 세일을 바로 연다. (홈 화면의 세일 카드에서 연결)
+ */
 export default function ClosingSalePage() {
   const navigate = useNavigate();
+  const active = usePageActive();
+  const [params, setParams] = useSearchParams();
   const { userId } = useAuth();
+  const { openStore } = useShell();
+  const openSale = useCallback((sale: ClosingSaleView) => openStore(sale.storeId, { category: 'closing-sale', target: `sale-${sale.id}` }), [openStore]);
   const [sales, setSales] = useState<ClosingSaleView[] | null>(null);
   const [sort, setSort] = useState<SaleSortKey>('closing');
   const [likedIds, setLikedIds] = useState<string[]>([]);
@@ -76,6 +86,15 @@ export default function ClosingSalePage() {
       sort,
     );
   }, [sales, sort, now]);
+
+  // ?sale=ID 로 들어오면 그 세일을 연다
+  useEffect(() => {
+    const saleId = params.get('sale');
+    if (!active || !saleId || sales === null) return;
+    const sale = sales.find((item) => item.id === saleId);
+    if (sale) openSale(sale);
+    const next = new URLSearchParams(params); next.delete('sale'); setParams(next, { replace: true });
+  }, [active, params, sales, setParams, openSale]);
 
   /** 배너에 보여줄 진행 중인 세일 가게 수 (한 가게가 여러 세일을 올려도 한 곳으로 센다) */
   const activeStoreCount = useMemo(() => new Set(visible.map((sale) => sale.storeId)).size, [visible]);
@@ -177,7 +196,10 @@ export default function ClosingSalePage() {
                     <p className="cs-card-meta">
                       {sale.store.cuisineType ?? '동네 가게'} · 도보 {sale.walkMinutes}분
                     </p>
-                    <h3 className="cs-card-name">{sale.store.name}</h3>
+                    <h3 className="cs-card-name">
+                      {/* 카드 전체가 눌리도록 버튼을 카드 위로 늘린다 (관심 버튼은 그 위에 있다) */}
+                      <button type="button" className="cs-card-open" aria-label={`${sale.store.name} 세일 자세히`} onClick={() => openSale(sale)}>{sale.store.name}</button>
+                    </h3>
                     <p className="cs-card-desc">{sale.desc}</p>
 
                     <div className="cs-card-foot">

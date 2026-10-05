@@ -8,10 +8,10 @@ import ExtraIcon from '../../shared/ExtraIcon';
 import Icon from '../../shared/Icon';
 import { useFavoriteStores } from '../../shared/favorites/useFavoriteStores';
 import StoreMap, { directionText } from '../../shared/map/StoreMap';
-import Sheet from '../../shared/sheet/Sheet';
 import { COLLEGES } from './colleges';
 import { fetchPartnerStores } from './source';
-import { AUDIENCE_STORAGE_KEY, STATUS_LABELS, benefitStatus, collegeOf, distanceLabel, estimatePrice, industryOf, isAudience, money, phoneUrl, safeSourceUrl } from './presentation';
+import { AUDIENCE_EVENT, readAudience, saveAudience } from './PartnerSection';
+import { STATUS_LABELS, benefitStatus, collegeOf, distanceLabel, estimatePrice, industryOf, money } from './presentation';
 import type { PartnerAudience, PartnerIndustry, PartnerStoreView } from './types';
 import './partner.css';
 
@@ -23,27 +23,16 @@ const SORTS = [
 ] as const;
 type SortKey = (typeof SORTS)[number]['key'];
 
-function initialAudience(): PartnerAudience {
-  try { const value = localStorage.getItem(AUDIENCE_STORAGE_KEY); return isAudience(value) ? value : 'all'; }
-  catch { return 'all'; }
-}
-function AudienceSelect({ value, onChange, id }: { value: PartnerAudience; onChange: (value: PartnerAudience) => void; id: string }) {
-  return <select id={id} value={value} onChange={(e) => { if (isAudience(e.target.value)) onChange(e.target.value); }}>
-    <option value="all">전체 혜택 둘러보기</option>
-    <option value="resident">주민 · 일반 이용자</option>
-    <optgroup label="광운대학교 단과대학">{COLLEGES.map((c) => <option key={c.key} value={c.key}>{c.name}</option>)}</optgroup>
-  </select>;
-}
-
 /**
  * 제휴 가게 화면 (/partner-stores).
  * - 소속 단과대를 고르면 받을 수 있는 혜택만 보여준다. (선택은 이 기기에만 저장)
  * - 가게 이름을 누르면 카드 안, 혜택 설명 아래에 가게 위치 지도가 펼쳐진다.
  * - /partner-stores?store=ID 로 들어오면 그 가게를 맨 위에 보여주고 지도를 펼친다. (스탬프 화면에서 연결)
+ * - "혜택 자세히" 를 누르면 그 가게의 2차 탭이 열리고, 2차 탭의 제휴 혜택 부분이 맨 위에 오도록 스크롤된다.
  */
 export default function PartnerStoresPage() {
   const active = usePageActive();
-  const { showStoreOnMap } = useShell();
+  const { openStore } = useShell();
   const location = useLocation();
   const navigate = useNavigate();
   const { isFavorite, toggle } = useFavoriteStores();
@@ -51,7 +40,7 @@ export default function PartnerStoresPage() {
   const [origin, setOrigin] = useState<GeoPoint | null>(null);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const [audience, setAudience] = useState<PartnerAudience>(initialAudience);
+  const [audience, setAudience] = useState<PartnerAudience>(readAudience);
   const [query, setQuery] = useState('');
   const [industry, setIndustry] = useState<PartnerIndustry>('전체');
   const [savedOnly, setSavedOnly] = useState(false);
@@ -59,8 +48,6 @@ export default function PartnerStoresPage() {
   const [openMaps, setOpenMaps] = useState<string[]>([]);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [scrollTo, setScrollTo] = useState<string | null>(null);
-  const [selected, setSelected] = useState<PartnerStoreView | null>(null);
-  const [presenting, setPresenting] = useState(false);
   const college = collegeOf(audience);
   const current = COLLEGES.find((c) => c.key === college);
 
@@ -72,8 +59,13 @@ export default function PartnerStoresPage() {
       .catch(() => { if (!cancelled) setError(true); });
     return () => { cancelled = true; };
   }, [attempt]);
-  useEffect(() => { try { localStorage.setItem(AUDIENCE_STORAGE_KEY, audience); } catch { /* session only */ } }, [audience]);
-  useEffect(() => { if (!active) { setSelected(null); setPresenting(false); } }, [active]);
+  // 내 소속은 2차 탭의 혜택 상세와 같은 값을 쓴다 (이 기기에만 저장)
+  useEffect(() => { if (readAudience() !== audience) saveAudience(audience); }, [audience]);
+  useEffect(() => {
+    const sync = () => setAudience(readAudience());
+    window.addEventListener(AUDIENCE_EVENT, sync);
+    return () => window.removeEventListener(AUDIENCE_EVENT, sync);
+  }, []);
 
   // 다른 화면에서 ?store=ID 로 들어온 경우: 그 가게를 맨 위에 두고 지도를 펼친다
   const linkedId = new URLSearchParams(location.search).get('store');
@@ -118,13 +110,6 @@ export default function PartnerStoresPage() {
   const hasFilters = !!query || industry !== '전체' || savedOnly;
   const resetFilters = () => changeFilters(() => { setQuery(''); setIndustry('전체'); setSavedOnly(false); });
   const toggleMap = (id: string) => setOpenMaps((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
-  const close = () => { setSelected(null); setPresenting(false); };
-  const info = college ? selected?.details?.[college] : undefined;
-  const status = benefitStatus(info);
-  const eligible = !!(college && selected?.benefits[college]);
-  const canPresent = eligible && (status === 'demo' || status === 'verified');
-  const source = safeSourceUrl(info?.sourceUrl);
-  const telephone = selected ? phoneUrl(selected) : null;
   const listTitle = current ? `${current.label} 학생 혜택` : audience === 'resident' ? '주민·일반 이용자 혜택' : '단과대별 제휴 가게';
 
   return <div className="ps-page">
@@ -223,7 +208,7 @@ export default function PartnerStoresPage() {
             {v.store.supports.coupon
               ? <Link className="ps-stamp-chip" to={`/coupon?store=${encodeURIComponent(v.storeId)}`}><ExtraIcon name="stamp" />스탬프 적립판</Link>
               : <span />}
-            <button type="button" className="ps-more" onClick={() => { setSelected(v); setPresenting(false); }} aria-label={`${v.store.name} 혜택 자세히`}>혜택 자세히 <Icon name="chevronRight" /></button>
+            <button type="button" className="ps-more" onClick={() => openStore(v.storeId, { category: 'partner-stores' })} aria-label={`${v.store.name} 혜택 자세히`}>혜택 자세히 <Icon name="chevronRight" /></button>
           </div>
         </li>;
       })}</ul>}
@@ -232,43 +217,5 @@ export default function PartnerStoresPage() {
     <aside className="ps-guide"><span className="ps-guide-icon"><ExtraIcon name="info" /></span><div><b>방문 전 확인하세요</b><p>내가 혜택 대상인지 · 학생증이 필요한지 · 적용 조건과 기간이 맞는지</p></div></aside>
     <p className="ps-disclaimer">거리는 월계1동 기준점에서 잰 직선거리예요. 광운대학교 공식 서비스가 아니며, 학생회 공지와 가게 확인을 거쳐 정보를 제공합니다.</p>
 
-    <Sheet open={!!selected && active} title={presenting ? '혜택 안내 화면' : '제휴 혜택 자세히'} onClose={close}>
-      {selected && <div className="ps-detail">
-        {selected.dataMode === 'demo' && <div className="ps-demo"><b>미리보기</b><span>실제 제휴·쿠폰이 아닙니다. 매장에서 사용할 수 없어요.</span></div>}
-        <div className="ps-detail-heading"><span className="ps-eyebrow">{selected.store.cuisineType ?? '생활·문화'}</span><h3>{selected.store.name}</h3></div>
-        {presenting ? <>
-          <div className="ps-presentation"><span>{current?.name}</span><strong>{college ? selected.benefits[college] : ''}</strong><p>{info?.condition ?? selected.condition}</p><b>실물 또는 모바일 학생증을 함께 제시해 주세요.</b></div>
-          <p className="ps-note">이 화면은 혜택 안내일 뿐, 학생 인증이나 결제·혜택 사용 완료 증명이 아닙니다.</p>
-          <button type="button" className="ps-secondary ps-full" onClick={() => setPresenting(false)}>상세 정보로 돌아가기</button>
-        </> : <>
-          <label className="ps-detail-audience" htmlFor="ps-detail-audience">내 혜택 대상<AudienceSelect id="ps-detail-audience" value={audience} onChange={setAudience} /></label>
-          <div className="ps-detail-offer">
-            {eligible ? <><span className={`ps-status is-${status}`}>{STATUS_LABELS[status]}</span><strong>{college ? selected.benefits[college] : ''}</strong></> : <><b>{audience === 'all' ? '내 단과대를 고르면 적용 혜택이 보여요.' : '선택한 대상의 혜택은 등록되지 않았어요.'}</b><p>아래 대상별 혜택을 참고해 주세요.</p></>}
-            <ul className="ps-benefit-list">{COLLEGES.filter((c) => selected.benefits[c.key]).map((c) => <li key={c.key} className={college === c.key ? 'is-on' : ''}><span>{c.label}</span><b>{selected.benefits[c.key]}</b></li>)}</ul>
-          </div>
-          <section className="ps-detail-section"><h4>놓치면 안 되는 이용 조건</h4><dl className="ps-facts">
-            <div><dt>이용 조건</dt><dd>{info?.condition ?? selected.condition}</dd></div>
-            <div><dt>혜택 기간</dt><dd>{info?.validUntil ? `${info.validUntil}까지` : '미등록 · 방문 전 확인 필요'}</dd></div>
-            <div><dt>확인일</dt><dd>{info?.verifiedAt ?? '확인된 날짜 없음'}</dd></div>
-            <div><dt>공지 출처</dt><dd>{source ? <a href={source} target="_blank" rel="noopener noreferrer">제휴 공지 확인 ↗</a> : '미등록 · 실제 제휴 확인 필요'}</dd></div>
-            <div><dt>스탬프 중복</dt><dd>{info?.stampStacking === 'allowed' ? '함께 이용 가능' : info?.stampStacking === 'not-allowed' ? '중복 이용 불가' : '확인되지 않음 · 가게 확인 필요'}</dd></div>
-          </dl></section>
-          <section className="ps-detail-section"><h4>메뉴와 가격 {selected.dataMode === 'demo' && <span>예시</span>}</h4>
-            {selected.menus.length ? <><ul className="ps-menu-list">{selected.menus.map((menu) => {
-              const price = estimatePrice(menu, college, info);
-              return <li key={menu.id}><span>{menu.name}</span><span>{price !== null ? <><del>{money(menu.price)}</del><b>{money(price)}</b></> : <b>{money(menu.price)}</b>}</span></li>;
-            })}</ul><p className="ps-note">{selected.dataMode === 'demo' ? '선택한 단과대의 할인 계산 예시입니다. 실제 결제 금액이 아니에요.' : '등록된 메뉴별 할인만 계산합니다. 최종 금액은 매장에서 확인해 주세요.'}</p></> : <p className="ps-note">등록된 메뉴·가격이 없어요. 확인되지 않은 금액은 표시하지 않아요.</p>}
-          </section>
-          <section className="ps-detail-section"><h4>가게 찾아가기</h4>
-            {origin && <StoreMap key={selected.storeId} store={selected.store} origin={origin} demo={selected.dataMode === 'demo'} className="ps-detail-map" />}
-            <dl className="ps-facts"><div><dt>주소</dt><dd>{selected.store.address}</dd></div><div><dt>영업시간</dt><dd>{selected.store.businessHours}</dd></div></dl>
-            {selected.dataMode === 'demo' && <p className="ps-note">주소·좌표·영업시간·전화번호도 예시입니다. 실제 방문 정보로 이용하지 마세요.</p>}
-            <div className="ps-contact"><button type="button" className="ps-secondary" onClick={() => { const id = selected.storeId; close(); showStoreOnMap(id); }}><Icon name="pin" />{selected.dataMode === 'demo' ? '예시 위치 보기' : '지도에서 보기'}</button>{telephone ? <a className="ps-secondary" href={telephone}>가게에 전화</a> : <button type="button" className="ps-secondary" disabled>{selected.dataMode === 'demo' ? '예시 번호 · 전화 불가' : '전화번호 미등록'}</button>}</div>
-          </section>
-          {selected.store.supports.coupon && <Link className="ps-stamp-link" to={`/coupon?store=${encodeURIComponent(selected.storeId)}`} onClick={close}><span className="ps-stamp-link-icon"><ExtraIcon name="stamp" /></span><span><b>이 가게의 스탬프도 모을 수 있어요</b><small>제휴 혜택과 중복 적용되는지는 별도 확인이 필요해요.</small></span><Icon name="chevronRight" /></Link>}
-          <div className="ps-detail-bottom"><button type="button" className="ps-primary ps-full" disabled={!canPresent} onClick={() => setPresenting(true)}>{!eligible ? '혜택 대상 단과대를 선택해 주세요' : !canPresent ? '혜택 확인 후 이용할 수 있어요' : selected.dataMode === 'demo' ? '혜택 안내 화면 미리보기' : '직원에게 혜택 안내 보여주기'}</button><p className="ps-note">쿠폰 발급·회원 인증 없이 정보를 확인하는 화면입니다.</p></div>
-        </>}
-      </div>}
-    </Sheet>
   </div>;
 }

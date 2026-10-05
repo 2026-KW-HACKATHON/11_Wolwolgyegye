@@ -310,3 +310,7 @@
   .ps-skeleton, .ps-map-panel { animation: none; }
   .ps-name-chevron { transition: none; }
 }
+
+/* 2차 탭 안의 제휴 혜택 묶음 (PartnerSection) */
+.ps-page--detail { max-width: none; margin: 0; padding: 0 16px 8px; }
+.ps-page--detail .ps-detail-heading { margin-top: 8px; }

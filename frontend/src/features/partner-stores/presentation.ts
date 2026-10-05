@@ -46,8 +46,3 @@ export function estimatePrice(menu: PartnerStoreMenuItem, college: CollegeKey | 
   if (discount.type === 'amount' && Number.isInteger(discount.value) && discount.value <= menu.price) return menu.price - discount.value;
   return null;
 }
-export function phoneUrl(view: PartnerStoreView): string | null {
-  if (view.dataMode === 'demo') return null;
-  const phone = view.store.phone.replace(/[\s()-]/g, '');
-  return /^\+?\d{7,15}$/.test(phone) ? `tel:${phone}` : null;
-}
