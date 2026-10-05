@@ -14,8 +14,8 @@ export interface ClosingSale {
   discountType: 'amount' | 'rate' | 'free';
   /** amount 일 때 깎아 주는 금액 (원). 다른 유형은 null */
   discountAmount: number | null;
-  /** rate 일 때 0 ~ 1 사이 소수 (0.3 = 30%). 다른 유형은 0 */
-  discountRate: number;
+  /** rate 일 때 0 ~ 1 사이 소수 (0.3 = 30%). 다른 유형은 null */
+  discountRate: number | null;
   /** 제공 내용 (free 일 때 필수. 예: 빵 2개 사면 1개 무료) */
   offer: string;
   /** 조건 (예: 오후 8시 이후 포장) */
@@ -25,7 +25,7 @@ export interface ClosingSale {
   /** 세일 시작·끝 시각 (ISO 문자열) */
   startsAt: string;
   closeAt: string;
-  /** 관심 등록한 사람 수. 로그인 연동 후에는 사용자별 관심 테이블에서 세어 온다 */
+  /** 관심 등록한 사람 수 (sale_likes 를 get_sale_like_counts 로 센 값) */
   likeCount: number;
 }
 

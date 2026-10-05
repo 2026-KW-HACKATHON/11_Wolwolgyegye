@@ -1,4 +1,4 @@
-/* 전역 리셋. 색상 변수(테마) 시스템은 이번 범위 제외라서 값은 각 CSS에 하드코딩 */
+/* 전역 리셋. 색과 글꼴은 shared/theme.css 토큰을 쓴다 */
 *,
 *::before,
 *::after {
@@ -13,10 +13,9 @@ body,
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
-    'Noto Sans KR', 'Malgun Gothic', sans-serif;
-  color: #1f2937;
-  background: #ffffff;
+  font-family: var(--font-family);
+  color: var(--color-text);
+  background: var(--color-bg);
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
 }

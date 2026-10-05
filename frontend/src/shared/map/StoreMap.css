@@ -1,14 +1,14 @@
 /* 가게 위치 작은 지도 (shared/map/StoreMap.tsx). 색은 theme.css 토큰을 따른다 */
 .smap {
   min-width: 0;
-  --smap-ground: var(--color-neighborhood-soft, #e8f0e6);
-  --smap-grid: color-mix(in srgb, var(--color-neighborhood, #245c4a) 9%, transparent);
-  --smap-green: var(--color-neighborhood, #245c4a);
-  --smap-pin: var(--color-brand, #802d40);
-  --smap-paper: var(--color-surface, #fff);
-  --smap-ink: var(--color-text, #2b1f17);
-  --smap-muted: #6f655c;
-  --smap-line: var(--color-border, #e7dfd4);
+  --smap-ground: var(--color-neighborhood-soft);
+  --smap-grid: color-mix(in srgb, var(--color-neighborhood) 9%, transparent);
+  --smap-green: var(--color-neighborhood);
+  --smap-pin: var(--color-brand);
+  --smap-paper: var(--color-surface);
+  --smap-ink: var(--color-text);
+  --smap-muted: var(--color-text-muted);
+  --smap-line: var(--color-border);
   margin: 0;
 }
 

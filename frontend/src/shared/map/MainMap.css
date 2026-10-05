@@ -1,42 +1,10 @@
 /* =====================================================================
    배경 지도. 색상은 모두 아래 CSS 변수에서 관리한다. (V_World/style.css 와 같은 변수 이름)
-   MainMap.tsx 가 지도를 만들 때 이 변수들을 읽어 지도 스타일에 사용하므로, 색을 바꾸려면 여기만 고치면 된다.
-   색은 동네 소식·원데이클래스·공간대여 테마(theme.css)에 맞췄다.
+   MainMap.tsx 가 지도를 만들 때 이 변수들을 .mm-root 에서 읽어 지도 스타일에 사용한다.
+   변수 값은 shared/theme.css 의 "지도" 묶음에서 관리한다.
    ===================================================================== */
 .mm-root {
-  /* 배경 (타일 대신 단색) */
-  --map-bg: #efe8dc;
-  /* 건물 */
-  --building-fill: #e2d5c3;
-  --building-stroke: #c9b8a1;
-  --building-hover: #e9b36a;
-  /* 도로 (등급별, OpenStreetMap) */
-  --road-major: #ffffff;
-  --road-medium: #fffdf8;
-  --road-minor: #fbf7f0;
-  --road-service: #f7f1e7;
-  --road-path: #cbbda9;
-  /* 철도 (바탕 선 + 흰 점선) */
-  --rail-base: #9c9087;
-  --rail-dash: #ffffff;
-  /* 지하철역 이름표·출구 (노선 색은 데이터에서) */
-  --station-bg: #ffffff;
-  --station-border: #5c4f45;
-  --station-exit: #3f7f5f;
-  --station-exit-link: #7d7066;
-  /* 영역 (건물·도로 아래에 깔리는 면) */
-  --mountain-fill: #d4e2c9; /* 산: 동네 소식 초록 계열 */
-  --water-fill: #c6dbe2; /* 강·하천 */
-  --school-fill: #e3d9c9; /* 학교: 바탕보다 조금 진하게 (아파트보다 한 단계 더) */
-  --apartment-fill: #e8e0d2; /* 아파트 단지: 바탕보다 조금 진하게 */
-  /* 경계 */
-  --admin-dong: #802d40; /* 월계1동(행정동): 브랜드 색 */
-  /* 가게 점 (그 외 카테고리 묶음별). 한 건물에 여러 묶음이 있으면 음식점 → 카페 → 편의점 → 그 외 순으로 색을 고른다 */
-  --place-restaurant: #d8473f; /* 음식점: 빨강 */
-  --place-cafe: #e2a514; /* 카페·베이커리: 노랑 */
-  --place-convenience: #2f6fd0; /* 편의점: 파랑 */
-  --place-etc: #8a7b6e; /* 그 외: 갈회색 */
-
+  /* 지도 색(--map-bg, --building-*, --road-*, --place-* …)은 shared/theme.css 에 있다 */
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -60,9 +28,9 @@
 .mm-source {
   position: absolute;
   z-index: 1000;
-  right: var(--inset-right, 0px);
-  bottom: calc(var(--inset-bottom, 0px) + 2px);
-  left: var(--inset-left, 0px);
+  right: var(--inset-right);
+  bottom: calc(var(--inset-bottom) + 2px);
+  left: var(--inset-left);
   margin: 0;
   color: var(--color-text-muted);
   font-size: 9px;
@@ -106,7 +74,7 @@
 
 /* ---------- Leaflet 기본 컨트롤 ---------- */
 .mm-root .leaflet-control-zoom {
-  margin: 0 0 12px calc(var(--inset-left, 0px) + 12px);
+  margin: 0 0 12px calc(var(--inset-left) + 12px);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-card);
   transition: margin-left 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -120,7 +88,7 @@
 }
 
 .mm-root .leaflet-control-scale {
-  margin-left: calc(var(--inset-left, 0px) + 12px);
+  margin-left: calc(var(--inset-left) + 12px);
 }
 
 .mm-root .leaflet-control-scale-line {
@@ -187,7 +155,7 @@
   border-radius: 16px 16px 16px 4px;
   background: var(--color-neighborhood);
   color: var(--color-surface);
-  box-shadow: 0 3px 12px rgba(37, 61, 51, 0.25);
+  box-shadow: 0 3px 12px rgb(var(--shadow-color) / 0.25);
   font-size: 19px;
   transition: transform 0.15s;
 }
@@ -202,7 +170,7 @@
 
 .mm-pin.is-selected {
   transform: scale(1.15);
-  box-shadow: 0 0 0 4px var(--color-brand-soft), 0 4px 14px rgba(43, 31, 23, 0.3);
+  box-shadow: 0 0 0 4px var(--color-brand-soft), 0 4px 14px rgb(var(--shadow-color) / 0.3);
 }
 
 .mm-pin-name {
@@ -235,7 +203,7 @@
   display: block;
   width: 30px;
   height: 39px;
-  filter: drop-shadow(0 2px 3px rgba(43, 31, 23, 0.35));
+  filter: drop-shadow(0 2px 3px rgb(var(--shadow-color) / 0.35));
   transform-origin: 50% 100%;
   transition: transform 0.15s ease;
 }
@@ -249,7 +217,7 @@
 
 .pl-pin path {
   fill: var(--pl-color);
-  stroke: #ffffff;
+  stroke: var(--white);
   stroke-width: 2;
 }
 
@@ -258,7 +226,7 @@
   position: absolute;
   top: 37%;
   left: 50%;
-  color: #ffffff;
+  color: var(--color-on-dark);
   font-size: 12px;
   font-weight: 800;
   line-height: 1;
@@ -274,7 +242,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--color-surface);
 }
 
 .pl-pin.is-selected {
@@ -293,11 +261,11 @@
   place-items: center;
   width: 36px;
   height: 36px;
-  border: 3px solid color-mix(in srgb, var(--pl-color) 35%, #ffffff);
+  border: 3px solid color-mix(in srgb, var(--pl-color) 35%, var(--white));
   border-radius: 50%;
   background: var(--pl-color);
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(43, 31, 23, 0.35);
+  color: var(--color-on-dark);
+  box-shadow: var(--shadow-pin);
   font-size: 12px;
   font-weight: 800;
 }
@@ -409,7 +377,7 @@
   border: 1.5px solid var(--station-border);
   border-radius: 4px;
   background: var(--station-bg);
-  box-shadow: 0 1px 3px rgba(43, 31, 23, 0.25);
+  box-shadow: 0 1px 3px rgb(var(--shadow-color) / 0.25);
   color: var(--station-border);
   font-size: 11px;
   line-height: 1.2;
@@ -429,7 +397,7 @@
   padding: 0 3px;
   border-radius: 8px;
   background: var(--line);
-  color: #ffffff;
+  color: var(--color-on-dark);
   font-size: 10px;
   font-style: normal;
   font-weight: 800;
@@ -444,7 +412,7 @@
   padding: 0 2px;
   border-radius: 3px;
   background: var(--station-exit);
-  color: #ffffff;
+  color: var(--color-on-dark);
   font-size: 9px;
   font-weight: 800;
 }

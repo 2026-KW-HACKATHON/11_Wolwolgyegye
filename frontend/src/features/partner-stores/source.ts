@@ -1,6 +1,6 @@
 import { fetchStoresByIds, getUserLocation } from '../../core/source/storeSource';
 import { getSupabaseClient } from '../../core/supabase/client';
-import { distanceMeters, walkMinutes } from '../../core/utils/geo';
+import { distanceMeters } from '../../core/utils/geo';
 import { COLLEGES } from './colleges';
 import type { CollegeKey, PartnerBenefit, PartnerStoreMenuItem, PartnerStoreView } from './types';
 
@@ -22,13 +22,16 @@ type Discount = { type: 'amount' | 'percent'; value: number };
 
 const collegeByName = new Map(COLLEGES.map((c) => [c.name, c.key]));
 
-function discountOf(row: BenefitRow): Discount | null {
+/** 한 혜택 행의 할인. DB 는 비율과 금액을 함께 둘 수 있어서 둘 다 돌려준다 (비율 먼저) */
+function discountsOf(row: BenefitRow): Discount[] {
+  const list: Discount[] = [];
   // numeric 칸은 문자열로 올 수 있다
-  if (row.discount_rate !== null) return { type: 'percent', value: Math.round(Number(row.discount_rate) * 100) };
-  if (row.discount_amount !== null) return { type: 'amount', value: row.discount_amount };
-  return null;
+  if (row.discount_rate !== null) list.push({ type: 'percent', value: Math.round(Number(row.discount_rate) * 100) });
+  if (row.discount_amount !== null) list.push({ type: 'amount', value: row.discount_amount });
+  return list;
 }
-const discountText = (d: Discount) => (d.type === 'percent' ? `${d.value}% 할인` : `${d.value.toLocaleString('ko-KR')}원 할인`);
+const discountText = (list: Discount[]) =>
+  list.map((d) => (d.type === 'percent' ? `${d.value}%` : `${d.value.toLocaleString('ko-KR')}원`)).join(' + ') + ' 할인';
 
 /** 가게별 혜택 + 가게별·단과대별 할인 (메뉴 할인 계산용) */
 async function fetchBenefitRows(): Promise<{ benefits: PartnerBenefit[]; discounts: Map<string, Partial<Record<CollegeKey, Discount>>> }> {
@@ -39,15 +42,17 @@ async function fetchBenefitRows(): Promise<{ benefits: PartnerBenefit[]; discoun
       .select('id, store_id, discount_amount, discount_rate, condition, benefit_partners(partners(name))');
     if (error) throw error;
     for (const row of (data ?? []) as unknown as BenefitRow[]) {
-      const discount = discountOf(row);
-      if (!discount) continue;
+      const rowDiscounts = discountsOf(row);
+      if (!rowDiscounts.length) continue;
       const benefit = byStore.get(row.store_id) ?? { storeId: row.store_id, benefits: {}, condition: '' };
       const storeDiscounts = discounts.get(row.store_id) ?? {};
       for (const link of row.benefit_partners ?? []) {
         const key = link.partners ? collegeByName.get(link.partners.name) : undefined;
         if (!key) continue;
-        benefit.benefits[key] = benefit.benefits[key] ? `${benefit.benefits[key]} / ${discountText(discount)}` : discountText(discount);
-        storeDiscounts[key] ??= discount;
+        const text = discountText(rowDiscounts);
+        benefit.benefits[key] = benefit.benefits[key] ? `${benefit.benefits[key]} / ${text}` : text;
+        // 메뉴 할인가 계산은 한 가지 할인만 쓴다
+        storeDiscounts[key] ??= rowDiscounts[0];
       }
       if (row.condition && !benefit.condition.split(' · ').includes(row.condition)) {
         benefit.condition = benefit.condition ? `${benefit.condition} · ${row.condition}` : row.condition;
@@ -82,14 +87,11 @@ export async function fetchPartnerStores(): Promise<PartnerStoreView[]> {
   return rows.flatMap((row) => {
     const store = stores.get(row.storeId);
     if (!store) return [];
-    // 예시 가게는 "미리보기"로, 실제 가게는 현장 확인 전이라 "확인 필요"로 표시한다
-    const status = store.isMock ? 'demo' as const : 'needs-check' as const;
     return [{
-      ...row, store, walkMinutes: walkMinutes(here, store.location),
+      ...row, store,
       referenceDistanceMeters: distanceMeters(here, store.location),
       menus: menus.filter((menu) => menu.storeId === row.storeId),
       dataMode: store.isMock ? 'demo' as const : 'live' as const,
-      details: Object.fromEntries(Object.keys(row.benefits).map((key) => [key, { status, condition: row.condition }])),
     }];
   });
 }

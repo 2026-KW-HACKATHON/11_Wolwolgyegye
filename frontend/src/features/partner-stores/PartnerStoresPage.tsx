@@ -11,7 +11,7 @@ import StoreMap, { directionText } from '../../shared/map/StoreMap';
 import { COLLEGES } from './colleges';
 import { fetchPartnerStores } from './source';
 import { AUDIENCE_EVENT, readAudience, saveAudience } from './PartnerSection';
-import { STATUS_LABELS, benefitStatus, collegeOf, distanceLabel, estimatePrice, industryOf, money } from './presentation';
+import { collegeOf, distanceLabel, estimatePrice, industryOf, money } from './presentation';
 import type { PartnerAudience, PartnerIndustry, PartnerStoreView } from './types';
 import './partner.css';
 
@@ -87,8 +87,7 @@ export default function PartnerStoresPage() {
   const changeFilters = (fn: () => void) => { setFocusId(null); fn(); };
 
   const q = query.trim().toLocaleLowerCase();
-  const matches = (v: PartnerStoreView) => audience !== 'resident'
-    && (!college || !!v.benefits[college]) && (!savedOnly || isFavorite(v.storeId))
+  const matches = (v: PartnerStoreView) => (!college || !!v.benefits[college]) && (!savedOnly || isFavorite(v.storeId))
     && (industry === '전체' || industryOf(v) === industry)
     && `${v.store.name} ${v.store.cuisineType ?? ''} ${v.menus.map((m) => m.name).join(' ')} ${Object.values(v.benefits).join(' ')}`.toLocaleLowerCase().includes(q);
   const benefitCount = (v: PartnerStoreView) => Object.keys(v.benefits).length;
@@ -102,7 +101,7 @@ export default function PartnerStoresPage() {
   const focusOutside = !!focused && !matches(focused);
 
   const collegeCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: stores?.length ?? 0, resident: 0 };
+    const counts: Record<string, number> = { all: stores?.length ?? 0 };
     COLLEGES.forEach((c) => { counts[c.key] = (stores ?? []).filter((v) => v.benefits[c.key]).length; });
     return counts;
   }, [stores]);
@@ -110,13 +109,13 @@ export default function PartnerStoresPage() {
   const hasFilters = !!query || industry !== '전체' || savedOnly;
   const resetFilters = () => changeFilters(() => { setQuery(''); setIndustry('전체'); setSavedOnly(false); });
   const toggleMap = (id: string) => setOpenMaps((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
-  const listTitle = current ? `${current.label} 학생 혜택` : audience === 'resident' ? '주민·일반 이용자 혜택' : '단과대별 제휴 가게';
+  const listTitle = current ? `${current.label} 학생 혜택` : '단과대별 제휴 가게';
 
   return <div className="ps-page">
     <section className="ps-audience" aria-labelledby="ps-audience-title">
       <div className="ps-audience-head">
         <h2 id="ps-audience-title">내 소속</h2>
-        <p>이 기기에만 저장돼요 · 학생 인증은 아니에요</p>
+        <p>이 기기에만 저장돼요</p>
       </div>
       <div className="ps-colleges" role="group" aria-label="혜택 대상 선택">
         <button type="button" className={audience === 'all' ? 'is-on' : ''} aria-pressed={audience === 'all'} onClick={() => changeFilters(() => setAudience('all'))}>전체 혜택<span>{collegeCounts.all}</span></button>
@@ -125,7 +124,6 @@ export default function PartnerStoresPage() {
             {c.label}<span>{collegeCounts[c.key] ?? 0}</span>
           </button>
         ))}
-        <button type="button" className={audience === 'resident' ? 'is-on' : ''} aria-pressed={audience === 'resident'} onClick={() => changeFilters(() => setAudience('resident'))}>주민·일반</button>
       </div>
     </section>
 
@@ -146,18 +144,16 @@ export default function PartnerStoresPage() {
       <p className="ps-sr" role="status">{error ? '가게를 불러오지 못했습니다.' : stores ? `${visible.length}개 가게가 검색되었습니다.` : '가게를 불러오는 중입니다.'}</p>
       {!stores && !error && <div className="ps-list" aria-hidden="true">{[0, 1, 2].map((n) => <div className="ps-skeleton" key={n} />)}</div>}
       {error && <div className="ps-empty"><h3>가게 정보를 불러오지 못했어요.</h3><p>잠시 후 다시 시도해 주세요.</p><button className="ps-primary" type="button" onClick={() => setAttempt(attempt + 1)}>다시 불러오기</button></div>}
-      {stores && !list.length && <div className="ps-empty"><Icon name="storefront" /><h3>{audience === 'resident' ? '아직 확인된 주민 혜택이 없어요.' : savedOnly ? '조건에 맞는 찜한 가게가 없어요.' : '조건에 맞는 가게가 없어요.'}</h3>
-        <p>{audience === 'resident' ? '학생 대상 혜택을 주민 혜택으로 표시하지 않아요. 일반 이용자는 스탬프 적립을 이용해 보세요.' : '다른 검색어나 업종을 선택해 보세요.'}</p>
-        {audience === 'resident' ? <div className="ps-empty-actions"><button className="ps-secondary" type="button" onClick={() => { setAudience('all'); resetFilters(); }}>학생 혜택 둘러보기</button><Link className="ps-primary" to="/coupon">스탬프 둘러보기</Link></div> : <button className="ps-secondary" type="button" onClick={resetFilters}>검색·필터 초기화</button>}
+      {stores && !list.length && <div className="ps-empty"><Icon name="storefront" /><h3>{savedOnly ? '조건에 맞는 찜한 가게가 없어요.' : '조건에 맞는 가게가 없어요.'}</h3>
+        <p>다른 검색어나 업종을 선택해 보세요.</p>
+        <button className="ps-secondary" type="button" onClick={resetFilters}>검색·필터 초기화</button>
       </div>}
       {!!list.length && <ul className="ps-list">{list.map((v) => {
         const colleges = COLLEGES.filter((c) => v.benefits[c.key]);
         const mine = college ? v.benefits[college] : undefined;
         const key = mine ? college! : colleges[0]?.key;
-        const cardInfo = key ? v.details?.[key] : undefined;
-        const cardStatus = benefitStatus(cardInfo);
         const menu = v.menus[0];
-        const price = menu ? estimatePrice(menu, college, cardInfo) : null;
+        const price = menu ? estimatePrice(menu, college) : null;
         const fav = isFavorite(v.storeId);
         const open = openMaps.includes(v.storeId);
         const cafe = industryOf(v) === '카페·베이커리';
@@ -182,13 +178,10 @@ export default function PartnerStoresPage() {
             <div className="ps-ticket-main">
               <span className="ps-ticket-label">
                 {outside ? '내 소속 혜택은 없는 가게예요' : current ? `${current.label} 학생 혜택` : variants > 1 ? '단과대마다 달라요' : '단과대 공통 혜택'}
-                <span className={`ps-status is-${cardStatus}`}>{STATUS_LABELS[cardStatus]}</span>
+                {v.dataMode === 'demo' && <span className="ps-status is-demo">예시 혜택</span>}
               </span>
               <strong>{outside ? (key ? v.benefits[key] : '') : key ? v.benefits[key] : '혜택 확인 필요'}</strong>
-              <p>{cardInfo?.condition ?? v.condition}</p>
-            </div>
-            <div className="ps-ticket-stub" aria-label={`${colleges.length}개 단과대 대상`}>
-              <b>{colleges.length}</b><span>개 단과대</span>
+              <p>{v.condition}</p>
             </div>
           </div>
 
@@ -214,8 +207,7 @@ export default function PartnerStoresPage() {
       })}</ul>}
     </section>
 
-    <aside className="ps-guide"><span className="ps-guide-icon"><ExtraIcon name="info" /></span><div><b>방문 전 확인하세요</b><p>내가 혜택 대상인지 · 학생증이 필요한지 · 적용 조건과 기간이 맞는지</p></div></aside>
-    <p className="ps-disclaimer">거리는 월계1동 기준점에서 잰 직선거리예요. 광운대학교 공식 서비스가 아니며, 학생회 공지와 가게 확인을 거쳐 정보를 제공합니다.</p>
+    <p className="ps-disclaimer">광운대학교 공식 서비스가 아니에요. 학생 인증 없이 혜택 정보만 보여주니, 방문 전 대상·학생증 필요 여부·조건을 가게에 확인해 주세요. 거리는 월계1동 기준점에서 잰 직선거리예요.</p>
 
   </div>;
 }

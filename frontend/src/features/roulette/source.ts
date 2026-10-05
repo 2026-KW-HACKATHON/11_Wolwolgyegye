@@ -27,7 +27,6 @@ async function fetchLinksByMenu(menuName: string): Promise<RouletteStoreLink[]> 
         id: m.id, menuName, storeId: m.store_id,
         desc: `${m.name} ${m.price.toLocaleString('ko-KR')}원`,
         tagLabel: subCategoryById(m.type_id)?.label ?? '메뉴',
-        emoji: '🍽️',
       }];
     });
   } catch {

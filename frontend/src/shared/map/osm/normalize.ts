@@ -67,9 +67,8 @@ export function normalizeRailway(feature: Feature): RailwayInfo {
   };
 }
 
-/** 노선 색이 없을 때 쓰는 색 */
-const DEFAULT_LINE_COLOUR = '#8a7b6e';
-const colourOf = (v: unknown): string => (/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(clean(v)) ? clean(v) : DEFAULT_LINE_COLOUR);
+/** 데이터의 노선 색(hex 형식)만 받는다. 없거나 형식이 다르면 '' → 그리는 쪽이 theme.css 의 --map-line-default 를 쓴다 */
+const colourOf = (v: unknown): string => (/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(clean(v)) ? clean(v) : '');
 
 /** 노선 칩에 넣을 짧은 이름: "1호선" → "1", "경춘선" → "경춘" */
 export const shortLineLabel = (label: string): string => (/^\d+호선$/.test(label) ? label.replace('호선', '') : label.replace(/선$/, '').slice(0, 2));
@@ -77,6 +76,7 @@ export const shortLineLabel = (label: string): string => (/^\d+호선$/.test(lab
 export interface SubwayLineInfo {
   /** 예: 1호선, 6호선, 경춘선 */
   label: string;
+  /** 노선 색 (hex). 데이터에 없으면 '' */
   colour: string;
 }
 

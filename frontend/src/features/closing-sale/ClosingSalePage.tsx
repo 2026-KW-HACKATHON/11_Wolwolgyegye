@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../core/auth/AuthContext';
 import { getSupabaseClient } from '../../core/supabase/client';
 import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
@@ -7,31 +7,9 @@ import { useShell } from '../../layout/AppShell/ShellContext';
 import { SALE_SORTS, toneForStore, type SaleSortKey } from './constants';
 import { discountSortValue, formatSaleDiscount } from './discount';
 import { fetchClosingSales } from './source';
+import { TICK_MS, URGENT_MINUTES, formatLeft, hhmm, minutesLeft } from './time';
 import type { ClosingSaleView } from './types';
 import './closing-sale.css';
-
-/** 남은 시간 표시를 1분마다 새로 계산한다 */
-const TICK_MS = 30_000;
-/** 이 시간보다 적게 남으면 "곧 마감" 으로 강조한다 */
-const URGENT_MINUTES = 60;
-
-function minutesLeft(sale: ClosingSaleView, now: number) {
-  return Math.floor((new Date(sale.closeAt).getTime() - now) / 60_000);
-}
-
-/** 42 -> "42분", 78 -> "1시간 18분" */
-function formatLeft(minutes: number) {
-  if (minutes < 60) return `${minutes}분`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m === 0 ? `${h}시간` : `${h}시간 ${String(m).padStart(2, '0')}분`;
-}
-
-/** 마감 시각을 "18:30" 으로 */
-function formatCloseTime(sale: ClosingSaleView) {
-  const at = new Date(sale.closeAt);
-  return `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`;
-}
 
 function sortSales(sales: ClosingSaleView[], key: SaleSortKey) {
   const sorted = [...sales];
@@ -45,7 +23,6 @@ function sortSales(sales: ClosingSaleView[], key: SaleSortKey) {
  * /closing-sale?sale=ID 로 들어오면 그 세일을 바로 연다. (홈 화면의 세일 카드에서 연결)
  */
 export default function ClosingSalePage() {
-  const navigate = useNavigate();
   const active = usePageActive();
   const [params, setParams] = useSearchParams();
   const { userId } = useAuth();
@@ -97,7 +74,6 @@ export default function ClosingSalePage() {
   }, [active, params, sales, setParams, openSale]);
 
   /** 배너에 보여줄 진행 중인 세일 가게 수 (한 가게가 여러 세일을 올려도 한 곳으로 센다) */
-  const activeStoreCount = useMemo(() => new Set(visible.map((sale) => sale.storeId)).size, [visible]);
 
   async function toggleLike(id: string) {
     if (!userId) return;
@@ -119,17 +95,6 @@ export default function ClosingSalePage() {
           지금, 동네 가게의 <em>마감세일</em>을 만나보세요
         </h1>
         <p className="cs-hero-sub">남은 시간 안에만 받을 수 있는 신선한 할인 혜택이에요.</p>
-        {sales !== null && (
-          <p className="cs-hero-count" role="status">
-            {activeStoreCount > 0 ? (
-              <>
-                지금 <b>{activeStoreCount}곳</b>에서 마감세일 진행 중
-              </>
-            ) : (
-              '현재는 진행중인 세일이 없어요'
-            )}
-          </p>
-        )}
         <span className="cs-hero-mark" aria-hidden="true">
           %
         </span>
@@ -213,7 +178,7 @@ export default function ClosingSalePage() {
                       >
                         {liked ? '♥' : '♡'} {sale.likeCount}명이 관심
                       </button>
-                      <span className="cs-close-time">{formatCloseTime(sale)} 마감</span>
+                      <span className="cs-close-time">{hhmm(sale.closeAt)} 마감</span>
                     </div>
                   </div>
                 </li>
@@ -222,15 +187,6 @@ export default function ClosingSalePage() {
           </ul>
         )}
       </section>
-
-      <p className="cs-tip">
-        <b>💡 헛걸음 방지</b> 마감 시간이 가까우면 재고가 빨리 떨어질 수 있어요. 출발 전에 가게에
-        한 번 확인해 보세요.
-      </p>
-
-      <button type="button" className="cs-map-link" onClick={() => navigate('/recommend')}>
-        지도에서 세일 매장 보기 →
-      </button>
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { useActivePath } from '../../core/router/useActivePath';
 import type { CategorySupport, GeoPoint, Store } from '../../core/types/place';
 import Icon from '../../shared/Icon';
 import MainMap, { type MainMapHandle, type MapInsets } from '../../shared/map/MainMap';
+import { usePalette } from '../../core/theme/palette';
 import { MAP_CENTER } from '../../shared/map/vworld/mapExtent';
 import { useToast } from '../../shared/toast/ToastContext';
 import CategoryNav from '../CategoryNav/CategoryNav';
@@ -88,6 +89,7 @@ export default function AppShell() {
 
   const stageRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MainMapHandle>(null);
+  const palette = usePalette();
   const secondaryRef = useRef<HTMLElement>(null);
   const [stage, setStage] = useState({ width: 0, height: 0 });
   const [panelStates, setPanelStates] = useState<Record<string, PanelState>>({});
@@ -226,7 +228,7 @@ export default function AppShell() {
     const moveTo = (point: GeoPoint, notice?: string) => {
       mapRef.current?.showMyLocation(point);
       const moved = mapRef.current?.centerOn(point, getInsets());
-      if (!moved) showToast('지도 미리보기에서는 위치 이동이 표시되지 않아요');
+      if (!moved) showToast('지도를 불러오지 못해 위치를 표시할 수 없어요');
       else if (notice) showToast(notice);
     };
     if (!navigator.geolocation) {
@@ -262,7 +264,6 @@ export default function AppShell() {
   }, [selectAnyStore, revealMap]);
 
   const api = useMemo<ShellApi>(() => ({
-    showStoreOnMap: (storeId) => openStore(storeId),
     openStore,
     setActivePanelState(state) {
       if (activeId) setPanelState(activeId, state);
@@ -285,6 +286,7 @@ export default function AppShell() {
           data-panel-state={activeState}
         >
           <MainMap
+            key={palette /* 지도는 만들 때 색을 한 번 읽으므로 팔레트가 바뀌면 다시 만든다 */}
             ref={mapRef}
             stores={mapStores}
             places={places}

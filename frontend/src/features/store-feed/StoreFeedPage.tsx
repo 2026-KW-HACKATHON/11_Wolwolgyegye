@@ -118,7 +118,7 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
     </section>
 
     <section className="sf-feed-section" aria-label={copy.label + ' 게시글'}>
-      <div className="sf-feed-heading"><div><span className="sf-eyebrow">FROM OUR NEIGHBORS</span><h2>사장님이 전하는 소식</h2></div></div>
+      <div className="sf-feed-heading"><h2>사장님이 전하는 소식</h2></div>
       <div className="sf-toolbar">
         <div className="sf-filters" aria-label="분류">{['전체', ...FEED_CATEGORIES[kind]].map((c) => <button key={c} type="button" aria-pressed={category === c} className={category === c ? 'is-active' : ''} onClick={() => setCategory(c)}>{c}</button>)}</div>
         <div className="sf-options"><button type="button" className={`sf-saved-toggle ${onlyLiked ? 'is-active' : ''}`} aria-pressed={onlyLiked} onClick={() => setOnlyLiked(!onlyLiked)}>♡ 찜한 글</button></div>
@@ -131,19 +131,18 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
           return <li key={post.id} className="sf-card">
             <button type="button" className="sf-card-open" aria-label={post.title + ' 상세보기'} onClick={() => openPost(post)}>
               <PostVisual post={post} />
-              <div className="sf-card-content"><div className="sf-byline"><span className="sf-avatar">{store?.name.slice(0, 1) ?? '가'}</span><span>{store?.name ?? '가게'}</span><span className="sf-owner-tag">사장님</span></div>
+              <div className="sf-card-content"><div className="sf-byline"><span className="sf-avatar">{store?.name.slice(0, 1) ?? '가'}</span><span>{store?.name ?? '가게'}</span></div>
                 <h3>{post.title}</h3><p className="sf-excerpt">{post.description}</p><p className="sf-schedule"><Icon name={kind === 'space-rental' ? 'pin' : 'calendar'} />{kind === 'space-rental' ? store?.address : scheduleLabel(post)}</p><div className="sf-price-row"><strong>{formatPrice(post)}</strong><span className={`sf-status ${available ? '' : 'is-closed'}`}>{available ? '모집 중' : '모집 마감'}</span></div>
               </div>
             </button>
-            <div className="sf-card-footer"><span>{kind === 'space-rental' ? '최대' : '정원'} {post.capacity}명 · {store?.isMock ? '예시 글' : '사장님 글'}</span><button type="button" className={`sf-like ${likes.includes(post.id) ? 'is-liked' : ''}`} aria-label={post.title + ' 찜'} aria-pressed={likes.includes(post.id)} onClick={() => void toggleLike(post.id)}>{likes.includes(post.id) ? '♥' : '♡'}</button></div>
+            <div className="sf-card-footer"><span>{kind === 'space-rental' ? '최대' : '정원'} {post.capacity}명{store?.isMock ? ' · 예시 글' : ''}</span><button type="button" className={`sf-like ${likes.includes(post.id) ? 'is-liked' : ''}`} aria-label={post.title + ' 찜'} aria-pressed={likes.includes(post.id)} onClick={() => void toggleLike(post.id)}>{likes.includes(post.id) ? '♥' : '♡'}</button></div>
           </li>;
         })}
       </ul>}
     </section>
-    <aside className="sf-bottom-note"><Icon name="storefront" /><div><strong>가게의 또 다른 매력을 나눠주세요.</strong><p>비어 있는 공간도, 사장님의 노하우도 이웃에게는 특별한 경험이 됩니다.</p></div>{canWrite && <button type="button" className="sf-text-btn" onClick={() => setEditing(null)}>글쓰기 →</button>}</aside>
 
     {active && canWrite && editing !== undefined && <FeedDialog title={editing ? copy.label + ' 글 수정' : copy.label + ' 글쓰기'} onDismiss={() => setEditing(undefined)}>
-      <PostForm kind={kind} existing={editing ?? undefined} onCancel={() => setEditing(undefined)} onSaved={(post) => { setEditing(undefined); resetFilters(); setSort('latest'); void reload().then(() => openPost(post)); showToast('게시글을 DB에 저장했어요.'); }} />
+      <PostForm kind={kind} existing={editing ?? undefined} onCancel={() => setEditing(undefined)} onSaved={(post) => { setEditing(undefined); resetFilters(); setSort('latest'); void reload().then(() => openPost(post)); showToast('게시글을 올렸어요.'); }} />
     </FeedDialog>}
   </div>;
 }

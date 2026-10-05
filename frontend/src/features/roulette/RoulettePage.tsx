@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useShell } from '../../layout/AppShell/ShellContext';
 import { MENUS, MENU_PRESETS, menusForPreset } from './constants';
 import { fetchStoresByMenu } from './source';
 import type { RouletteStoreView, WheelMenu } from './types';
@@ -13,7 +13,8 @@ function loadMenus(): WheelMenu[] {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return menusForPreset('all');
     const saved = JSON.parse(raw) as WheelMenu[];
-    return Array.isArray(saved) ? saved : menusForPreset('all');
+    // 예전에 저장한 메뉴는 색이 hex 로 남아 있어서, 같은 id 의 기본 메뉴로 바꿔 지금 테마 색을 쓴다
+    return Array.isArray(saved) ? saved.map((m) => MENUS.find((d) => d.id === m.id) ?? m) : menusForPreset('all');
   } catch {
     return menusForPreset('all');
   }
@@ -59,7 +60,7 @@ function menuSetKey(menus: WheelMenu[]) {
 }
 
 export default function RoulettePage() {
-  const navigate = useNavigate();
+  const { openStore } = useShell();
   const [menus, setMenus] = useState<WheelMenu[]>(loadMenus);
   const [editing, setEditing] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -74,7 +75,7 @@ export default function RoulettePage() {
   const wheelBackground = useMemo(
     () =>
       menus.length === 0
-        ? 'var(--color-surface-alt, #f3ece3)'
+        ? 'var(--color-surface-alt)'
         : `conic-gradient(${menus
             .map((m, i) => `${m.color} ${i * segmentAngle}deg ${(i + 1) * segmentAngle}deg`)
             .join(', ')})`,
@@ -300,16 +301,11 @@ export default function RoulettePage() {
       {result && (
         <section className="rl-stores">
           <div className="rl-stores-head">
-            <div>
-              <h2 className="rl-stores-title">
-                {result.name}
-                {objectParticle(result.name)} 파는 가까운 가게
-              </h2>
-              <p className="rl-stores-sub">선택한 메뉴와 비슷한 메뉴를 즐길 수 있는 곳이에요.</p>
-            </div>
-            <button type="button" className="rl-map-link" onClick={() => navigate('/recommend')}>
-              지도에서 보기 →
-            </button>
+            <h2 className="rl-stores-title">
+              {result.name}
+              {objectParticle(result.name)} 파는 가까운 가게
+            </h2>
+            <p className="rl-stores-sub">메뉴 이름에 '{result.name}' 글자가 든 가게예요. 누르면 지도에서 보여드려요.</p>
           </div>
 
           {stores === null && <p className="rl-stores-empty">가게를 찾는 중이에요…</p>}
@@ -324,29 +320,25 @@ export default function RoulettePage() {
           {stores !== null && stores.length > 0 && (
             <ul className="rl-store-grid">
               {stores.map((store) => (
-                <li key={store.id} className="rl-store-card">
+                <li key={store.id}>
+                  <button type="button" className="rl-store-card" onClick={() => openStore(store.storeId)}>
                   <div
                     className="rl-store-thumb"
                     style={{
-                      background: `linear-gradient(160deg, ${result.color} 0%, ${result.color}55 100%)`,
+                      background: `linear-gradient(160deg, ${result.color} 0%, color-mix(in srgb, ${result.color} 33%, transparent) 100%)`,
                     }}
                   >
-                    {store.emoji}
+                    {result.emoji}
                   </div>
                   <div className="rl-store-body">
                     <span className="rl-store-tag">{store.tagLabel}</span>
                     <h3 className="rl-store-name">{store.store.name}</h3>
                     <p className="rl-store-desc">{store.desc}</p>
                     <div className="rl-store-foot">
-                      {store.store.rating !== undefined && (
-                        <span className="rl-store-rating">★ {store.store.rating}</span>
-                      )}
-                      {store.store.reviewCount !== undefined && (
-                        <span className="rl-store-meta">리뷰 {store.store.reviewCount}</span>
-                      )}
                       <span className="rl-store-meta">도보 {store.walkMinutes}분</span>
                     </div>
                   </div>
+                  </button>
                 </li>
               ))}
             </ul>

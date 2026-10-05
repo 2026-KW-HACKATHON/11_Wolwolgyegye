@@ -12,32 +12,31 @@ interface PostBase {
   /** 공간은 시간당, 클래스는 1인당 원 단위 금액 */
   price: number;
   capacity: number;
+  /** 문의 번호 = 가게 전화(stores.phone). 글마다 따로 저장하지 않는다 */
   contactPhone: string;
   imageUrl: string;
   /** 이용 안내 / 준비물 / 포함 사항 */
   notes: string;
   createdAt: string;
   status: FeedStatus;
-  /** 공간대여·원데이클래스 DB에서 읽은 글 */
-  origin: 'db';
 }
 
 export interface SpacePost extends PostBase {
   kind: 'space-rental';
   schedule: string;
-  minimumHours: number;
+  /** 최소 이용 시간. DB min_hours 가 비어 있으면 null (표시 안 함) */
+  minimumHours: number | null;
 }
 
 export interface ClassPost extends PostBase {
   kind: 'oneday-class';
   startsAt: string;
   durationMinutes: number;
-  /** 현재 신청 인원 (DB 글만. capacity 가 마감 인원) */
-  enrolled?: number;
 }
 
 export type FeedPost = SpacePost | ClassPost;
-export type PostInput = Omit<SpacePost, 'id' | 'createdAt' | 'origin'> | Omit<ClassPost, 'id' | 'createdAt' | 'origin'>;
+type InputOmit = 'id' | 'createdAt' | 'contactPhone';
+export type PostInput = Omit<SpacePost, InputOmit> | Omit<ClassPost, InputOmit>;
 
 export const FEED_CATEGORIES: Record<FeedKind, readonly string[]> = {
   'space-rental': ['모임·파티', '스터디·회의', '촬영·작업'],

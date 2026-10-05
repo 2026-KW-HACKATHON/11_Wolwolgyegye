@@ -3,23 +3,23 @@
    제휴 태그의 파란색(--color-tag-partner-*)을 혜택 강조색으로 쓴다.
    ========================================================================== */
 .ps-page {
-  --ps-ink: var(--color-text, #2b1f17);
-  --ps-muted: #6f655c;
-  --ps-line: var(--color-border, #e7dfd4);
-  --ps-paper: var(--color-surface, #fff);
-  --ps-cream: var(--color-bg, #faf6f0);
-  --ps-cream-2: var(--color-surface-alt, #f3ece3);
-  --ps-brand: var(--color-brand, #802d40);
-  --ps-brand-soft: var(--color-brand-soft, #f6e9e9);
-  --ps-blue: var(--color-tag-partner-text, #2e6da4);
-  --ps-blue-soft: var(--color-tag-partner-bg, #dceaf7);
+  --ps-ink: var(--color-text);
+  --ps-muted: var(--color-text-muted);
+  --ps-line: var(--color-border);
+  --ps-paper: var(--color-surface);
+  --ps-cream: var(--color-bg);
+  --ps-cream-2: var(--color-surface-alt);
+  --ps-brand: var(--color-brand);
+  --ps-brand-soft: var(--color-brand-soft);
+  --ps-blue: var(--color-tag-partner-text);
+  --ps-blue-soft: var(--color-tag-partner-bg);
   --ps-blue-pale: color-mix(in srgb, var(--ps-blue-soft) 45%, var(--ps-paper));
-  --ps-green: var(--color-neighborhood, #245c4a);
-  --ps-green-soft: var(--color-neighborhood-soft, #e8f0e6);
-  --ps-gold: var(--color-tag-coupon-text, #9c6b12);
-  --ps-gold-soft: var(--color-tag-coupon-bg, #fbe7c6);
-  --ps-like: var(--color-like, #c96a6a);
-  --ps-shadow: 0 6px 22px rgba(59, 48, 42, 0.07);
+  --ps-green: var(--color-neighborhood);
+  --ps-green-soft: var(--color-neighborhood-soft);
+  --ps-gold: var(--color-tag-coupon-text);
+  --ps-gold-soft: var(--color-tag-coupon-bg);
+  --ps-like: var(--color-like);
+  --ps-shadow: var(--shadow-soft);
   max-width: 1180px;
   margin: 0 auto;
   padding-bottom: 24px;
@@ -32,7 +32,6 @@
 .ps-page :is(button, a, input, select):focus-visible { outline: 3px solid var(--ps-brand); outline-offset: 2px; }
 .ps-page .icon { font-size: 1.15em; }
 .ps-sr { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-.ps-eyebrow { display: inline-flex; align-items: center; gap: 6px; color: var(--ps-blue); font-size: 0.82rem; font-weight: 800; }
 
 /* --- 내 소속 --- */
 .ps-audience { margin-bottom: 14px; }
@@ -57,15 +56,15 @@
   white-space: nowrap;
 }
 .ps-colleges button span { min-width: 20px; padding: 1px 6px; border-radius: 999px; background: var(--ps-cream-2); font-size: 0.72rem; text-align: center; }
-.ps-colleges button.is-on { background: var(--ps-brand); border-color: var(--ps-brand); color: #fff; }
-.ps-colleges button.is-on span { background: rgba(255, 255, 255, 0.22); color: #fff; }
+.ps-colleges button.is-on { background: var(--ps-brand); border-color: var(--ps-brand); color: var(--color-on-dark); }
+.ps-colleges button.is-on span { background: var(--color-on-dark-soft); color: var(--color-on-dark); }
 
 /* --- 검색·필터 --- */
 .ps-tools { display: flex; gap: 8px; }
 .ps-search { display: flex; flex: 1; align-items: center; gap: 8px; min-width: 0; padding: 0 14px; border: 1px solid var(--ps-line); border-radius: 999px; background: var(--ps-paper); color: var(--ps-muted); }
 .ps-search input { width: 100%; min-width: 0; min-height: 48px; border: 0; background: transparent; color: var(--ps-ink); font-size: 0.9rem; }
 .ps-search input:focus { outline: none; }
-.ps-search input::placeholder { color: #857a70; }
+.ps-search input::placeholder { color: var(--color-text-faint); }
 .ps-search:focus-within { border-color: var(--ps-brand); }
 .ps-saved { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 76px; min-height: 50px; padding: 0 14px; border: 1px solid var(--ps-line); border-radius: 999px; background: var(--ps-paper); color: var(--ps-muted); font-size: 0.88rem; font-weight: 700; }
 .ps-saved.is-on { background: color-mix(in srgb, var(--ps-like) 12%, var(--ps-paper)); border-color: color-mix(in srgb, var(--ps-like) 45%, transparent); color: var(--ps-like); }
@@ -161,41 +160,23 @@
 .ps-name-hint .icon { font-size: 0.95rem; }
 .ps-name-chevron { display: inline-flex; transition: transform 0.2s ease; }
 .ps-name[aria-expanded='true'] .ps-name-chevron { transform: rotate(180deg); }
-.ps-name[aria-expanded='true'] .ps-name-hint { background: var(--ps-green); color: #fff; }
+.ps-name[aria-expanded='true'] .ps-name-hint { background: var(--ps-green); color: var(--color-on-dark); }
 
-.ps-heart { display: grid; flex-shrink: 0; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; color: #8b8076; font-size: 1.05rem; }
+.ps-heart { display: grid; flex-shrink: 0; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; color: var(--ps-muted); font-size: 1.05rem; }
 .ps-heart.is-on { color: var(--ps-like); background: color-mix(in srgb, var(--ps-like) 12%, transparent); }
 
 /* 혜택 티켓 */
 .ps-ticket {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 76px;
   border-radius: 16px;
   background: var(--ps-blue-pale);
 }
-.ps-ticket::before, .ps-ticket::after {
-  content: '';
-  position: absolute;
-  right: 67px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--ps-paper);
-}
-.ps-ticket::before { top: -9px; }
-.ps-ticket::after { bottom: -9px; }
 .ps-ticket-main { display: grid; gap: 4px; padding: 14px 14px 14px 16px; min-width: 0; }
 .ps-ticket-label { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; color: var(--ps-blue); font-size: 0.78rem; font-weight: 800; }
 .ps-ticket-main strong { color: var(--ps-blue); font-size: 1.32rem; font-weight: 900; letter-spacing: -0.035em; line-height: 1.3; word-break: keep-all; }
 .ps-ticket-main p { margin: 0; color: var(--ps-muted); font-size: 0.82rem; line-height: 1.55; }
-.ps-ticket-stub { display: grid; align-content: center; justify-items: center; gap: 2px; border-left: 2px dashed color-mix(in srgb, var(--ps-blue) 30%, transparent); color: var(--ps-blue); text-align: center; }
-.ps-ticket-stub b { font-size: 1.5rem; font-weight: 900; line-height: 1; }
-.ps-ticket-stub span { font-size: 0.7rem; font-weight: 700; line-height: 1.3; }
 
+.ps-condition { margin: 0; font-size: 0.86rem; line-height: 1.65; }
 .ps-status { flex-shrink: 0; padding: 2px 7px; border: 1px solid color-mix(in srgb, var(--ps-blue) 28%, transparent); border-radius: 6px; background: var(--ps-paper); color: var(--ps-muted); font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
-.ps-status.is-verified { color: #276747; border-color: #9fcab4; }
-.ps-status.is-ended { color: #95484a; border-color: #ddb1b2; }
 
 .ps-price { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; padding: 0 2px; font-size: 0.86rem; }
 .ps-price small { color: var(--ps-muted); font-size: 0.72rem; }
@@ -224,27 +205,20 @@
 .ps-empty > span { display: grid; place-items: center; color: var(--ps-muted); font-size: 2rem; }
 .ps-empty h3 { margin: 12px 0 8px; font-size: 1rem; }
 .ps-empty p { max-width: 420px; margin: 0 auto 18px; color: var(--ps-muted); font-size: 0.86rem; line-height: 1.7; }
-.ps-empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 
 .ps-primary, .ps-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 48px; padding: 12px 16px; border-radius: 14px; font-size: 0.88rem; font-weight: 800; line-height: 1.4; text-decoration: none; }
-.ps-primary { background: var(--ps-brand); border: 1px solid var(--ps-brand); color: #fff; }
+.ps-primary { background: var(--ps-brand); border: 1px solid var(--ps-brand); color: var(--color-on-dark); }
 .ps-secondary { background: var(--ps-paper); border: 1px solid var(--ps-line); color: var(--ps-ink); }
 .ps-full { width: 100%; }
 
-.ps-guide { display: flex; align-items: flex-start; gap: 12px; margin-top: 24px; padding: 16px 18px; border-radius: 18px; background: var(--ps-cream); }
-.ps-guide-icon { color: var(--ps-blue); font-size: 1.2rem; }
-.ps-guide b { font-size: 0.9rem; }
-.ps-guide p { margin: 4px 0 0; color: var(--ps-muted); font-size: 0.82rem; line-height: 1.6; }
 .ps-disclaimer { margin: 14px 0 0; color: var(--ps-muted); font-size: 0.76rem; line-height: 1.7; }
 .ps-disclaimer b { margin-right: 6px; padding: 1px 6px; border-radius: 6px; background: var(--ps-gold-soft); color: var(--ps-gold); font-size: 0.7rem; }
 
 /* --- 자세히 보기 창 --- */
 .ps-page .sh-sheet { width: min(540px, calc(100% - 32px)); color: var(--ps-ink); background: var(--ps-paper); }
 .ps-page .sh-close { width: 44px; height: 44px; background: var(--ps-cream-2); color: var(--ps-ink); }
-.ps-demo { display: flex; align-items: baseline; gap: 8px; padding: 10px 14px; border-radius: 12px; background: var(--ps-gold-soft); color: #6b5220; font-size: 0.8rem; line-height: 1.6; }
+.ps-demo { display: flex; align-items: baseline; gap: 8px; padding: 10px 14px; border-radius: 12px; background: var(--ps-gold-soft); color: var(--ps-gold); font-size: 0.8rem; line-height: 1.6; }
 .ps-demo b { flex-shrink: 0; }
-.ps-detail-heading { margin: 20px 0 16px; }
-.ps-detail-heading h3 { margin: 4px 0 0; font-size: 1.6rem; font-weight: 900; letter-spacing: -0.04em; }
 .ps-detail-audience { display: grid; gap: 8px; margin-bottom: 14px; font-size: 0.84rem; font-weight: 800; }
 .ps-detail-audience select { min-height: 48px; padding: 0 12px; border: 1px solid var(--ps-line); border-radius: 12px; background: var(--ps-paper); color: var(--ps-ink); font-size: 0.9rem; }
 .ps-detail-offer { padding: 18px; border-radius: 16px; background: var(--ps-blue-pale); }
@@ -258,17 +232,9 @@
 .ps-detail-section { padding: 20px 0; border-bottom: 1px solid var(--ps-line); }
 .ps-detail-section h4 { margin: 0 0 12px; font-size: 0.98rem; }
 .ps-detail-section h4 > span { margin-left: 5px; color: var(--ps-muted); font-size: 0.72rem; font-weight: 500; }
-.ps-detail-map { margin-bottom: 14px; }
-.ps-facts { display: grid; gap: 10px; margin: 0; font-size: 0.86rem; line-height: 1.65; }
-.ps-facts > div { display: grid; grid-template-columns: 76px 1fr; gap: 12px; }
-.ps-facts dt { color: var(--ps-muted); }
-.ps-facts dd { margin: 0; overflow-wrap: anywhere; }
-.ps-facts a { color: var(--ps-blue); text-decoration: underline; }
 .ps-note { margin: 12px 0 0; color: var(--ps-muted); font-size: 0.78rem; line-height: 1.75; }
 .ps-menu-list { margin: 0; padding: 0; list-style: none; }
 .ps-menu-list li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 10px 0; font-size: 0.9rem; }
-.ps-contact { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
-.ps-contact .ps-secondary { padding: 10px 6px; font-size: 0.82rem; }
 .ps-stamp-link { display: flex; align-items: center; gap: 12px; margin: 20px 0 0; padding: 14px; border-radius: 16px; background: var(--ps-brand-soft); color: var(--ps-brand); text-decoration: none; }
 .ps-stamp-link-icon { display: grid; flex-shrink: 0; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--ps-paper); font-size: 1.1rem; }
 .ps-stamp-link > span:nth-child(2) { flex: 1; }
@@ -313,4 +279,3 @@
 
 /* 2차 탭 안의 제휴 혜택 묶음 (PartnerSection) */
 .ps-page--detail { max-width: none; margin: 0; padding: 0 16px 8px; }
-.ps-page--detail .ps-detail-heading { margin-top: 8px; }

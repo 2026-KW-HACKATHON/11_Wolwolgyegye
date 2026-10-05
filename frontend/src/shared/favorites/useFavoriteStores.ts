@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../core/auth/AuthContext';
 import { getSupabaseClient } from '../../core/supabase/client';
+import { useToast } from '../toast/ToastContext';
 
 /**
  * 가게 찜(관심) 목록. 스탬프·제휴 가게 화면이 함께 쓰며, 같은 가게는 어느 화면에서 찜해도 같이 바뀐다.
  * 로그인 사용자의 가게 찜을 Supabase store_favorites에서 공유한다.
+ * 로그아웃 상태에서 누르면 로그인 안내 토스트를 띄우고 null 을 돌려준다 (찜했으면 true, 해제했으면 false).
  */
 const EVENT = 'wol-favorite-stores';
 
 export function useFavoriteStores() {
   const { userId } = useAuth();
+  const showToast = useToast();
   const [ids, setIds] = useState<string[]>([]);
 
   const load = useCallback(async () => {
@@ -25,8 +28,8 @@ export function useFavoriteStores() {
     return () => window.removeEventListener(EVENT, sync);
   }, [load]);
 
-  const toggle = useCallback(async (storeId: string) => {
-    if (!userId) return;
+  const toggle = useCallback(async (storeId: string): Promise<boolean | null> => {
+    if (!userId) { showToast('로그인하면 가게를 찜할 수 있어요'); return null; }
     const exists = ids.includes(storeId);
     setIds((current) => exists ? current.filter((id) => id !== storeId) : [...current, storeId]);
     const query = exists
@@ -35,7 +38,8 @@ export function useFavoriteStores() {
     const { error } = await query;
     if (error) await load();
     else window.dispatchEvent(new Event(EVENT));
-  }, [ids, load, userId]);
+    return !exists;
+  }, [ids, load, showToast, userId]);
 
   return { isFavorite: (storeId: string) => ids.includes(storeId), toggle };
 }
