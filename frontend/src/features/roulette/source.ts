@@ -67,10 +67,8 @@ async function fetchSpecialtyStores({ keywords, storeNames = [], industries = []
 async function fetchLinksByMenu(menu: WheelMenu & Partial<MenuMatch>): Promise<RouletteStoreLink[]> {
   const match = matchOf(menu);
   if (!match.keywords.length) return [];
-  const [menuHits, specialty] = await Promise.all([
-    fetchMenuHits(match, menu.name).catch(() => []),
-    fetchSpecialtyStores(match).catch(() => []),
-  ]);
+  // 둘 중 하나라도 못 읽으면 오류로 넘긴다 (일부만 보여주면 "가게 없음" 으로 오해한다)
+  const [menuHits, specialty] = await Promise.all([fetchMenuHits(match, menu.name), fetchSpecialtyStores(match)]);
 
   const links = new Map(menuHits.map((l) => [l.storeId, l]));
   const nameWords = [...match.keywords, ...(match.storeNames ?? [])];

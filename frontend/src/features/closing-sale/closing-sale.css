@@ -267,6 +267,27 @@
   font-size: 0.85rem;
 }
 
+/* 불러오기 실패: "세일 없음" 과 구분되게 제목과 다시 시도 버튼을 둔다 */
+.cs-load-error strong {
+  display: block;
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.cs-load-error p {
+  margin: 4px 0 12px;
+}
+
+.cs-load-error button {
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 700;
+}
+
 /* 모바일: 배너를 절반 정도 높이로 줄인다 */
 @container (max-width: 719px) {
   .cs-hero {

@@ -81,6 +81,9 @@ export default function RoulettePage() {
   const [spinning, setSpinning] = useState(false);
   const [resultIndex, setResultIndex] = useState<number | null>(null);
   const [stores, setStores] = useState<RouletteStoreView[] | null>(null);
+  /** 가게를 못 찾아왔으면 true ("가게 없음" 과 구분해서 다시 시도를 보여준다) / 다시 시도 횟수 */
+  const [storesFailed, setStoresFailed] = useState(false);
+  const [storesRetry, setStoresRetry] = useState(0);
   const [cuisine, setCuisine] = useState<Cuisine>(CUISINES[0].key);
   const wheelZoneRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -116,14 +119,17 @@ export default function RoulettePage() {
 
     let cancelled = false;
     setStores(null);
+    setStoresFailed(false);
     fetchStoresByMenu(result).then((list) => {
       if (!cancelled) setStores(list);
+    }).catch(() => {
+      if (!cancelled) setStoresFailed(true);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [result]);
+  }, [result, storesRetry]);
 
   // 편집기를 열면 원판 아래에 펼쳐진 편집 영역이 화면에 들어오도록 내려준다
   useEffect(() => {
@@ -352,7 +358,15 @@ export default function RoulettePage() {
             <p className="rl-stores-sub">전문점을 먼저, 그다음 메뉴판에 있는 가게를 가까운 순으로 보여드려요. 누르면 지도에서 보여드려요.</p>
           </div>
 
-          {stores === null && <p className="rl-stores-empty">가게를 찾는 중이에요…</p>}
+          {storesFailed && (
+            <div className="rl-stores-empty rl-stores-error" role="alert">
+              <strong>가게를 불러오지 못했어요</strong>
+              <p>인터넷 연결을 확인한 뒤 다시 시도해 주세요.</p>
+              <button type="button" onClick={() => setStoresRetry((n) => n + 1)}>다시 시도</button>
+            </div>
+          )}
+
+          {!storesFailed && stores === null && <p className="rl-stores-empty">가게를 찾는 중이에요…</p>}
 
           {stores !== null && stores.length === 0 && (
             <p className="rl-stores-empty">
