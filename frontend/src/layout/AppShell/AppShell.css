@@ -103,6 +103,51 @@
   50% { opacity: 0.35; }
 }
 
+/* ---- 전체 메뉴 버튼 (세로 화면): 그 외 카테고리 줄 바로 아래 왼쪽 ---- */
+.map-menu-button {
+  position: absolute;
+  z-index: 10;
+  top: calc(env(safe-area-inset-top) + 60px);
+  left: calc(var(--inset-left) + 12px);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-float);
+  font-size: 22px;
+  transition: left var(--overlay-ease);
+}
+
+.map-menu-button .icon {
+  display: block;
+}
+
+/* 하단 바에 없는 탭을 보는 중이면 메뉴 버튼에 표시 (테두리 + 점) */
+.map-menu-button[data-active] {
+  border: 2px solid var(--color-primary);
+  color: var(--color-primary);
+}
+
+.map-menu-button[data-active]::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+.map-menu-button:focus-visible {
+  outline: 3px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
 /* ---- 그 외 카테고리 한 줄 (모든 화면): 보이는 지도 위쪽, 얇게 ---- */
 .map-sub-bar {
   position: absolute;
@@ -123,6 +168,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .map-fabs,
+  .map-menu-button,
   .map-sub-bar {
     transition: none;
   }

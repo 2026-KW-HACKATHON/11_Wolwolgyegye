@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type WheelEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { ALL_PANELS, DEFAULT_LANDING_PATH, USER_PANEL } from '../../core/categories/categories';
-import type { PanelMeta } from '../../core/categories/categoryTypes';
+import { ALL_PANELS, DEFAULT_LANDING_PATH, PORTRAIT_BAR_IDS, USER_PANEL } from '../../core/categories/categories';
+import type { Category, PanelMeta } from '../../core/categories/categoryTypes';
 import { SUB_CATEGORIES, subCategoryById } from '../../core/categories/subCategories';
 import { fetchMapStores, floorLabel, type MapStore, type MapStoreData } from '../../core/supabase/stores';
 import { useVisibleCategories } from '../../core/categories/useVisibleCategories';
@@ -15,6 +15,7 @@ import MainMap, { type MainMapHandle, type MapInsets } from '../../shared/map/Ma
 import { usePalette } from '../../core/theme/palette';
 import { MAP_CENTER } from '../../shared/map/vworld/mapExtent';
 import { useToast } from '../../shared/toast/ToastContext';
+import AllMenu from '../AllMenu/AllMenu';
 import CategoryNav from '../CategoryNav/CategoryNav';
 import KeepAlivePages from '../KeepAlivePages/KeepAlivePages';
 import MapPlaceList, { type MapListItem } from '../MapPlaceList/MapPlaceList';
@@ -69,7 +70,7 @@ const NO_INSETS: MapInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 /**
  * 앱 셸: 지도를 뒤에 깔고, 그 위에 카테고리별 1차 탭을 올린다.
  *
- * - portrait (모바일·태블릿 세로) : [지도 + 1차 탭(아래→위)] / [하단 카테고리 바 + 최우측 유저]
+ * - portrait (모바일·태블릿 세로) : [지도 + 1차 탭(아래→위) + 왼쪽 위 전체 메뉴 버튼] / [하단 카테고리 바(주요 4개, 고정)]
  * - mobile-landscape (모바일 가로) : [지도 + 1차 탭(우→좌)] [우측 카테고리 바 + 최하단 유저]
  * - wide (태블릿 가로·PC)          : [지도 + 1차 탭(우→좌, 눌러서 닫기/열기만)] [우측 카테고리 바(고정) + 맨 아래 유저]
  *
@@ -104,6 +105,7 @@ export default function AppShell() {
   const [focus, setFocus] = useState<(SecondaryFocus & { seq: number }) | null>(null);
   const [locating, setLocating] = useState(false);
   const [listOpen, setListOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // 지도 영역 크기 (1차 탭 크기 계산용)
   useLayoutEffect(() => {
@@ -167,6 +169,16 @@ export default function AppShell() {
   function openPanel(panel: PanelMeta) {
     if (panel.id === activeId) {
       setPanelState(panel.id, (panelStates[panel.id] ?? 'half') === 'closed' ? 'half' : 'closed');
+      return;
+    }
+    navigate(panel.path);
+  }
+
+  /** 전체 메뉴에서 고르기: 메뉴를 닫고 그 탭으로 간다. 지금 탭이면 접지 않고 펼쳐서 보여준다 */
+  function openFromMenu(panel: PanelMeta) {
+    setMenuOpen(false);
+    if (panel.id === activeId) {
+      if ((panelStates[panel.id] ?? 'half') === 'closed') setPanelState(panel.id, 'half');
       return;
     }
     navigate(panel.path);
@@ -294,6 +306,11 @@ export default function AppShell() {
   }
 
   const activeState = panelStates[active.id] ?? 'half';
+  const portrait = mode === 'portrait';
+  // 세로 화면 하단 바는 정해 둔 몇 개만, 나머지는 전체 메뉴로 (PORTRAIT_BAR_IDS 순서대로)
+  const barItems = portrait
+    ? PORTRAIT_BAR_IDS.map((id) => categories.find((c) => c.id === id)).filter((c): c is Category => !!c)
+    : categories;
   const userButton = <UserButton active={active.id === USER_PANEL.id} onClick={() => openPanel(USER_PANEL)} />;
 
   return (
@@ -324,6 +341,20 @@ export default function AppShell() {
             <SubCategoryList items={visibleSubs} selectedId={subId} counts={subCounts} onToggle={toggleSub} />
           </nav>
 
+          {portrait && (
+            <button
+              type="button"
+              className="map-menu-button"
+              aria-label="전체 메뉴"
+              aria-haspopup="dialog"
+              aria-expanded={menuOpen}
+              data-active={!barItems.some((c) => c.id === active.id) || undefined /* 하단 바에 없는 탭을 보는 중 */}
+              onClick={() => setMenuOpen(true)}
+            >
+              <Icon name="menu" />
+            </button>
+          )}
+
           <div className="map-fabs">
             <button type="button" className="map-fab map-fab--text" aria-haspopup="dialog" onClick={() => setListOpen(true)}>
               목록
@@ -341,6 +372,18 @@ export default function AppShell() {
             onClose={() => setListOpen(false)}
           />
 
+          {portrait && (
+            <AllMenu
+              open={menuOpen}
+              items={categories}
+              activeId={active.id}
+              onSelect={openFromMenu}
+              userActive={active.id === USER_PANEL.id}
+              onSelectUser={() => openFromMenu(USER_PANEL)}
+              onClose={() => setMenuOpen(false)}
+            />
+          )}
+
           <SecondaryPanel ref={secondaryRef} place={secondaryPlace} layout={mode} onClose={closeSecondary} focus={focus} />
 
           <KeepAlivePages
@@ -355,12 +398,12 @@ export default function AppShell() {
         </div>
 
         <CategoryNav
-          orientation={mode === 'portrait' ? 'horizontal' : 'vertical'}
-          scrollable={mode !== 'wide'}
-          items={categories}
+          orientation={portrait ? 'horizontal' : 'vertical'}
+          scrollable={mode === 'mobile-landscape'}
+          items={barItems}
           activeId={active.id}
           onSelect={openPanel}
-          userButton={userButton}
+          userButton={portrait ? undefined : userButton}
           userPlacement={mode === 'wide' ? 'end' : 'list'}
         />
       </div>

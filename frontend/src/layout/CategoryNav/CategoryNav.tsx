@@ -6,7 +6,7 @@ import './CategoryNav.css';
 interface CategoryNavProps {
   /** horizontal: 세로 화면 하단 바 / vertical: 가로 화면 우측 바 */
   orientation: 'horizontal' | 'vertical';
-  /** true 면 항목을 밀어서(스와이프) 넘기고, false 면 전부 고정으로 나열한다 (PC·태블릿 가로) */
+  /** true 면 항목을 밀어서(스와이프) 넘기고, false 면 전부 고정으로 나열한다 (PC·태블릿 가로, 세로 화면 하단 바) */
   scrollable: boolean;
   items: Category[];
   activeId: string;
