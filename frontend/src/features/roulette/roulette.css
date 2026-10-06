@@ -182,6 +182,40 @@
   cursor: default;
 }
 
+.rl-cuisine-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 var(--space-2);
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-alt);
+}
+
+.rl-cuisine-tab {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 0;
+  border-radius: var(--radius-pill);
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.rl-cuisine-tab.is-on {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+}
+
+.rl-cuisine-count {
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
 .rl-add-chip {
   padding: 5px 11px;
   border: 1px dashed var(--color-border);
@@ -391,7 +425,7 @@
   font-weight: 800;
 }
 
-.rl-respin {
+.rl-see-stores {
   flex-shrink: 0;
   padding: 9px 18px;
   border-radius: var(--radius-pill);
@@ -402,12 +436,8 @@
   transition: background 0.15s ease;
 }
 
-.rl-respin:hover:not(:disabled) {
+.rl-see-stores:hover {
   background: var(--color-primary-dark);
-}
-
-.rl-respin:disabled {
-  opacity: 0.7;
 }
 
 /* --- 메뉴에 맞는 가게 --- */
