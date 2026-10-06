@@ -18,6 +18,7 @@ export interface WheelMenu {
  * 뽑힌 메뉴로 DB 에서 가게를 찾는 기준.
  * - keywords: store_menus.name 에 들어 있으면 그 메뉴를 파는 가게 (예: "돈까스", "돈가스", "카츠")
  * - exclude: keywords 에 걸렸어도 이 글자가 들면 뺀다 (예: 치킨 → "치킨까스", "치킨마요")
+ * - excludeStoreNames: 업종·가게 이름으로 전문점이 될 때, 가게 이름에 이 글자가 있으면 뺀다 (예: '중국집' 업종의 양꼬치집)
  * - storeNames: 메뉴 이름으로는 너무 넓지만 가게 이름에 있으면 전문점인 단어 (예: "참치" → 이참치. 메뉴의 참치김밥은 아님)
  * - industries: stores.industry (상가정보 원본 업종) 가 이 중 하나면 전문점. 이름이 구체적이라 믿을 수 있는 업종만 (예: '치킨', '빵/도넛')
  * - looseIndustries: 넓거나 잘못 붙는 일이 많은 업종 (예: '돼지고기 구이/찜' 에 닭도리탕집).
@@ -28,6 +29,7 @@ export interface MenuMatch {
   keywords: string[];
   exclude?: string[];
   storeNames?: string[];
+  excludeStoreNames?: string[];
   industries?: string[];
   looseIndustries?: string[];
 }
