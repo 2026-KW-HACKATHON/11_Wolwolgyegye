@@ -47,7 +47,7 @@ export default function ComposeShell({ title, step, total, onBack, submitLabel, 
     <div className="ow-page" role="dialog" aria-modal="true" aria-labelledby={titleId}
       onKeyDown={(e) => { if (e.key === 'Escape') onBack(); }}>
       <header className="ow-top">
-        <button type="button" className="ow-back" aria-label={step > 1 && submitLabel ? '이전 단계' : '사장님 센터로 돌아가기'} onClick={onBack}>
+        <button type="button" className="ow-back" aria-label={step > 1 && submitLabel ? '이전 단계' : '가게 관리로 돌아가기'} onClick={onBack}>
           <Icon name="chevronLeft" />
         </button>
         <h1 id={titleId} ref={headingRef} tabIndex={-1}>{title}</h1>

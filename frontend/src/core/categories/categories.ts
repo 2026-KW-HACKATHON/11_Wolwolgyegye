@@ -71,7 +71,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'owner',
-    name: '사장님',
+    name: '가게 관리',
     path: '/owner',
     icon: 'storefront',
     isFixed: true,
@@ -87,7 +87,7 @@ export const CATEGORIES: Category[] = [
  */
 export const PORTRAIT_BAR_IDS: string[] = ['recommend', 'coupon', 'partner-stores', 'roulette'];
 
-/** 사장님 계정의 세로 화면 하단 바. 사장님 센터와 유저(내 정보) 버튼을 함께 둔다 */
+/** 사장님 계정의 세로 화면 하단 바. 가게 관리(사장님 센터)와 유저(내 정보) 버튼을 함께 둔다 */
 export const OWNER_PORTRAIT_BAR_IDS: string[] = ['recommend', 'coupon', 'owner'];
 
 /**

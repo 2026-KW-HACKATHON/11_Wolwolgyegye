@@ -44,7 +44,7 @@ const COMPOSERS = {
 } as const;
 
 /**
- * 사장님 센터 (1차 탭, 사장님 계정에만 보인다).
+ * 가게 관리 (1차 탭, 사장님 계정에만 보인다).
  * 위에서부터 새 소식 등록 → 운영 중인 소식.
  * 새 소식 등록은 전체 화면 등록 페이지(compose/)로 연다. 주소에 ?new=<종류> 를 붙여서, 뒤로 가기로 닫히게 한다.
  * 등록한 글을 고칠 때는 공간대여·클래스는 그 카테고리 화면의 수정 창, 마감세일·가게 정보는 이 화면의 창(Sheet)을 쓴다.
@@ -120,7 +120,7 @@ export default function OwnerCenterPage() {
       <header className="oc-head">
         <span className="oc-head-icon" aria-hidden="true"><Icon name="storefront" /></span>
         <div className="oc-head-text">
-          <h1>사장님 센터</h1>
+          <h1>가게 관리</h1>
           <p>가게의 새로운 이야기를 등록해보세요.</p>
         </div>
       </header>

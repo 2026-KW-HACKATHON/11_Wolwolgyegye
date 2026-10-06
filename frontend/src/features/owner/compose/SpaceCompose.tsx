@@ -191,7 +191,7 @@ export default function SpaceCompose({ storeId, onClose }: { storeId: string; on
         <DoneStep icon="house" title="공간 대여를 등록했어요" desc="이웃들이 공간 대여 목록과 지도에서 바로 볼 수 있어요."
           actions={[
             { label: '등록한 글 보기', onClick: () => navigate(`/space-rental?post=${savedId}`) },
-            { label: '사장님 센터로', onClick: onClose, primary: true },
+            { label: '가게 관리로', onClick: onClose, primary: true },
           ]} />
       )}
 

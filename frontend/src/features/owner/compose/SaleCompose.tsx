@@ -122,7 +122,7 @@ export default function SaleCompose({ storeId, onClose }: { storeId: string; onC
         <DoneStep icon="bolt" title="마감세일을 등록했어요" desc={`${name} · ${ends ? `${tomorrow ? '내일' : '오늘'} ${end}` : ''}까지 이웃들에게 보여요.`}
           actions={[
             { label: '마감세일 보기', onClick: () => navigate('/closing-sale') },
-            { label: '사장님 센터로', onClick: onClose, primary: true },
+            { label: '가게 관리로', onClick: onClose, primary: true },
           ]} />
       )}
 

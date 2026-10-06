@@ -124,7 +124,7 @@ export default function StampCompose({ storeId, onClose }: { storeId: string; on
         <DoneStep icon="gift" title={exists ? '스탬프판을 고쳤어요' : '스탬프판을 만들었어요'} desc={`스탬프 ${required}개를 모으면 ${reward.trim()}을(를) 드려요.`}
           actions={[
             { label: '스탬프 화면 보기', onClick: () => navigate('/coupon') },
-            { label: '사장님 센터로', onClick: onClose, primary: true },
+            { label: '가게 관리로', onClick: onClose, primary: true },
           ]} />
       )}
 
