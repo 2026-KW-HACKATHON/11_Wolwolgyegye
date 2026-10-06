@@ -94,6 +94,7 @@ export default function RoulettePage() {
   const wheelZoneRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const storesRef = useRef<HTMLElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
 
   const result = resultIndex === null ? null : menus[resultIndex] ?? null;
   const resultColor = resultIndex === null ? '' : wheelColor(resultIndex, menus.length);
@@ -136,6 +137,13 @@ export default function RoulettePage() {
       cancelled = true;
     };
   }, [result, storesRetry]);
+
+  // 룰렛이 멈춰 결과가 나오면, 원판 아래 결과 창이 화면에 들어오도록 내려준다 (이미 보이면 그대로)
+  useEffect(() => {
+    if (resultIndex === null) return;
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    resultRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'nearest' });
+  }, [resultIndex]);
 
   // 편집기를 열면 원판 아래에 펼쳐진 편집 영역이 화면에 들어오도록 내려준다
   useEffect(() => {
@@ -222,7 +230,7 @@ export default function RoulettePage() {
 
           {/* 결과는 원판을 가리지 않도록 원판 아래에 띄운다 */}
           {result && (
-            <div className="rl-result" role="status">
+            <div className="rl-result" role="status" ref={resultRef}>
               <span className="rl-result-emoji">{result.emoji}</span>
               <div className="rl-result-text">
                 <p className="rl-result-label">오늘의 추천 메뉴</p>
