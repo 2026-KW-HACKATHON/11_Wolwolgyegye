@@ -40,6 +40,7 @@ function storeToSecondary(store: Store): SecondaryPlace {
     name: store.name,
     category: store.cuisineType ?? '',
     address: store.address,
+    location: store.location,
     facts: [{ label: '전화', value: store.phone }].filter((f) => f.value), // 영업시간은 2차 탭 아래쪽에 요일별로 나온다
   };
 }
@@ -51,6 +52,7 @@ function placeToSecondary(place: MapStore): SecondaryPlace {
     name: place.name,
     category: [subCategoryById(place.typeId)?.label, place.industry].filter(Boolean).join(' · '),
     address: place.address,
+    location: { lat: place.lat, lng: place.lng },
     facts: [
       { label: '층', value: floorLabel(place.floor) },
       { label: '건물', value: place.buildingName },
@@ -66,6 +68,7 @@ function scrollBarByWheel(event: WheelEvent<HTMLElement>) {
 }
 
 const NO_INSETS: MapInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+const matchesStoreName = (name: string, term: string) => !term || name.toLocaleLowerCase().includes(term);
 
 /**
  * 앱 셸: 지도를 뒤에 깔고, 그 위에 카테고리별 1차 탭을 올린다.
@@ -97,6 +100,7 @@ export default function AppShell() {
   const [stage, setStage] = useState({ width: 0, height: 0 });
   const [panelStates, setPanelStates] = useState<Record<string, PanelState>>({});
   const [subId, setSubId] = useState<string | null>(null);
+  const [storeQuery, setStoreQuery] = useState('');
   const [mapData, setMapData] = useState<MapStoreData | null>(null);
   const [categoryStores, setCategoryStores] = useState<Store[]>([]);
   const [mapStoreIds, setMapStoreIds] = useState<string[] | null>(null);
@@ -201,8 +205,9 @@ export default function AppShell() {
   // ---- 지도에 표시할 가게 ----
   // 지도 위쪽 필터는 대표 유형 여러 개를 묶은 것 (MAP_FILTERS)
   const subCategory = MAP_FILTERS.find((s) => s.id === subId) ?? null;
+  const storeTerm = storeQuery.trim().toLocaleLowerCase();
   const subCounts = useMemo(() => Object.fromEntries(MAP_FILTERS.map((s) =>
-    [s.id, mapData ? mapData.stores.filter((p) => p.typeId !== null && s.typeIds.includes(p.typeId)).length : 0])), [mapData]);
+    [s.id, mapData ? mapData.stores.filter((p) => p.typeId !== null && s.typeIds.includes(p.typeId) && matchesStoreName(p.name, storeTerm)).length : 0])), [mapData, storeTerm]);
   // 가게가 한 곳도 없는 항목은 목록에서 뺀다 (데이터가 아직 없으면 전부 보여준다)
   const visibleSubs = useMemo(() => (mapData ? MAP_FILTERS.filter((s) => subCounts[s.id] > 0) : MAP_FILTERS), [mapData, subCounts]);
   // 가게를 하나 열어 둔 동안(2차 탭)에는 그 가게 핀만 남긴다
@@ -212,15 +217,15 @@ export default function AppShell() {
     // 그 외 카테고리를 고른 동안에는 카테고리 가게 핀을 숨기고 지도 가게만 보여준다
     const panelStores = storesForPanel(categoryStores, activeId ?? '');
     const allowed = mapStoreIds ? new Set(mapStoreIds) : null;
-    return subCategory ? [] : allowed ? panelStores.filter((store) => allowed.has(store.id)) : panelStores;
-  }, [focusedId, subCategory, activeId, selectedStore, categoryStores, mapStoreIds]);
+    return subCategory ? [] : panelStores.filter((store) => (!allowed || allowed.has(store.id)) && matchesStoreName(store.name, storeTerm));
+  }, [focusedId, subCategory, activeId, selectedStore, categoryStores, mapStoreIds, storeTerm]);
   // 지도 가게: 그 외 카테고리를 고르면 그 유형만, 아니면 전부. 카테고리 핀으로 이미 나온 가게는 두 번 그리지 않는다
   const places = useMemo(() => {
     if (!mapData) return [];
     const shown = new Set(mapStores.map((s) => s.id));
     if (focusedId) return mapData.stores.filter((p) => p.id === focusedId && !shown.has(p.id));
-    return mapData.stores.filter((p) => !shown.has(p.id) && (!subCategory || (p.typeId !== null && subCategory.typeIds.includes(p.typeId))));
-  }, [mapData, subCategory, mapStores, focusedId]);
+    return mapData.stores.filter((p) => !shown.has(p.id) && matchesStoreName(p.name, storeTerm) && (!subCategory || (p.typeId !== null && subCategory.typeIds.includes(p.typeId))));
+  }, [mapData, subCategory, mapStores, focusedId, storeTerm]);
 
   // ---- 2차 탭: 카테고리 가게 또는 지도 가게 하나만 연다 ----
   const selectStore = useCallback((id: string) => { setSelectedPlace(null); setSelectedStoreId(id); }, []);
@@ -367,7 +372,18 @@ export default function AppShell() {
           />
 
           {/* 그 외 카테고리: 모든 화면에서 지도 위쪽에 얇은 한 줄로 늘어놓는다 (넘치면 옆으로 밀기) */}
-          <nav className="map-sub-bar" aria-label="그 외 카테고리" onWheel={scrollBarByWheel}>
+          <nav className="map-sub-bar" aria-label="가게 검색 및 업종 카테고리" onWheel={scrollBarByWheel}>
+            <div className="map-store-search">
+              <Icon name="search" />
+              <input
+                type="search"
+                aria-label="가게명 검색"
+                placeholder="가게명 검색"
+                value={storeQuery}
+                onChange={(event) => setStoreQuery(event.target.value)}
+              />
+              {storeQuery && <button type="button" aria-label="가게명 검색어 지우기" onClick={() => setStoreQuery('')}>×</button>}
+            </div>
             <SubCategoryList items={visibleSubs} selectedId={subId} counts={subCounts} onToggle={toggleSub} />
           </nav>
 

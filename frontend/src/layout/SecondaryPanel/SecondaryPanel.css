@@ -147,6 +147,36 @@
   font-size: 13px;
 }
 
+.sd-directions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 46px;
+  margin-top: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.sd-directions .icon {
+  display: block;
+  font-size: 19px;
+}
+
+.sd-directions:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.sd-directions:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .secondary-panel__facts {
   display: grid;
   gap: 4px;

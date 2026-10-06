@@ -1,11 +1,14 @@
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { subCategoryById } from '../../core/categories/subCategories';
 import type { LayoutMode } from '../../core/device/layoutMode';
+import { getCurrentPoint, kakaoWalkingDirectionsUrl, locationErrorMessage } from '../../core/navigation/kakaoDirections';
 import { findKakaoPlace, type KakaoPlace } from '../../core/source/kakaoPlace';
 import { fetchStoreDetail, groupMenus, type StoreDetail } from '../../core/source/storeDetail';
+import type { GeoPoint } from '../../core/types/place';
 import { groupBusinessHours } from '../../core/utils/hours';
 import { STORE_SECTIONS } from '../../features/storeSections';
 import Icon from '../../shared/Icon';
+import { useToast } from '../../shared/toast/ToastContext';
 import type { SecondaryFocus } from '../AppShell/ShellContext';
 import './SecondaryPanel.css';
 
@@ -18,6 +21,8 @@ export interface SecondaryPlace {
   /** 업종 (예: 한식 · 백반/한정식) */
   category: string;
   address: string;
+  /** 지도에서 이미 아는 좌표. 없으면 상세 정보의 lat/lng를 사용한다. */
+  location?: GeoPoint;
   /** 전화·층 같은 짧은 정보 */
   facts: { label: string; value: string }[];
 }
@@ -74,11 +79,13 @@ const SecondaryPanel = forwardRef<HTMLElement, SecondaryPanelProps>(function Sec
   /** 세로 화면 시트: 지도 영역 전체까지 올렸는지 / 끄는 중인 높이(px) */
   const [sheetFull, setSheetFull] = useState(false);
   const [dragHeight, setDragHeight] = useState<number | null>(null);
+  const [routing, setRouting] = useState(false);
+  const showToast = useToast();
   const dragStart = useRef<{ y: number; height: number; time: number; moved: boolean } | null>(null);
   const portrait = layout === 'portrait';
 
   // 다른 가게를 열면 시트는 반 높이부터
-  useEffect(() => { setSheetFull(false); setDragHeight(null); }, [id]);
+  useEffect(() => { setSheetFull(false); setDragHeight(null); setRouting(false); }, [id]);
 
   /** 시트가 올라올 수 있는 최대 높이 = 지도 영역 높이 - 위쪽 여백 */
   const stageHeight = () => panelRef.current?.parentElement?.clientHeight ?? window.innerHeight;
@@ -181,6 +188,9 @@ const SecondaryPanel = forwardRef<HTMLElement, SecondaryPanelProps>(function Sec
   const detail = current?.detail ?? null;
   const name = place.name || detail?.name || '가게';
   const address = place.address || detail?.address || '';
+  const destination = place.location ?? (detail?.lat !== null && detail?.lat !== undefined && detail.lng !== null && detail.lng !== undefined
+    ? { lat: detail.lat, lng: detail.lng }
+    : null);
   const hours = detail ? groupBusinessHours(detail.hours) : [];
   const sections = detail ? STORE_SECTIONS.filter((section) => section.has(detail)) : [];
   const photos = detail?.photos ?? [];
@@ -209,6 +219,35 @@ const SecondaryPanel = forwardRef<HTMLElement, SecondaryPanelProps>(function Sec
     const next = tabs[(index + (event.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
     chooseTab(next.id);
     document.getElementById(tabId(next.id))?.focus();
+  }
+
+  async function openDirections() {
+    if (routing) return;
+    if (!destination) {
+      showToast('이 가게의 위치 좌표가 없어 길찾기를 시작할 수 없어요.');
+      return;
+    }
+
+    // 클릭 순간 탭을 열어 두어, GPS 확인 뒤 브라우저가 새 창을 차단하지 않게 한다.
+    const routeWindow = window.open('', '_blank');
+    if (routeWindow) {
+      routeWindow.opener = null;
+      routeWindow.document.title = '길찾기 준비 중';
+      routeWindow.document.body.textContent = '현재 위치를 확인하고 있어요…';
+    }
+
+    setRouting(true);
+    try {
+      const current = await getCurrentPoint();
+      const url = kakaoWalkingDirectionsUrl(current, destination, name);
+      if (routeWindow) routeWindow.location.replace(url);
+      else window.location.assign(url);
+    } catch (error) {
+      routeWindow?.close();
+      showToast(locationErrorMessage(error));
+    } finally {
+      setRouting(false);
+    }
   }
 
   return (
@@ -250,6 +289,10 @@ const SecondaryPanel = forwardRef<HTMLElement, SecondaryPanelProps>(function Sec
       <p className="secondary-panel__meta">
         <Icon name="pin" /> {address || '주소 정보 없음'}
       </p>
+      <button type="button" className="sd-directions" disabled={routing || !destination} onClick={() => void openDirections()}>
+        <Icon name="compass" />
+        <span>{routing ? '현재 위치 확인 중…' : '현 위치에서 길찾기'}</span>
+      </button>
 
       {/* 목록 탭 */}
       <div ref={tabsRef} className="sd-tabs" role="tablist" aria-label={`${name} 정보 목록`} onKeyDown={onTabKey}>

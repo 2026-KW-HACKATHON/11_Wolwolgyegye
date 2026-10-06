@@ -57,7 +57,6 @@ export default function HomeScreen({ onShowNearby, onShowStore }: { onShowNearby
   return <div className="rp-home">
     <section className="rp-welcome">
       <div><p>{userName ? userName + '님, 반가워요' : '월계1동의 작은 발견'}</p><h1>오늘도, 동네 한 바퀴</h1><span>익숙한 골목에서 새로운 즐거움을 만나세요.</span></div>
-      <span className="rp-welcome-flower" aria-hidden="true">✳</span>
     </section>
     <section className="rp-feed" aria-labelledby="rp-feed-title">
       <div className="rp-section-heading"><h2 id="rp-feed-title">사장님이 전하는 소식</h2>{ownedStores.length > 0 && <Link className="rp-owner-link" to="/owner">글쓰기 <Icon name="chevronRight" /></Link>}</div>

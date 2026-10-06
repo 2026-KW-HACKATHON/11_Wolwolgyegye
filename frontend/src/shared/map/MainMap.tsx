@@ -354,7 +354,10 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
   return (
     <div className="mm-root">
       <div ref={containerRef} className="mm-canvas" role="region" aria-label="월계1동 지도" />
-      <p className="mm-source">데이터 © 브이월드 · 도로 © OpenStreetMap{placesMonth ? ` · 상가정보 © 소상공인시장진흥공단 (${placesMonth.slice(0, 4)}.${placesMonth.slice(4, 6)})` : ''}</p>
+      <p className="mm-source">
+        © 브이월드 · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>
+        {placesMonth ? ` · © 소상공인시장진흥공단 ${placesMonth.slice(0, 4)}.${placesMonth.slice(4, 6)}` : ''}
+      </p>
       {status === 'loading' && <div className="mm-state" role="status">지도를 불러오는 중…</div>}
       {status === 'missing' && (
         <div className="mm-state" role="alert">

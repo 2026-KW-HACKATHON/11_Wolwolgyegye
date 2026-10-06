@@ -178,11 +178,77 @@
   top: calc(env(safe-area-inset-top) + 8px);
   right: var(--inset-right);
   left: var(--inset-left);
+  display: flex;
+  align-items: center;
   overflow-x: auto;
   overflow-y: hidden;
   padding: 4px 12px 6px; /* 위아래는 칩 그림자·넓힌 터치 영역이 잘리지 않을 만큼 */
   scrollbar-width: none;
   transition: right var(--overlay-ease), left var(--overlay-ease);
+}
+
+.map-store-search {
+  position: sticky;
+  z-index: 2;
+  left: 0;
+  flex: none;
+  display: flex;
+  align-items: center;
+  width: clamp(138px, 22vw, 190px);
+  height: 34px;
+  margin-right: 7px;
+  padding: 0 7px 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: 0 1px 4px rgb(var(--shadow-color) / 0.12);
+  color: var(--color-text-muted);
+}
+
+.map-store-search > .icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.map-store-search input {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  outline: 0;
+}
+
+.map-store-search input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+.map-store-search button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+  font-size: 19px;
+}
+
+.map-store-search:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 22%, transparent);
+}
+
+.map-store-search button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 
 .map-sub-bar::-webkit-scrollbar {

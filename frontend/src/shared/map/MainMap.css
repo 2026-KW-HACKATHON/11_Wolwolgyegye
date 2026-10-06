@@ -24,7 +24,7 @@
   font-family: inherit;
 }
 
-/* 데이터 출처 라벨: 보이는 지도의 아래쪽 가운데, 최대한 작게 */
+/* 데이터 출처: 라이선스 표시는 유지하되 지도보다 눈에 띄지 않게 둔다 */
 .mm-source {
   position: absolute;
   z-index: 1000;
@@ -33,13 +33,19 @@
   left: var(--inset-left);
   margin: 0;
   color: var(--color-text-muted);
-  font-size: 9px;
+  font-size: 8px;
   line-height: 1;
   text-align: center;
   text-shadow: 0 0 2px var(--map-bg), 0 0 2px var(--map-bg);
-  opacity: 0.8;
+  opacity: 0.58;
   pointer-events: none; /* 지도 조작을 막지 않도록 */
   transition: right 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), bottom 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), left 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.mm-source a {
+  color: inherit;
+  pointer-events: auto;
+  text-decoration: none;
 }
 
 /* 불러오는 중 / 데이터 없음 안내: 화면 가운데 */
