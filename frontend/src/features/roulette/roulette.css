@@ -46,7 +46,8 @@
     'intro'
     'wheel'
     'editor';
-  gap: var(--space-5);
+  /* 1차 탭을 반만 열어도 원판이 다 보이도록 위쪽 소개와 원판 사이를 촘촘하게 */
+  gap: var(--space-3);
   padding: var(--space-4);
   background: var(--color-surface-alt);
   border-radius: var(--radius-lg);
@@ -70,18 +71,8 @@
   grid-area: intro;
 }
 
-.rl-badge {
-  display: inline-flex;
-  padding: 6px 12px;
-  border-radius: var(--radius-pill);
-  background: var(--color-surface);
-  color: var(--color-primary);
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
 .rl-card-title {
-  margin: var(--space-3) 0 var(--space-2);
+  margin: 0 0 6px;
   font-size: 1.35rem;
   font-weight: 800;
 }

@@ -171,7 +171,6 @@ export default function RoulettePage() {
     <div className="rl-page">
       <section className="rl-card">
         <div className="rl-intro">
-          <span className="rl-badge">✦ 30초면 결정 끝</span>
           <h2 className="rl-card-title">오늘 뭐 먹지?</h2>
           <p className="rl-card-desc">
             룰렛에 올릴 메뉴는 직접 고를 수 있어요.
