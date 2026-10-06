@@ -408,12 +408,21 @@
   color: var(--color-text-muted);
   font-size: 0.75rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
+/* 꾸밈말 / 메뉴 이름 / 어때요? 를 한 줄씩. 꾸밈말이 길어 줄을 바꿀 때도 낱말 중간(제/육볶음)이 아니라 띄어쓴 자리에서만 바꾼다 */
 .rl-result-headline {
   margin: 2px 0 0;
   font-size: 1.05rem;
   font-weight: 800;
+  line-height: 1.35;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.rl-result-headline > span {
+  display: block;
 }
 
 .rl-see-stores {

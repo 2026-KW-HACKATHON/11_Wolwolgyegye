@@ -66,6 +66,12 @@ function objectParticle(word: string) {
   return hasFinalConsonant ? '을' : '를';
 }
 
+/** "밥도둑 제육볶음 어때요?" → ['밥도둑', '제육볶음', '어때요?']. 결과 창에서 세 줄로 나눠 보여준다 (모양이 다르면 통째로 한 줄) */
+function headlineLines(headline: string): string[] {
+  const match = headline.match(/^(.*\S)\s+(\S+)\s+(어때요\?)$/);
+  return match ? [match[1], match[2], match[3]] : [headline];
+}
+
 function menuSetKey(menus: WheelMenu[]) {
   return menus
     .map((m) => m.id)
@@ -221,7 +227,9 @@ export default function RoulettePage() {
               <div className="rl-result-text">
                 <p className="rl-result-label">오늘의 추천 메뉴</p>
                 <p className="rl-result-headline">
-                  {result.headline ?? `오늘은 ${result.name} 어때요?`}
+                  {headlineLines(result.headline ?? `오늘은 ${result.name} 어때요?`).map((line) => (
+                    <span key={line}>{line}</span>
+                  ))}
                 </p>
               </div>
               <button
