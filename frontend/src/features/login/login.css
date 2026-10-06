@@ -250,3 +250,32 @@
   font-weight: 700;
   color: var(--color-text);
 }
+
+/* 회원 탈퇴: 로그아웃 아래 작은 글자 버튼 → 누르면 확인 칸이 펼쳐진다 */
+.lp-withdraw-open {
+  display: block;
+  margin-top: 20px;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  text-decoration: underline;
+}
+
+.lp-withdraw { margin-bottom: 0; }
+.lp-withdraw h3 { color: var(--color-danger); }
+
+.lp-withdraw-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.lp-withdraw-submit {
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.lp-card .lp-withdraw-submit:disabled { cursor: not-allowed; }

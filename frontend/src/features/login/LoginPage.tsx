@@ -8,6 +8,8 @@ import './login.css';
 
 type Mode = 'login' | 'customer-signup' | 'owner-signup' | 'reset';
 const KAKAO_PROVIDER = 'custom:kakao-no-email' as const;
+/** 회원 탈퇴 확인 칸에 그대로 입력해야 하는 문구 */
+const WITHDRAW_PHRASE = '탈퇴';
 
 interface ClaimableStore {
   id: string;
@@ -30,6 +32,7 @@ function authMessage(error: unknown): string {
   if (/Store already has pending owner application/i.test(message)) return '이 가게는 다른 사장님 신청을 검토 중이에요. 관리자에게 문의해 주세요.';
   if (/duplicate key.*owner_applications_one_pending_store/i.test(message)) return '이 가게는 다른 사장님 신청을 검토 중이에요. 관리자에게 문의해 주세요.';
   if (/duplicate key.*owner_applications_one_pending/i.test(message)) return '이미 검토 중인 사장님 신청이 있어요.';
+  if (/Admins cannot delete their own account/i.test(message)) return '관리자 계정은 관리자 명단에서 먼저 뺀 뒤 탈퇴할 수 있어요.';
   if (/rate limit/i.test(message)) return '잠시 후 다시 시도해 주세요.';
   return message || '요청을 처리하지 못했어요. 다시 시도해 주세요.';
 }
@@ -58,6 +61,9 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  /** 회원 탈퇴 확인 칸을 펼쳤는지 / 확인 문구 입력값 */
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [withdrawConfirm, setWithdrawConfirm] = useState('');
   const showToast = useToast();
   const navigate = useNavigate();
 
@@ -200,6 +206,24 @@ export default function LoginPage() {
     });
   }
 
+  /** 회원 탈퇴: DB 함수가 이 계정을 지운 뒤, 남은 로그인 정보는 이 기기에서만 지운다 (서버엔 이미 계정이 없다) */
+  function handleWithdraw(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (withdrawConfirm.trim() !== WITHDRAW_PHRASE) return;
+    void run(async () => {
+      const client = getSupabaseClient();
+      const { error: deleteError } = await client.rpc('delete_my_account');
+      if (deleteError) throw deleteError;
+      await client.auth.signOut({ scope: 'local' });
+      await refresh();
+      setWithdrawOpen(false);
+      setWithdrawConfirm('');
+      setMode('login');
+      showToast('탈퇴했어요. 그동안 이용해 주셔서 고마워요');
+      navigate(DEFAULT_LANDING_PATH);
+    });
+  }
+
   function handleNewPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     void run(async () => {
@@ -243,6 +267,20 @@ export default function LoginPage() {
         {message && <p className="lp-message" role="status">{message}</p>}
         {error && <p className="lp-error" role="alert">{error}</p>}
         <button type="button" className="lp-logout" disabled={busy} onClick={handleLogout}>로그아웃</button>
+        {!withdrawOpen ? (
+          <button type="button" className="lp-withdraw-open" disabled={busy} onClick={() => { setWithdrawOpen(true); setError(''); }}>회원 탈퇴</button>
+        ) : (
+          <form className="lp-name-form lp-account-section lp-withdraw" onSubmit={handleWithdraw}>
+            <h3>회원 탈퇴</h3>
+            <p>탈퇴하면 계정과 함께 찜한 가게·관심 세일, 모은 스탬프와 적립 내역, 사장님 신청 기록이 모두 지워지고 되돌릴 수 없어요.</p>
+            {status === 'owner' && <p><strong>관리하던 가게({ownedStores[0]?.name})는 지워지지 않고 계정 연결만 풀려요.</strong> 올린 글과 가게 정보는 그대로 남아요.</p>}
+            <label>확인을 위해 <b>{WITHDRAW_PHRASE}</b>라고 입력해 주세요<input className="lp-name-input" required autoComplete="off" value={withdrawConfirm} onChange={(event) => setWithdrawConfirm(event.target.value)} /></label>
+            <div className="lp-withdraw-actions">
+              <button type="button" className="lp-logout" disabled={busy} onClick={() => { setWithdrawOpen(false); setWithdrawConfirm(''); }}>취소</button>
+              <button type="submit" className="lp-withdraw-submit" disabled={busy || withdrawConfirm.trim() !== WITHDRAW_PHRASE}>{busy ? '탈퇴 처리 중…' : '탈퇴하기'}</button>
+            </div>
+          </form>
+        )}
       </div>
     );
   }
