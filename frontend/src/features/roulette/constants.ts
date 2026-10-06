@@ -44,9 +44,17 @@ export const MENUS: RouletteMenu[] = [
     groups: ['solo', 'snack'],
   },
   {
-    id: 'jjajang', name: '짜장·짬뽕', emoji: '🥢', cuisine: 'chinese', headline: '짜장이냐 짬뽕이냐, 중식 어때요?',
-    keywords: ['짜장', '짬뽕', '탕수육'], industries: ['중국집'],
-    groups: ['popular', 'meal'],
+    id: 'jjajang', name: '짜장면', emoji: '🥢', cuisine: 'chinese', headline: '달콤짭짤한 짜장면 어때요?',
+    keywords: ['짜장'], exclude: ['라면'],
+    // '중국집' 업종에 양꼬치·텐동·포차집도 섞여 있어 이름으로 뺀다
+    industries: ['중국집'], excludeStoreNames: ['양꼬치', '텐동', '포차'],
+    groups: ['popular', 'meal', 'solo'],
+  },
+  {
+    id: 'jjamppong', name: '짬뽕', emoji: '🦐', cuisine: 'chinese', headline: '얼큰한 짬뽕 어때요?',
+    keywords: ['짬뽕'], exclude: ['라면', '비빔밥', '죽'],
+    industries: ['중국집'], excludeStoreNames: ['양꼬치', '텐동', '포차'],
+    groups: ['popular', 'meal', 'soup'],
   },
   {
     id: 'malatang', name: '마라탕', emoji: '🌶️', cuisine: 'chinese', headline: '얼얼한 마라탕 어때요?',
@@ -198,7 +206,15 @@ export const MENUS: RouletteMenu[] = [
   },
   {
     id: 'bingsu', name: '빙수', emoji: '🍧', cuisine: 'etc', headline: '시원한 빙수 어때요?',
-    keywords: ['빙수', '아이스크림'],
+    keywords: ['빙수'], storeNames: ['설빙'],
+    groups: ['snack'],
+  },
+  {
+    id: 'icecream', name: '아이스크림', emoji: '🍦', cuisine: 'etc', headline: '달콤한 아이스크림 어때요?',
+    // 나뚜루: 초밥집 후식이라 아이스크림 가게로 추천하지 않는다
+    keywords: ['아이스크림', '젤라또', '소프트'], exclude: ['추가', '나뚜루'],
+    storeNames: ['배스킨', '베스킨', '아이스짱', '요아정'],
+    industries: ['아이스크림/빙수', '아이스크림 할인점'],
     groups: ['snack'],
   },
   {

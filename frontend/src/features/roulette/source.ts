@@ -20,7 +20,7 @@ function containsPattern(term: string) {
 function matchOf(menu: WheelMenu & Partial<MenuMatch>): MenuMatch {
   const keywords = (menu.keywords?.length ? menu.keywords : [menu.name]).map((k) => k.trim()).filter(Boolean);
   return {
-    keywords, exclude: menu.exclude ?? [], storeNames: menu.storeNames ?? [],
+    keywords, exclude: menu.exclude ?? [], storeNames: menu.storeNames ?? [], excludeStoreNames: menu.excludeStoreNames ?? [],
     industries: menu.industries ?? [], looseIndustries: menu.looseIndustries ?? [],
   };
 }
@@ -75,6 +75,7 @@ async function fetchLinksByMenu(menu: WheelMenu & Partial<MenuMatch>): Promise<R
   const links = new Map(menuHits.map((l) => [l.storeId, l]));
   const nameWords = [...match.keywords, ...(match.storeNames ?? [])];
   for (const s of specialty) {
+    if ((match.excludeStoreNames ?? []).some((k) => s.name.includes(k))) continue;
     const hit = links.get(s.id);
     const trusted = nameWords.some((k) => s.name.includes(k)) || (match.industries ?? []).includes(s.industry);
     const hasMenus = (s.store_menus?.[0]?.count ?? 0) > 0;
