@@ -47,6 +47,8 @@ export default function LoginPage() {
   const [storeQuery, setStoreQuery] = useState('');
   const [storeResults, setStoreResults] = useState<ClaimableStore[]>([]);
   const [selectedStore, setSelectedStore] = useState<ClaimableStore | null>(null);
+  /** 가게를 두 번 눌러 확정하면 검색 결과 목록을 접는다 (검색어를 다시 고치면 다시 펼친다) */
+  const [storeConfirmed, setStoreConfirmed] = useState(false);
   const [storeSearchBusy, setStoreSearchBusy] = useState(false);
   const [storeSearchError, setStoreSearchError] = useState('');
   const [businessNumber, setBusinessNumber] = useState('');
@@ -87,6 +89,13 @@ export default function LoginPage() {
       window.clearTimeout(timer);
     };
   }, [status, storeQuery, wantsOwner]);
+
+  /** 가게 결과를 두 번 누르면: 그 가게로 정하고 검색칸에 이름을 넣은 뒤 목록을 접는다 */
+  function confirmStore(store: ClaimableStore) {
+    setSelectedStore(store);
+    setStoreQuery(store.name);
+    setStoreConfirmed(true);
+  }
 
   function chooseMode(next: Mode) {
     setMode(next);
@@ -218,12 +227,12 @@ export default function LoginPage() {
             <p className="lp-sub">DB에 등록된 실제 가게를 선택하고 사업자 정보를 제출해 주세요. 관리자가 확인한 뒤 선택한 가게에만 권한을 연결합니다.</p>
             <label>신청자 이름<input className="lp-name-input" required maxLength={80} value={name} placeholder={userName ?? ''} onChange={(event) => setName(event.target.value)} /></label>
             <label>연락처<input className="lp-name-input" required type="tel" minLength={8} maxLength={25} pattern="[0-9+() -]+" value={phone} onChange={(event) => setPhone(event.target.value)} /></label>
-            <label>내 가게 검색<input className="lp-name-input" type="search" minLength={2} maxLength={100} value={storeQuery} placeholder="가게명 또는 주소 2글자 이상" onChange={(event) => { setStoreQuery(event.target.value); setSelectedStore(null); }} /></label>
+            <label>내 가게 검색<input className="lp-name-input" type="search" minLength={2} maxLength={100} value={storeQuery} placeholder="가게명 또는 주소 2글자 이상" onChange={(event) => { setStoreQuery(event.target.value); setSelectedStore(null); setStoreConfirmed(false); }} /></label>
             {storeSearchBusy && <p className="lp-search-note" role="status">가게를 검색하고 있어요…</p>}
             {storeSearchError && <p className="lp-error" role="alert">{storeSearchError}</p>}
             {!storeSearchBusy && storeQuery.trim().length >= 2 && !storeSearchError && storeResults.length === 0 && <p className="lp-search-note">검색 결과가 없어요. 관리자에게 가게 등록을 요청해 주세요.</p>}
-            {storeResults.length > 0 && <fieldset className="lp-store-results"><legend>등록된 가게 선택</legend>{storeResults.map((store) => <button key={store.id} type="button" className={selectedStore?.id === store.id ? 'is-selected' : ''} aria-pressed={selectedStore?.id === store.id} onClick={() => setSelectedStore(store)}><strong>{store.name}</strong><span>{store.address}</span>{(store.industry || store.phone) && <small>{[store.industry, store.phone].filter(Boolean).join(' · ')}</small>}</button>)}</fieldset>}
-            {selectedStore && <div className="lp-selected-store" role="status"><strong>선택한 가게</strong><span>{selectedStore.name}</span><small>{selectedStore.address}</small></div>}
+            {storeResults.length > 0 && !storeConfirmed && <fieldset className="lp-store-results"><legend>등록된 가게 선택 <small>두 번 누르면 바로 선택돼요</small></legend>{storeResults.map((store) => <button key={store.id} type="button" className={selectedStore?.id === store.id ? 'is-selected' : ''} aria-pressed={selectedStore?.id === store.id} onClick={() => setSelectedStore(store)} onDoubleClick={() => confirmStore(store)}><strong>{store.name}</strong><span>{store.address}</span>{(store.industry || store.phone) && <small>{[store.industry, store.phone].filter(Boolean).join(' · ')}</small>}</button>)}</fieldset>}
+            {selectedStore && <div className="lp-selected-store" role="status"><strong>선택한 가게</strong><span>{selectedStore.name}</span><small>{selectedStore.address}</small>{storeConfirmed && <button type="button" className="lp-store-change" onClick={() => setStoreConfirmed(false)}>다른 가게 고르기</button>}</div>}
             <label>사업자등록번호<input className="lp-name-input" required inputMode="numeric" autoComplete="off" pattern="[0-9]{3}-?[0-9]{2}-?[0-9]{5}" maxLength={12} value={businessNumber} placeholder="000-00-00000" onChange={(event) => setBusinessNumber(event.target.value)} /><small className="lp-field-help">관리자의 사장님 확인에만 사용되며 일반 사용자에게 공개되지 않아요.</small></label>
             <button className="lp-submit" type="submit" disabled={busy}>신청 제출</button>
           </form> : <div className="lp-account-section"><p>{hasEmailLogin ? '이메일 인증을 마친 뒤 사장님 신청이 가능해요.' : '사장님 신청에는 인증된 이메일 계정이 필요해요. 이메일로 회원가입해 주세요.'}</p></div>
