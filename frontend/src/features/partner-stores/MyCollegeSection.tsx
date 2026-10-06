@@ -6,14 +6,15 @@ import { saveAudience } from './PartnerSection';
 import type { CollegeKey } from './types';
 import './myCollege.css';
 
-/** 유저 탭의 "내 단과대" 등록. 등록하면 제휴 가게 화면이 그 단과대 제휴 가게로 바로 걸러진다 */
+/** 유저 탭의 "내 단과대" 등록 (사장님 계정에는 보이지 않는다). 등록하면 제휴 가게 화면이 그 단과대 제휴 가게로 바로 걸러진다 */
 export default function MyCollegeSection() {
   const { status, userId, refresh } = useAuth();
   const college = useMyCollege();
   const [saving, setSaving] = useState<CollegeKey | 'none' | null>(null);
   const [error, setError] = useState(false);
 
-  if (status === 'checking') return null;
+  // 사장님 계정은 학생이 아니라 가게 운영자라 단과대를 등록하지 않는다
+  if (status === 'checking' || status === 'owner') return null;
 
   async function choose(next: CollegeKey | null) {
     if (!userId || saving || next === college) return;
