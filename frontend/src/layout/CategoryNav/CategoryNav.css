@@ -50,7 +50,7 @@
 }
 
 /* 고정 나열(PC·태블릿 가로)은 넘기지 않고 위에서부터 차례로 */
-.cat-nav[data-scrollable='false'] .cat-nav__list {
+.cat-nav[data-orientation='vertical'][data-scrollable='false'] .cat-nav__list {
   scroll-snap-type: none;
   padding-top: var(--space-2);
 }
@@ -75,6 +75,16 @@
 
 .cat-nav[data-orientation='horizontal'] .cat-nav__item {
   min-width: 76px;
+}
+
+/* 고정 나열(세로 화면 하단 바)은 넘기지 않고 폭을 똑같이 나눈다 */
+.cat-nav[data-orientation='horizontal'][data-scrollable='false'] .cat-nav__list {
+  scroll-snap-type: none;
+}
+
+.cat-nav[data-orientation='horizontal'][data-scrollable='false'] .cat-nav__item {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .cat-nav[data-orientation='vertical'] .cat-nav__item {

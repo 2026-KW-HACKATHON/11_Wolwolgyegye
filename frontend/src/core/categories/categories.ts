@@ -72,6 +72,12 @@ export const CATEGORIES: Category[] = [
 ];
 
 /**
+ * 세로 화면(모바일·태블릿 세로) 하단 바에 남기는 카테고리 id. 이 순서대로 나열한다.
+ * 나머지 카테고리와 유저 탭은 지도 왼쪽 위 전체 메뉴(세줄 버튼)에서 연다.
+ */
+export const PORTRAIT_BAR_IDS: string[] = ['recommend', 'coupon', 'partner-stores', 'roulette'];
+
+/**
  * 유저 및 설정 탭. 카테고리 바에 나열하지 않고 전용 유저 버튼으로만 연다.
  * 로그인 창이며 그 안에 설정이 함께 들어 있다.
  */
