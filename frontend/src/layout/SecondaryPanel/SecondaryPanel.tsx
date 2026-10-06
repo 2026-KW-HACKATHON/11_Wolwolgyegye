@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState, type KeyboardEvent } from 'react';
+import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { subCategoryById } from '../../core/categories/subCategories';
 import type { LayoutMode } from '../../core/device/layoutMode';
 import { findKakaoPlace, type KakaoPlace } from '../../core/source/kakaoPlace';
@@ -43,6 +43,10 @@ const BASE_TABS = [
   { id: 'menu', label: '가격' },
   { id: 'photos', label: '사진' },
 ] as const;
+/** 세로 화면 시트: 반쯤 열린 높이 (지도 영역 대비) / 이보다 낮게 끌어 내리면 닫는다 (반 높이 대비) / 빠르게 튕긴 것으로 보는 속도 (px/ms) */
+const SHEET_HALF = 0.55;
+const SHEET_CLOSE_RATIO = 0.55;
+const SHEET_FLING = 0.6;
 /** 위쪽 사진 줄에 보여 줄 최대 장수 (나머지는 사진 탭에서) */
 const STRIP_PHOTOS = 6;
 
@@ -67,6 +71,56 @@ const SecondaryPanel = forwardRef<HTMLElement, SecondaryPanelProps>(function Sec
   const headRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const tabIdBase = useId();
+  /** 세로 화면 시트: 지도 영역 전체까지 올렸는지 / 끄는 중인 높이(px) */
+  const [sheetFull, setSheetFull] = useState(false);
+  const [dragHeight, setDragHeight] = useState<number | null>(null);
+  const dragStart = useRef<{ y: number; height: number; time: number; moved: boolean } | null>(null);
+  const portrait = layout === 'portrait';
+
+  // 다른 가게를 열면 시트는 반 높이부터
+  useEffect(() => { setSheetFull(false); setDragHeight(null); }, [id]);
+
+  /** 시트가 올라올 수 있는 최대 높이 = 지도 영역 높이 - 위쪽 여백 */
+  const stageHeight = () => panelRef.current?.parentElement?.clientHeight ?? window.innerHeight;
+  const maxSheet = () => stageHeight() - 8;
+
+  // 세로 화면: 위쪽 손잡이 줄을 위아래로 끌어 크기를 바꾼다. 놓으면 반 / 전체로 붙고, 많이 내리면 닫힌다. 손잡이를 누르면 반 <-> 전체
+  function onSheetPointerDown(event: PointerEvent<HTMLDivElement>) {
+    // 닫기(✕) 버튼은 끌기에서 뺀다. 손잡이(.sd-grip)는 끌기·누르기 모두 여기서 처리한다
+    if (!portrait || (event.target as HTMLElement).closest('button:not(.sd-grip)')) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    dragStart.current = { y: event.clientY, height: panelRef.current?.offsetHeight ?? 0, time: performance.now(), moved: false };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+  function onSheetPointerMove(event: PointerEvent<HTMLDivElement>) {
+    const start = dragStart.current;
+    if (!start) return;
+    const dy = event.clientY - start.y;
+    if (!start.moved && Math.abs(dy) < 5) return;
+    start.moved = true;
+    setDragHeight(Math.min(maxSheet(), Math.max(60, start.height - dy)));
+  }
+  function onSheetPointerUp(event: PointerEvent<HTMLDivElement>) {
+    const start = dragStart.current;
+    dragStart.current = null;
+    if (!start) return;
+    if (!start.moved) { setSheetFull((full) => !full); return; }
+    const dy = event.clientY - start.y;
+    const speed = dy / Math.max(1, performance.now() - start.time);
+    const height = Math.min(maxSheet(), Math.max(60, start.height - dy));
+    const half = stageHeight() * SHEET_HALF;
+    setDragHeight(null);
+    if (speed > SHEET_FLING) { if (sheetFull) setSheetFull(false); else onClose(); return; }
+    if (speed < -SHEET_FLING) { setSheetFull(true); return; }
+    if (height < half * SHEET_CLOSE_RATIO) { onClose(); return; }
+    setSheetFull(height > (half + maxSheet()) / 2);
+  }
+  // 손잡이 키보드: Enter·Space 는 반 <-> 전체, 위·아래 화살표는 전체 / 반
+  function onSheetKey(event: KeyboardEvent<HTMLButtonElement>) {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSheetFull((full) => !full); }
+    if (event.key === 'ArrowUp') { event.preventDefault(); setSheetFull(true); }
+    if (event.key === 'ArrowDown') { event.preventDefault(); setSheetFull(false); }
+  }
   useImperativeHandle(ref, () => panelRef.current as HTMLElement, [place]);
 
   useEffect(() => {
@@ -158,8 +212,27 @@ const SecondaryPanel = forwardRef<HTMLElement, SecondaryPanelProps>(function Sec
   }
 
   return (
-    <aside ref={panelRef} className="secondary-panel" data-layout={layout} aria-label={`${name} 정보`}>
-      <div ref={headRef} className="secondary-panel__head">
+    <aside
+      ref={panelRef}
+      className="secondary-panel"
+      data-layout={layout}
+      data-dragging={dragHeight !== null || undefined}
+      aria-label={`${name} 정보`}
+      style={portrait ? { height: dragHeight ?? (sheetFull ? `calc(100% - 8px)` : `${SHEET_HALF * 100}%`) } : undefined}
+    >
+      <div
+        ref={headRef}
+        className="secondary-panel__head"
+        onPointerDown={onSheetPointerDown}
+        onPointerMove={onSheetPointerMove}
+        onPointerUp={onSheetPointerUp}
+        onPointerCancel={() => { dragStart.current = null; setDragHeight(null); }}
+      >
+        {portrait && (
+          <button type="button" className="sd-grip" aria-label={sheetFull ? '가게 정보 줄이기' : '가게 정보 크게 보기'} aria-expanded={sheetFull} onKeyDown={onSheetKey}>
+            <span aria-hidden="true" />
+          </button>
+        )}
         {detail?.isMock ? <span className="secondary-panel__badge is-mock">예시 가게</span> : <span />}
         <button type="button" className="secondary-panel__close" aria-label="가게 정보 닫기" title="닫기" onClick={onClose}>✕</button>
       </div>

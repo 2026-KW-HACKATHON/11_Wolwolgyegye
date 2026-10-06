@@ -30,21 +30,47 @@
   right: 0;
   bottom: 0;
   left: 0;
-  max-height: 55%; /* 위쪽 지도와 상단 검색·필터 줄이 보이게 남긴다 */
+  /* 높이는 SecondaryPanel.tsx 가 정한다: 반(55%, 위쪽 지도가 보이게) / 전체 / 끄는 중인 높이 */
+  transition: height 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
   border-bottom: 0;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   animation: secondary-sheet-up 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* 시트 손잡이 (모양만) */
-.secondary-panel[data-layout='portrait']::before {
-  content: '';
-  flex: none;
-  align-self: center;
+/* 끄는 동안에는 손가락을 바로 따라오게 */
+.secondary-panel[data-dragging] {
+  transition: none;
+}
+
+/* 세로 화면: 닫기 줄 전체가 끄는 손잡이. 가운데 막대 = 누르면 반 <-> 전체 */
+.secondary-panel[data-layout='portrait'] .secondary-panel__head {
+  touch-action: none;
+  cursor: grab;
+}
+
+.sd-grip {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 28px;
+  transform: translateX(-50%);
+  touch-action: none;
+}
+
+.sd-grip span {
   width: 40px;
   height: 4px;
   border-radius: var(--radius-pill);
   background: var(--color-border);
+}
+
+.sd-grip:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: -3px;
+  border-radius: var(--radius-sm);
 }
 
 @keyframes secondary-sheet-up {
@@ -52,7 +78,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .secondary-panel[data-layout='portrait'] { animation: none; }
+  .secondary-panel[data-layout='portrait'] { animation: none; transition: none; }
 }
 
 /* 예시 표시·닫기(✕) 줄: 탭 안을 스크롤해도 맨 위에 붙어 있다.

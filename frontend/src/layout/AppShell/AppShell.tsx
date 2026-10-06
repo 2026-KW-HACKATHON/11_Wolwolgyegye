@@ -158,7 +158,10 @@ export default function AppShell() {
     if (!node) return NO_INSETS;
     const css = getComputedStyle(node);
     const read = (name: string) => parseFloat(css.getPropertyValue(name)) || 0;
-    return { top: 0, right: read('--inset-right'), bottom: read('--inset-bottom'), left: read('--inset-left') };
+    // 세로 화면: 가게 정보(2차 탭)는 아래 시트라, 열려 있으면 그 높이만큼 아래가 가려진다
+    const sheet = secondaryRef.current;
+    const sheetBottom = sheet?.dataset.layout === 'portrait' ? sheet.offsetHeight : 0;
+    return { top: 0, right: read('--inset-right'), bottom: Math.max(read('--inset-bottom'), sheetBottom), left: read('--inset-left') };
   }, []);
 
   const setPanelState = useCallback((id: string, state: PanelState) => {
@@ -199,17 +202,20 @@ export default function AppShell() {
     [s.id, mapData ? mapData.stores.filter((p) => p.typeId !== null && s.typeIds.includes(p.typeId)).length : 0])), [mapData]);
   // 가게가 한 곳도 없는 항목은 목록에서 뺀다 (데이터가 아직 없으면 전부 보여준다)
   const visibleSubs = useMemo(() => (mapData ? MAP_FILTERS.filter((s) => subCounts[s.id] > 0) : MAP_FILTERS), [mapData, subCounts]);
+  // 가게를 하나 열어 둔 동안(2차 탭)에는 그 가게 핀만 남긴다
+  const focusedId = selectedPlace?.id ?? selectedStoreId;
   const mapStores = useMemo(() => {
+    if (focusedId) return selectedStore ? [selectedStore] : [];
     // 그 외 카테고리를 고른 동안에는 카테고리 가게 핀을 숨기고 지도 가게만 보여준다
-    const list = subCategory ? [] : storesForPanel(categoryStores, activeId ?? '');
-    return selectedStore && !list.includes(selectedStore) ? [...list, selectedStore] : list;
-  }, [subCategory, activeId, selectedStore, categoryStores]);
+    return subCategory ? [] : storesForPanel(categoryStores, activeId ?? '');
+  }, [focusedId, subCategory, activeId, selectedStore, categoryStores]);
   // 지도 가게: 그 외 카테고리를 고르면 그 유형만, 아니면 전부. 카테고리 핀으로 이미 나온 가게는 두 번 그리지 않는다
   const places = useMemo(() => {
     if (!mapData) return [];
     const shown = new Set(mapStores.map((s) => s.id));
+    if (focusedId) return mapData.stores.filter((p) => p.id === focusedId && !shown.has(p.id));
     return mapData.stores.filter((p) => !shown.has(p.id) && (!subCategory || (p.typeId !== null && subCategory.typeIds.includes(p.typeId))));
-  }, [mapData, subCategory, mapStores]);
+  }, [mapData, subCategory, mapStores, focusedId]);
 
   // ---- 2차 탭: 카테고리 가게 또는 지도 가게 하나만 연다 ----
   const selectStore = useCallback((id: string) => { setSelectedPlace(null); setSelectedStoreId(id); }, []);
@@ -234,12 +240,15 @@ export default function AppShell() {
     else selectStore(storeId);
   }, [selectPlace, selectStore]);
 
-  // 지도 가게를 열면 그 자리를 탭에 가려지지 않은 영역 가운데로 (2차 탭 폭이 반영된 뒤에)
+  // 가게를 열면 그 자리를 탭·가게 창에 가려지지 않은 영역 가운데로 (2차 탭 크기가 반영된 뒤에)
+  const focusPoint = selectedPlace ?? selectedStore?.location ?? (selectedStoreId ? mapData?.stores.find((p) => p.id === selectedStoreId) : undefined) ?? null;
+  const focusLat = focusPoint?.lat;
+  const focusLng = focusPoint?.lng;
   useEffect(() => {
-    if (!selectedPlace) return;
-    const frame = requestAnimationFrame(() => mapRef.current?.centerOn(selectedPlace, getInsets()));
+    if (focusLat === undefined || focusLng === undefined) return;
+    const frame = requestAnimationFrame(() => mapRef.current?.centerOn({ lat: focusLat, lng: focusLng }, getInsets()));
     return () => cancelAnimationFrame(frame);
-  }, [selectedPlace, getInsets]);
+  }, [focusedId, focusLat, focusLng, getInsets]);
 
   // ---- 지도 대체 목록: 지금 지도에 보이는 가게를 글 목록으로 ----
   const listItems = useMemo<MapListItem[]>(() => [

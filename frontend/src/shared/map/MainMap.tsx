@@ -82,9 +82,20 @@ function minZoomFor(map: L.Map, portrait: boolean): number {
 
 /** point 가 탭에 가려지지 않은 영역의 가운데에 오도록 지도 중심을 옮긴다 */
 function centerInVisibleArea(map: L.Map, point: GeoPoint, insets: MapInsets) {
-  const zoom = map.getZoom();
-  const target = map.project([point.lat, point.lng], zoom).add([(insets.right - insets.left) / 2, (insets.bottom - insets.top) / 2]);
-  map.panTo(map.unproject(target, zoom));
+  const shift = L.point((insets.right - insets.left) / 2, (insets.bottom - insets.top) / 2);
+  const centerAt = (zoom: number) => map.unproject(map.project([point.lat, point.lng], zoom).add(shift), zoom);
+  // 지도는 이동 범위(maxBounds) 밖으로 못 나가서, 줌이 낮으면 가게를 가려지지 않은 곳 가운데로 끌어올 수 없다.
+  // 그럴 때는 가운데에 올 수 있을 때까지만 한 단계씩 확대한다
+  const limit = EXTENT_BOUNDS;
+  const half = map.getSize().divideBy(2);
+  const fits = (zoom: number) => {
+    const center = map.project(centerAt(zoom), zoom);
+    return limit.contains(L.latLngBounds(map.unproject(center.subtract(half), zoom), map.unproject(center.add(half), zoom)));
+  };
+  let zoom = map.getZoom();
+  while (!fits(zoom) && zoom < map.getMaxZoom()) zoom += 1;
+  if (zoom === map.getZoom()) map.panTo(centerAt(zoom));
+  else map.setView(centerAt(zoom), zoom);
 }
 
 /** 내 위치 점. Canvas 로 그려져 CSS 클래스가 적용되지 않으므로 theme.css 토큰 값을 읽어 넘긴다 */
@@ -334,12 +345,7 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
     }
   }, [stores, selectedId, status]);
 
-  // 4) 선택한 가게를 보이는 영역 가운데로
-  useEffect(() => {
-    const map = mapRef.current;
-    const store = stores.find((item) => item.id === selectedId);
-    if (map && store) centerInVisibleArea(map, store.location, getInsetsRef.current());
-  }, [selectedId, stores]);
+  // 선택한 가게를 가운데로 옮기는 건 AppShell 이 한다 (가게 창 크기가 정해진 뒤에, centerOn)
 
   return (
     <div className="mm-root">
