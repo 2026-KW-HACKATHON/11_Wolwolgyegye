@@ -1,7 +1,7 @@
 /**
  * 화면 전용 상수. 룰렛에 올리는 기본 메뉴와 빠른 구성은 앱이 정한 콘텐츠라 DB 가 아니라 여기 둔다.
  * 메뉴는 DB(store_menus·stores)에 실제로 파는 가게가 있는 것만 골랐다. 가게 찾는 기준(keywords 등)은 types.ts 의 MenuMatch 참고.
- * industries 값은 stores.industry 원본 업종 그대로 적는다 (예: '일식 회/초밥').
+ * industries·looseIndustries 값은 stores.industry 원본 업종 그대로 적는다 (예: '빵/도넛').
  */
 import type { Cuisine, MenuPreset, RouletteMenu } from './types';
 
@@ -50,13 +50,14 @@ export const MENUS: RouletteMenu[] = [
   },
   {
     id: 'sushi', name: '초밥·회', emoji: '🍣', cuisine: 'japanese', headline: '신선한 초밥 어때요?',
-    keywords: ['초밥', '스시', '사시미', '모둠회', '연어'], exclude: ['또띠아'],
-    industries: ['일식 회/초밥', '횟집'],
+    keywords: ['초밥', '스시', '사시미', '모둠회', '연어'], exclude: ['또띠아'], storeNames: ['참치'],
+    // 상가정보의 '일식 회/초밥'은 카레·돈까스·이자카야 같은 일식집 전체에 붙어 있어 쓰지 않는다
+    looseIndustries: ['횟집'],
     groups: ['popular', 'night'],
   },
   {
     id: 'donkatsu', name: '돈까스', emoji: '🍖', cuisine: 'japanese', headline: '겉바속촉 돈까스 어때요?',
-    keywords: ['돈까스', '돈가스', '카츠'], industries: ['일식 카레/돈가스/덮밥'],
+    keywords: ['돈까스', '돈가스', '카츠'], looseIndustries: ['일식 카레/돈가스/덮밥'],
     groups: ['popular', 'meal', 'solo'],
   },
   {
@@ -66,7 +67,7 @@ export const MENUS: RouletteMenu[] = [
   },
   {
     id: 'gukbap', name: '국밥', emoji: '🍲', cuisine: 'korean', headline: '뜨끈한 국밥 어때요?',
-    keywords: ['국밥', '순대국', '해장국', '설렁탕', '곰탕'], industries: ['국/탕/찌개류'],
+    keywords: ['국밥', '순대국', '해장국', '설렁탕', '곰탕'], looseIndustries: ['국/탕/찌개류'],
     groups: ['popular', 'meal', 'solo', 'soup'],
   },
   {
@@ -96,12 +97,12 @@ export const MENUS: RouletteMenu[] = [
   },
   {
     id: 'kalguksu', name: '칼국수', emoji: '🍜', cuisine: 'korean', headline: '쫄깃한 칼국수 어때요?',
-    keywords: ['칼국수', '수제비'], industries: ['국수/칼국수'],
+    keywords: ['칼국수', '수제비'], looseIndustries: ['국수/칼국수'],
     groups: ['meal', 'soup'],
   },
   {
     id: 'udon', name: '우동', emoji: '🍥', cuisine: 'japanese', headline: '따끈한 우동 어때요?',
-    keywords: ['우동'], industries: ['일식 면 요리'],
+    keywords: ['우동'], looseIndustries: ['일식 면 요리'],
     groups: ['solo', 'soup'],
   },
   {
@@ -171,7 +172,7 @@ export const MENUS: RouletteMenu[] = [
   },
   {
     id: 'toast', name: '토스트', emoji: '🥪', cuisine: 'etc', headline: '바삭한 토스트 어때요?',
-    keywords: ['토스트', '샌드위치'], industries: ['토스트/샌드위치/샐러드'],
+    keywords: ['토스트', '샌드위치'], looseIndustries: ['토스트/샌드위치/샐러드'],
     groups: ['solo', 'snack'],
   },
   {
@@ -196,7 +197,7 @@ export const MENUS: RouletteMenu[] = [
   },
   {
     id: 'samgyeopsal', name: '삼겹살', emoji: '🥓', cuisine: 'korean', headline: '지글지글 삼겹살 어때요?',
-    keywords: ['삼겹', '오겹', '목살'], industries: ['돼지고기 구이/찜'],
+    keywords: ['삼겹', '오겹', '목살'], looseIndustries: ['돼지고기 구이/찜'],
     groups: ['popular', 'night'],
   },
   {
@@ -211,7 +212,7 @@ export const MENUS: RouletteMenu[] = [
   },
   {
     id: 'dakgalbi', name: '닭갈비', emoji: '🐔', cuisine: 'korean', headline: '철판 닭갈비 어때요?',
-    keywords: ['닭갈비'], industries: ['닭/오리고기 구이/찜'],
+    keywords: ['닭갈비'], looseIndustries: ['닭/오리고기 구이/찜'],
     groups: ['night'],
   },
   {
