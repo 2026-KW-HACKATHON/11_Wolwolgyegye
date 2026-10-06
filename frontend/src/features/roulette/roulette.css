@@ -573,3 +573,23 @@
     grid-template-columns: repeat(3, 1fr);
   }
 }
+/* 가게 불러오기 실패: "가게 없음" 과 구분되게 제목과 다시 시도 버튼을 둔다 */
+.rl-stores-error strong {
+  display: block;
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.rl-stores-error p {
+  margin: 4px 0 12px;
+}
+
+.rl-stores-error button {
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 700;
+}

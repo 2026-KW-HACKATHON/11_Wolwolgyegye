@@ -29,9 +29,10 @@ export default function HomeScreen({ onShowNearby, onShowStore }: { onShowNearby
 
   const reload = useCallback(async () => {
     try {
-      const [spaces, classes, promotions] = await Promise.all([fetchFeedPosts('space-rental'), fetchFeedPosts('oneday-class'), fetchClosingSales()]);
+      // 혜택 칸은 덤이라, 세일을 못 읽어도 소식은 보여준다 (그때는 전에 읽은 혜택을 그대로 둔다)
+      const [spaces, classes, promotions] = await Promise.all([fetchFeedPosts('space-rental'), fetchFeedPosts('oneday-class'), fetchClosingSales().catch(() => null)]);
       setPosts([...spaces, ...classes].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)));
-      setSales(promotions);
+      if (promotions) setSales(promotions);
       setError('');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : '동네 소식을 불러오지 못했어요.');

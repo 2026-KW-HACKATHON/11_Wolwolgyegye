@@ -255,13 +255,24 @@ export default function AppShell() {
       setCategoryStores(stores);
       setStoresLoaded((prev) => ({ ...prev, category: true }));
     });
+    return () => { cancelled = true; };
+  }, []);
+
+  // 지도 가게를 못 읽으면(null) 핀 없는 지도만 남으므로, 위쪽에 안내 띠와 다시 시도를 띄운다
+  const [mapRetry, setMapRetry] = useState(0);
+  const [mapLoading, setMapLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    setMapLoading(true);
     void fetchMapStores().then((data) => {
       if (cancelled) return;
       setMapData(data);
+      setMapLoading(false);
       setStoresLoaded((prev) => ({ ...prev, map: true }));
     });
     return () => { cancelled = true; };
-  }, []);
+  }, [mapRetry]);
+  const mapStoresFailed = !mapLoading && mapData === null;
 
   // ---- 지도에 표시할 가게 ----
   // 지도 위쪽 필터는 대표 유형 여러 개를 묶은 것 (MAP_FILTERS)
@@ -516,6 +527,13 @@ export default function AppShell() {
             </form>
             <SubCategoryList items={visibleSubs} selectedId={subId} counts={subCounts} onToggle={toggleSub} />
           </nav>
+
+          {(mapStoresFailed || (mapLoading && mapRetry > 0)) && (
+            <div className="map-load-error" role="alert">
+              <span>{mapLoading ? '가게 정보를 다시 불러오는 중…' : '가게 정보를 불러오지 못했어요'}</span>
+              {!mapLoading && <button type="button" onClick={() => setMapRetry((n) => n + 1)}>다시 시도</button>}
+            </div>
+          )}
 
           {portrait && (
             <button

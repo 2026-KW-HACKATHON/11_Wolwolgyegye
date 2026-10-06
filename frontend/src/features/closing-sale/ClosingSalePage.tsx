@@ -29,12 +29,16 @@ export default function ClosingSalePage() {
   const { openStore } = useShell();
   const openSale = useCallback((sale: ClosingSaleView) => openStore(sale.storeId, { category: 'closing-sale', target: `sale-${sale.id}` }), [openStore]);
   const [sales, setSales] = useState<ClosingSaleView[] | null>(null);
+  /** 세일을 못 읽었으면 true ("세일 없음" 과 구분해서 다시 시도를 보여준다) */
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [version, setVersion] = useState(0);
   const [sort, setSort] = useState<SaleSortKey>('closing');
   const [likedIds, setLikedIds] = useState<string[]>([]);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     let cancelled = false;
+    setLoadFailed(false);
     Promise.all([
       fetchClosingSales(),
       userId ? getSupabaseClient().from('sale_likes').select('sale_id').eq('user_id', userId) : Promise.resolve({ data: [], error: null }),
@@ -43,11 +47,13 @@ export default function ClosingSalePage() {
         setSales(list);
         if (!likes.error) setLikedIds((likes.data ?? []).map((row) => row.sale_id));
       }
+    }).catch(() => {
+      if (!cancelled) setLoadFailed(true);
     });
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, version]);
 
   // 남은 시간이 멈춰 보이지 않도록 주기적으로 현재 시각을 새로 읽는다
   useEffect(() => {
@@ -84,7 +90,7 @@ export default function ClosingSalePage() {
       ? await client.from('sale_likes').delete().eq('user_id', userId).eq('sale_id', id)
       : await client.from('sale_likes').insert({ user_id: userId, sale_id: id });
     if (result.error) setLikedIds((current) => exists ? [...current, id] : current.filter((value) => value !== id));
-    else setSales(await fetchClosingSales());
+    else setSales(await fetchClosingSales().catch(() => sales)); // 관심 수만 새로 읽는 것이라, 못 읽으면 보던 목록을 둔다
   }
 
   return (
@@ -105,7 +111,9 @@ export default function ClosingSalePage() {
           <div>
             <h2 className="cs-list-title">오늘 마감 임박 매장</h2>
             <p className="cs-list-sub">
-              {sales === null ? (
+              {loadFailed ? (
+                '세일 정보를 확인하지 못했어요'
+              ) : sales === null ? (
                 '세일을 불러오는 중이에요…'
               ) : (
                 <>
@@ -130,14 +138,22 @@ export default function ClosingSalePage() {
           </label>
         </div>
 
-        {sales !== null && visible.length === 0 && (
+        {loadFailed && (
+          <div className="cs-empty cs-load-error" role="alert">
+            <strong>마감세일을 불러오지 못했어요</strong>
+            <p>인터넷 연결을 확인한 뒤 다시 시도해 주세요.</p>
+            <button type="button" onClick={() => setVersion((n) => n + 1)}>다시 시도</button>
+          </div>
+        )}
+
+        {!loadFailed && sales !== null && visible.length === 0 && (
           <p className="cs-empty">
             지금은 진행 중인 마감세일이 없어요. 가게 사장님이 세일을 등록하면 이곳에 바로
             올라옵니다.
           </p>
         )}
 
-        {visible.length > 0 && (
+        {!loadFailed && visible.length > 0 && (
           <ul className="cs-grid">
             {visible.map((sale) => {
               const left = minutesLeft(sale, now);
