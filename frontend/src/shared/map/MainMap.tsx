@@ -8,6 +8,7 @@ import { buildingListElement, clusterGroups, clusterIcon, CLUSTER_MAX_ZOOM, grou
 import type { MapStore } from '../../core/supabase/stores';
 import { ADMIN_DONG_LABEL, AREA_LAYERS, createStyles } from './vworld/config';
 import { drawStations, drawSubwayLines } from './osm/drawTransit';
+import { drawCampusLabels } from './vworld/campusLabels';
 import { drawArea, drawBoundary, drawBuildings, drawRailways, drawRoads, drawSchoolFacilities, visibleSchoolFacilities, type BuildingOutlines, type DrawContext } from './vworld/draw';
 import { isInWolgye1 } from './vworld/geometry';
 import { loadData } from './vworld/loadData';
@@ -218,6 +219,7 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
       if (data.subwayLines) drawSubwayLines(ctx, data.subwayLines);
       if (data.stations) drawStations(ctx, data.stations, data.stationExits);
       if (data.adminDong) drawBoundary(ctx, data.adminDong, ctx.styles.ADMIN_DONG_STYLE, ADMIN_DONG_LABEL, 'admin-dong-label');
+      if (data.buildings) drawCampusLabels(ctx, data.buildings);
       adminDongRef.current = data.adminDong;
 
       // 줌이 바뀔 때마다 등급별 표시 여부 갱신 (투명도만 바꿔서 그리기 순서를 유지)
