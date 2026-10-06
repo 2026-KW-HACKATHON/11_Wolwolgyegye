@@ -31,6 +31,8 @@ export interface StoreDetail {
   phone: string;
   /** 대표 사진 공개 URL (store_images 첫 장). 없으면 '' */
   thumbnailUrl: string;
+  /** 사진 탭: 가게 사진 + 공개 중인 공간대여·원데이클래스 글 사진 (가게 사진이 앞) */
+  photos: { url: string; caption: string }[];
   hours: HoursRow[];
   menus: StoreMenu[];
   sales: {
@@ -55,8 +57,8 @@ const COLUMNS = [
   'store_menus(id, name, price, type_id, sort_order, section, kind, description)',
   'closing_sales(id, discount_type, discount_amount, discount_rate, condition, offer, ends_at)',
   'partner_benefits(id, discount_amount, discount_rate, condition, benefit_partners(partners(name)))',
-  'space_rentals(id, title, summary, price, capacity, min_hours, available_hours, created_at, is_published, space_rental_categories(name))',
-  'one_day_classes(id, title, summary, starts_at, duration_minutes, price, current_count, max_count, is_published, one_day_class_categories(name))',
+  'space_rentals(id, title, summary, price, capacity, min_hours, available_hours, created_at, is_published, space_rental_categories(name), space_rental_images(image_path, sort_order))',
+  'one_day_classes(id, title, summary, starts_at, duration_minutes, price, current_count, max_count, is_published, one_day_class_categories(name), one_day_class_images(image_path, sort_order))',
   'stamp_policies(required_stamps, reward, unit, condition)',
 ].join(', ');
 
@@ -64,9 +66,22 @@ const COLUMNS = [
 type Row = Record<string, any>;
 const list = (v: unknown): Row[] => (Array.isArray(v) ? v : v ? [v as Row] : []);
 const num = (v: unknown): number | null => (v === null || v === undefined ? null : Number(v));
+const publicUrl = (path: string) => getSupabaseClient().storage.from('store-media').getPublicUrl(path).data.publicUrl;
+const sorted = (images: Row[]) => [...images].sort((a, b) => a.sort_order - b.sort_order);
 function thumbnailOf(images: Row[]): string {
-  const first = [...images].sort((a, b) => a.sort_order - b.sort_order)[0];
-  return first ? getSupabaseClient().storage.from('store-media').getPublicUrl(first.image_path).data.publicUrl : '';
+  const first = sorted(images)[0];
+  return first ? publicUrl(first.image_path) : '';
+}
+
+/** 사진 탭에 넣을 사진: 가게 사진 → 공간대여 글 사진 → 원데이클래스 글 사진 (공개 글만) */
+function photosOf(row: Row): { url: string; caption: string }[] {
+  const posts = (rows: Row[], images: string) => rows.filter((p) => p.is_published)
+    .flatMap((p) => sorted(list(p[images])).map((img) => ({ url: publicUrl(img.image_path), caption: p.title as string })));
+  return [
+    ...sorted(list(row.store_images)).map((img) => ({ url: publicUrl(img.image_path), caption: '' })),
+    ...posts(list(row.space_rentals), 'space_rental_images'),
+    ...posts(list(row.one_day_classes), 'one_day_class_images'),
+  ];
 }
 
 /** 메뉴를 메뉴판 묶음(section, 없으면 kind) 순서대로 나눈다. 묶음 정보가 하나도 없으면 이름 없는 한 묶음 */
@@ -93,6 +108,7 @@ export async function fetchStoreDetail(id: string): Promise<StoreDetail | null> 
       isMock: Boolean(row.is_mock),
       phone: row.phone ?? '',
       thumbnailUrl: thumbnailOf(list(row.store_images)),
+      photos: photosOf(row),
       hours: list(row.store_hours) as HoursRow[],
       menus: list(row.store_menus)
         .sort((a, b) => a.sort_order - b.sort_order)
