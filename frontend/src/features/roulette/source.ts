@@ -4,7 +4,7 @@ import { walkMinutes } from '../../core/utils/geo';
 import type { MenuMatch, RouletteStoreLink, RouletteStoreView, WheelMenu } from './types';
 
 interface MenuRow { id: string; store_id: string; name: string; price: number }
-interface StoreHitRow { id: string; industry: string }
+interface StoreHitRow { id: string; name: string; industry: string; store_menus: { count: number }[] }
 
 /** 음료·추가·사이드·주류는 그 메뉴를 "파는 가게"로 보기 어려워 뺀다 (예: 치킨집 사이드 떡볶이) */
 const MEAL_KINDS = ['main', 'set', 'dessert'];
@@ -19,7 +19,10 @@ function containsPattern(term: string) {
 
 function matchOf(menu: WheelMenu & Partial<MenuMatch>): MenuMatch {
   const keywords = (menu.keywords?.length ? menu.keywords : [menu.name]).map((k) => k.trim()).filter(Boolean);
-  return { keywords, exclude: menu.exclude ?? [], industries: menu.industries ?? [] };
+  return {
+    keywords, exclude: menu.exclude ?? [], storeNames: menu.storeNames ?? [],
+    industries: menu.industries ?? [], looseIndustries: menu.looseIndustries ?? [],
+  };
 }
 
 /** 메뉴판에 그 메뉴가 있는 가게. 가게마다 메뉴판 순서상 첫 메뉴 하나로 소개한다 */
@@ -43,18 +46,22 @@ async function fetchMenuHits({ keywords, exclude = [] }: MenuMatch, menuName: st
   });
 }
 
-/** 업종이 맞거나 가게 이름에 키워드가 든 전문점 */
-async function fetchSpecialtyStores({ keywords, industries = [] }: MenuMatch): Promise<StoreHitRow[]> {
-  const filters = keywords.map((k) => `name.ilike.${containsPattern(k)}`);
-  if (industries.length) filters.push(`industry.in.(${industries.map((i) => `"${i}"`).join(',')})`);
+/** 업종이 맞거나 가게 이름에 키워드가 든 가게 후보 (메뉴판 메뉴 수 포함) */
+async function fetchSpecialtyStores({ keywords, storeNames = [], industries = [], looseIndustries = [] }: MenuMatch): Promise<StoreHitRow[]> {
+  const filters = [...keywords, ...storeNames].map((k) => `name.ilike.${containsPattern(k)}`);
+  const allIndustries = [...industries, ...looseIndustries];
+  if (allIndustries.length) filters.push(`industry.in.(${allIndustries.map((i) => `"${i}"`).join(',')})`);
   const { data, error } = await getSupabaseClient().from('stores')
-    .select('id, industry').or(filters.join(',')).limit(200);
+    .select('id, name, industry, store_menus(count)').or(filters.join(',')).limit(200);
   if (error) throw error;
   return (data ?? []) as StoreHitRow[];
 }
 
 /**
  * 룰렛에서 뽑힌 메뉴로 추천 가게를 찾아오는 지점. 우리 DB 의 메뉴판·업종·가게 이름을 함께 본다.
+ * - 가게 이름에 키워드가 있거나, 믿는 업종(industries)이면 전문점
+ * - 확인하는 업종(looseIndustries)만 맞으면: 메뉴판에 그 메뉴가 있거나, 메뉴판이 아예 없을 때만 전문점.
+ *   메뉴판은 있는데 그 메뉴가 없으면 업종이 틀린 것으로 보고 뺀다 (예: 횟집으로 등록된 부대찌개집)
  * 전문점을 먼저, 그다음 가까운 순. 메뉴판에 없는 전문점은 업종으로 소개한다.
  */
 async function fetchLinksByMenu(menu: WheelMenu & Partial<MenuMatch>): Promise<RouletteStoreLink[]> {
@@ -66,8 +73,12 @@ async function fetchLinksByMenu(menu: WheelMenu & Partial<MenuMatch>): Promise<R
   ]);
 
   const links = new Map(menuHits.map((l) => [l.storeId, l]));
+  const nameWords = [...match.keywords, ...(match.storeNames ?? [])];
   for (const s of specialty) {
     const hit = links.get(s.id);
+    const trusted = nameWords.some((k) => s.name.includes(k)) || (match.industries ?? []).includes(s.industry);
+    const hasMenus = (s.store_menus?.[0]?.count ?? 0) > 0;
+    if (!trusted && !hit && hasMenus) continue;
     links.set(s.id, hit
       ? { ...hit, specialty: true }
       : { id: `store-${s.id}`, menuName: menu.name, storeId: s.id, specialty: true, desc: s.industry || `${menu.name} 전문` });
