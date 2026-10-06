@@ -23,12 +23,15 @@ function escapeHtml(s: unknown): string {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 }
 
-/** 영역 하나(산/강/학교/아파트)를 그린다. 클릭하면 이름과 설명을 보여준다 */
+/** 영역 하나(산/강/학교/아파트)를 그린다. 클릭하면 이름과 설명을 보여준다 (config.popup 이 false 면 안내창 없음) */
 export function drawArea(ctx: DrawContext, config: AreaLayerConfig, geojson: FeatureCollection) {
+  const popup = config.popup !== false;
   return L.geoJSON(geojson, {
     renderer: ctx.featureRenderer,
-    style: ctx.styles.AREA_STYLES[config.key],
+    style: { ...ctx.styles.AREA_STYLES[config.key], ...(popup ? {} : { interactive: false }) },
+    interactive: popup,
     onEachFeature(feature, sublayer) {
+      if (!popup) return;
       const info = config.normalize(feature);
       sublayer.bindPopup(() => areaPopupHtml(config.label, info));
     },

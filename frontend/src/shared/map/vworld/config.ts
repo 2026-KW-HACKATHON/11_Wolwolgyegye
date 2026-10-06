@@ -38,6 +38,8 @@ export interface AreaLayerConfig {
   url: string;
   label: string;
   normalize: (feature: Feature) => AreaInfo;
+  /** false 면 눌러도 안내창을 띄우지 않고, 클릭을 아래로 통과시킨다 */
+  popup?: boolean;
 }
 
 /**
@@ -46,7 +48,8 @@ export interface AreaLayerConfig {
  * 영역 종류를 추가·삭제하거나 순서를 바꾸려면 여기만 고치면 된다.
  */
 export const AREA_LAYERS: AreaLayerConfig[] = [
-  { key: 'school', url: `${DATA_DIR}/schools.geojson`, label: '학교', normalize: normalizeSchool },
+  // 학교 영역은 이름 없이 "학교 / 대학" 만 나와서 안내창을 띄우지 않는다
+  { key: 'school', url: `${DATA_DIR}/schools.geojson`, label: '학교', normalize: normalizeSchool, popup: false },
   { key: 'apartment', url: `${DATA_DIR}/apartments.geojson`, label: '아파트 단지 (추정)', normalize: normalizeApartment },
   { key: 'water', url: `${DATA_DIR}/water.geojson`, label: '강·하천', normalize: normalizeWater },
   { key: 'mountain', url: `${DATA_DIR}/mountains.geojson`, label: '산', normalize: normalizeMountain },
