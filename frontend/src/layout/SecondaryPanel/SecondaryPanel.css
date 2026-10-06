@@ -57,9 +57,15 @@
 
 /* 예시 표시·닫기(✕) 줄: 탭 안을 스크롤해도 맨 위에 붙어 있다.
    패널 안쪽 여백만큼 위·좌우로 넓혀서 스크롤되는 내용이 뒤로 비치지 않게 덮는다 */
+.secondary-panel {
+  --sd-head-h: 60px; /* 닫기 줄 높이. 목록 탭 줄이 이 바로 아래에 붙는다 */
+}
+
 .secondary-panel__head {
   position: sticky;
   top: calc(-1 * var(--space-4));
+  box-sizing: border-box;
+  height: var(--sd-head-h);
   z-index: 3;
   display: flex;
   flex: none;
@@ -86,16 +92,6 @@
   border-radius: 50%;
   color: var(--color-text-muted);
   font-size: 16px;
-}
-
-.secondary-panel__photo {
-  display: block;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  margin-bottom: var(--space-3);
-  border-radius: var(--radius-md);
-  object-fit: cover;
-  background: var(--color-surface-alt);
 }
 
 .secondary-panel__close:focus-visible {
@@ -262,16 +258,7 @@
 
 /* ---------- 카테고리 묶음 (1차 탭의 상세 화면: features/storeSections.tsx) ---------- */
 .sd-cat {
-  margin: var(--space-4) calc(-1 * var(--space-4)) 0; /* 묶음 안의 사진 등은 탭 좌우 끝까지 */
-  padding-top: var(--space-3);
-  border-top: 6px solid var(--color-surface-alt);
-  scroll-margin-top: 8px;
-}
-
-.sd-cat-title {
-  margin: 0 var(--space-4) var(--space-2);
-  font-size: 15px;
-  letter-spacing: -0.03em;
+  margin: 0 calc(-1 * var(--space-4)); /* 묶음 안의 사진 등은 탭 좌우 끝까지 */
 }
 
 /* 묶음 안에서 글·세일이 여러 개면 사이를 띄운다 */
@@ -281,4 +268,186 @@
 
 .sd-cat-body .cs-page--detail {
   padding: 0 var(--space-4);
+}
+
+/* ---------- 위쪽 사진 줄 (가로로 밀기) ---------- */
+.sd-strip {
+  display: flex;
+  flex: none;
+  gap: 6px;
+  overflow-x: auto;
+  margin: 0 calc(-1 * var(--space-4)) var(--space-2);
+  padding: 0 var(--space-4);
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.sd-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.sd-strip img {
+  flex: none;
+  width: 42%;
+  max-width: 180px;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  object-fit: cover;
+  scroll-snap-align: start;
+}
+
+/* 사진이 한 장뿐이면 넓게 */
+.sd-strip img:only-child {
+  width: 100%;
+  max-width: none;
+  aspect-ratio: 16 / 9;
+}
+
+/* ---------- 목록 탭 [홈 | 가격 | 사진 | 카테고리…]: 닫기 줄 바로 아래에 붙는다 ---------- */
+.sd-tabs {
+  position: sticky;
+  top: calc(var(--sd-head-h) - var(--space-4));
+  z-index: 2;
+  display: flex;
+  flex: none;
+  overflow-x: auto;
+  margin: var(--space-2) calc(-1 * var(--space-4)) 0;
+  padding: 0 var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  scrollbar-width: none;
+}
+
+.sd-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.sd-tabs [role='tab'] {
+  position: relative;
+  flex: 1 0 auto;
+  min-width: 56px;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 고른 탭: 진한 글씨 + 아래 막대 (색만으로 전하지 않는다) */
+.sd-tabs [role='tab'][aria-selected='true'] {
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+.sd-tabs [role='tab'][aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  bottom: -1px;
+  left: 10px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--color-text);
+}
+
+.sd-tabs [role='tab']:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: -3px;
+}
+
+.sd-tabpanel {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-3);
+}
+
+.sd-tabpanel .sd-empty {
+  margin: var(--space-3) 0;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* 홈: 단골(스탬프) 혜택 */
+.sd-perk {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+}
+
+.sd-perk strong {
+  flex: none;
+}
+
+/* 홈: 이 가게 소식 → 탭 바로가기 */
+.sd-shortcuts {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-shortcuts button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.sd-shortcut-label {
+  flex: 1;
+}
+
+.sd-shortcuts b {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.sd-shortcuts .icon {
+  display: block;
+  color: var(--color-text-muted);
+}
+
+.sd-shortcuts button:focus-visible,
+.sd-photos a:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* 사진 탭: 3칸 격자 */
+.sd-photos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-photos a {
+  display: block;
+  border-radius: var(--radius-sm);
+}
+
+.sd-photos img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt);
+  object-fit: cover;
 }
