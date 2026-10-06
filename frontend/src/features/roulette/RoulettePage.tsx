@@ -14,7 +14,7 @@ function loadMenus(): WheelMenu[] {
     if (!raw) return menusForPreset(DEFAULT_PRESET);
     const saved = JSON.parse(raw) as WheelMenu[];
     // 저장해 둔 건 id 만 믿고 지금 기본 메뉴로 바꾼다 (가게 찾는 기준이 바뀌어도 따라가도록).
-    // 파는 가게가 없어 목록에서 뺀 메뉴(예: 예전 쌀국수·마라탕)는 버린다
+    // 파는 가게가 없어 목록에서 뺀 메뉴(예: 예전 쌀국수)는 버린다
     return Array.isArray(saved)
       ? saved.flatMap((m) => MENUS.find((d) => d.id === m.id) ?? [])
       : menusForPreset(DEFAULT_PRESET);

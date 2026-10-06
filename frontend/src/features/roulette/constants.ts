@@ -49,6 +49,12 @@ export const MENUS: RouletteMenu[] = [
     groups: ['popular', 'meal'],
   },
   {
+    id: 'malatang', name: '마라탕', emoji: '🌶️', cuisine: 'chinese', headline: '얼얼한 마라탕 어때요?',
+    // 마라탕집은 아직 메뉴판이 없어 가게 이름(○○마라탕)과 업종으로 찾는다. 메뉴판이 생기면 메뉴 이름으로도 잡힌다
+    keywords: ['마라탕', '마라샹궈', '훠궈'], industries: ['마라탕/훠궈'],
+    groups: ['popular', 'solo'],
+  },
+  {
     id: 'sushi', name: '초밥·회', emoji: '🍣', cuisine: 'japanese', headline: '신선한 초밥 어때요?',
     keywords: ['초밥', '스시', '사시미', '모둠회', '연어'], exclude: ['또띠아'], storeNames: ['참치'],
     // 상가정보의 '일식 회/초밥'은 카레·돈까스·이자카야 같은 일식집 전체에 붙어 있어 쓰지 않는다
