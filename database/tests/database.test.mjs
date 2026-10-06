@@ -263,3 +263,24 @@ test('사진 저장소: 자기 가게 폴더만 쓰고, 다른 가게 폴더로 
   await rejectsCode(as('authenticated', owner, 'update storage.objects set name=$1 where name=$2', [shopB + '/test.webp', path]), '42501');
   assert.equal((await rows('authenticated', neighbor, 'select * from storage.objects')).length, 0);
 });
+
+test('회원 탈퇴: 본인 계정만 지우고, 딸린 기록은 함께 지우며 가게는 연결만 푼다', async () => {
+  const leaver = 'a0000000-0000-4000-8000-000000000008';
+  const admin = 'a0000000-0000-4000-8000-000000000009';
+  const leaverShop = '10000000-0000-4000-8000-000000000006';
+  await db.query("insert into auth.users(id,raw_user_meta_data,email_confirmed_at) values ($1,null,now()),($2,null,now())", [leaver, admin]);
+  await db.query("insert into public.stores(id,owner_id,sbiz_id,name,type_id,address,lat,lng,floor,building_id,is_published) values ($1,$2,'MA006','탈퇴 사장님 가게','korean','주소 6',37.62,127.06,1,'B3',true)", [leaverShop, leaver]);
+  await as('authenticated', leaver, 'insert into public.store_favorites(user_id,store_id) values ($1,$2)', [leaver, shopA]);
+  await db.query('insert into private.admin_users(user_id) values ($1)', [admin]);
+
+  await rejectsCode(as('anon', null, 'select public.delete_my_account()'), '42501');
+  await rejectsCode(as('authenticated', admin, 'select public.delete_my_account()'), '42501');
+  assert.equal(await scalar('select count(*)::int from auth.users where id=$1', [admin]), 1);
+
+  await as('authenticated', leaver, 'select public.delete_my_account()');
+  assert.equal(await scalar('select count(*)::int from auth.users where id=$1', [leaver]), 0);
+  assert.equal(await scalar('select count(*)::int from public.profiles where user_id=$1', [leaver]), 0);
+  assert.equal(await scalar('select count(*)::int from public.store_favorites where user_id=$1', [leaver]), 0);
+  assert.equal(await scalar('select owner_id from public.stores where id=$1', [leaverShop]), null);
+  assert.equal(await scalar('select count(*)::int from auth.users where id=$1', [owner]), 1);
+});
