@@ -1,4 +1,5 @@
 import { forgetStores } from '../../core/source/storeSource';
+import { FEED_CHANGE_EVENT } from '../store-feed/feedSource';
 import type { MenuKind } from '../../core/source/storeDetail';
 import { getSupabaseClient } from '../../core/supabase/client';
 import type { HoursRow } from '../../core/utils/hours';
@@ -215,5 +216,190 @@ export async function saveMenu(storeId: string, input: MenuInput, id?: string): 
 export async function deleteMenu(id: string): Promise<void> {
   const { error } = await getSupabaseClient().from('store_menus').delete().eq('id', id);
   if (error) throw new Error('메뉴를 삭제하지 못했어요.');
+  forgetStores();
+}
+
+// ---------- 사장님 센터: 현황과 운영 중인 소식 ----------
+
+export type OwnerNewsKind = 'space-rental' | 'oneday-class' | 'closing-sale' | 'coupon';
+
+/** 운영 중인 소식 한 줄 (공간대여·클래스 글, 마감세일, 스탬프 규칙을 같은 모양으로) */
+export interface OwnerNews {
+  id: string;
+  kind: OwnerNewsKind;
+  title: string;
+  /** 일정 한 줄 (예: 5월 20일 (화) 14:00 - 17:00) */
+  when: string;
+  status: { label: string; tone: 'on' | 'soon' | 'off' };
+  /** 최신순 정렬 기준 */
+  createdAt: string;
+  /** 일정순 정렬 기준 (없으면 만든 시각) */
+  sortAt: string;
+  /** 공간대여·클래스 글이면 상세 정보 (카드를 누르면 보여 준다) */
+  post?: OwnerPostDetail;
+}
+
+/** 공간대여·클래스 글의 상세 (사장님 센터 > 운영 중인 소식 > 카드) */
+export interface OwnerPostDetail {
+  category: string;
+  summary: string;
+  /** 공간은 시간당, 클래스는 1인당 */
+  price: number;
+  /** 공간은 최대 이용 인원, 클래스는 정원 */
+  capacity: number;
+  /** 공간만: 최소 이용 시간 */
+  minHours: number | null;
+  /** 클래스만: 지금까지 신청한 인원. 공간 대여는 신청을 기록하는 곳이 없어 null */
+  applied: number | null;
+  cancelledAt: string | null;
+  cancelReason: string;
+}
+
+export interface OwnerDashboard {
+  news: OwnerNews[];
+}
+
+const dayFormat = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+const timeFormat = new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+/** 5월 20일 (화) */
+const day = (date: Date) => dayFormat.format(date);
+const time = (date: Date) => timeFormat.format(date);
+function range(startIso: string, endIso: string): string {
+  const start = new Date(startIso);
+  const end = new Date(endIso);
+  const sameDay = start.toDateString() === end.toDateString();
+  return `${day(start)} ${time(start)} - ${sameDay ? '' : `${day(end)} `}${time(end)}`;
+}
+
+interface PostRowBase {
+  id: string; title: string; summary: string; price: number; status: 'open' | 'closed'; created_at: string;
+  cancelled_at: string | null; cancel_reason: string;
+}
+interface NewsSpaceRow extends PostRowBase { available_hours: string; capacity: number; min_hours: number | null; space_rental_categories: { name: string } | null }
+interface NewsClassRow extends PostRowBase { starts_at: string; duration_minutes: number; current_count: number; max_count: number; one_day_class_categories: { name: string } | null }
+
+const CANCELLED = { label: '등록 취소', tone: 'off' } as const;
+const POST_COLUMNS = 'id, title, summary, price, status, created_at, cancelled_at, cancel_reason';
+interface NewsSaleRow { id: string; offer: string; condition: string; discount_type: SaleDiscountType; discount_amount: number | null; discount_rate: number | string | null; starts_at: string; ends_at: string; created_at: string }
+
+function saleTitle(row: NewsSaleRow): string {
+  const rate = row.discount_rate === null ? null : Number(row.discount_rate);
+  const discount = row.discount_type === 'rate' && rate ? `${Math.round(rate * 100)}% 할인`
+    : row.discount_type === 'amount' && row.discount_amount ? `${row.discount_amount.toLocaleString('ko-KR')}원 할인`
+    : '무료 제공';
+  return [row.offer.trim(), discount].filter(Boolean).join(' · ');
+}
+
+/** 내 가게의 공간대여·클래스 글, 끝나지 않은 마감세일, 스탬프 규칙을 한 번에 읽는다 */
+export async function fetchOwnerDashboard(storeId: string): Promise<OwnerDashboard> {
+  const client = getSupabaseClient();
+  const nowIso = new Date().toISOString();
+  const [spaces, classes, sales, stamp] = await Promise.all([
+    client.from('space_rentals').select(`${POST_COLUMNS}, available_hours, capacity, min_hours, space_rental_categories(name)`).eq('store_id', storeId),
+    client.from('one_day_classes').select(`${POST_COLUMNS}, starts_at, duration_minutes, current_count, max_count, one_day_class_categories(name)`).eq('store_id', storeId),
+    client.from('closing_sales').select('id, offer, condition, discount_type, discount_amount, discount_rate, starts_at, ends_at, created_at')
+      .eq('store_id', storeId).gt('ends_at', nowIso),
+    client.from('stamp_policies').select('required_stamps, reward, unit').eq('store_id', storeId).maybeSingle(),
+  ]);
+  if (spaces.error || classes.error || sales.error || stamp.error) throw new Error('가게 소식을 불러오지 못했어요.');
+
+  const now = Date.now();
+  const news: OwnerNews[] = [];
+  const cancelInfo = (row: PostRowBase) => ({ cancelledAt: row.cancelled_at, cancelReason: row.cancel_reason ?? '' });
+  for (const row of (spaces.data ?? []) as unknown as NewsSpaceRow[]) {
+    news.push({
+      id: row.id, kind: 'space-rental', title: row.title, when: row.available_hours,
+      status: row.cancelled_at ? CANCELLED : row.status === 'open' ? { label: '예약 받는 중', tone: 'on' } : { label: '마감', tone: 'off' },
+      createdAt: row.created_at, sortAt: row.created_at,
+      post: {
+        category: row.space_rental_categories?.name ?? '', summary: row.summary, price: row.price, capacity: row.capacity,
+        minHours: row.min_hours, applied: null, ...cancelInfo(row),
+      },
+    });
+  }
+  for (const row of (classes.data ?? []) as unknown as NewsClassRow[]) {
+    const starts = Date.parse(row.starts_at);
+    const ends = new Date(starts + row.duration_minutes * 60_000).toISOString();
+    news.push({
+      id: row.id, kind: 'oneday-class', title: row.title, when: range(row.starts_at, ends),
+      status: row.cancelled_at ? CANCELLED : starts <= now ? { label: '종료', tone: 'off' } : row.status === 'open' ? { label: '모집 중', tone: 'on' } : { label: '모집 마감', tone: 'soon' },
+      createdAt: row.created_at, sortAt: row.starts_at,
+      post: {
+        category: row.one_day_class_categories?.name ?? '', summary: row.summary, price: row.price, capacity: row.max_count,
+        minHours: null, applied: row.current_count, ...cancelInfo(row),
+      },
+    });
+  }
+  for (const row of (sales.data ?? []) as NewsSaleRow[]) {
+    news.push({
+      id: row.id, kind: 'closing-sale', title: saleTitle(row), when: range(row.starts_at, row.ends_at),
+      status: Date.parse(row.starts_at) <= now ? { label: '진행 중', tone: 'on' } : { label: '예정', tone: 'soon' },
+      createdAt: row.created_at, sortAt: row.starts_at,
+    });
+  }
+  if (stamp.data) {
+    news.push({
+      id: `stamp-${storeId}`, kind: 'coupon', title: `${stamp.data.required_stamps}개 모으면 ${stamp.data.reward}`, when: `${stamp.data.unit}마다 1개`,
+      status: { label: '운영 중', tone: 'on' }, createdAt: '', sortAt: '',
+    });
+  }
+
+  return { news };
+}
+
+/**
+ * 공간대여·클래스 등록 취소. 글을 비공개·마감으로 바꾸고 취소 시각과 사유를 남긴다 (손님 목록에서 사라진다).
+ * 이미 신청한 손님에게 알려 주는 기능은 아직 없어서, 화면에서 사장님이 직접 연락하도록 안내한다.
+ */
+export async function cancelOwnerPost(kind: 'space-rental' | 'oneday-class', id: string, reason: string): Promise<void> {
+  const text = reason.trim();
+  if (text.length < 1) throw new Error('취소 사유를 적어 주세요.');
+  if (text.length > 500) throw new Error('취소 사유는 500자 이내로 적어 주세요.');
+  const { data, error } = await getSupabaseClient().from(kind === 'space-rental' ? 'space_rentals' : 'one_day_classes')
+    .update({ status: 'closed', is_published: false, cancelled_at: new Date().toISOString(), cancel_reason: text })
+    .eq('id', id).select('id');
+  if (error || !data?.length) throw new Error('등록을 취소하지 못했어요. 잠시 뒤 다시 시도해 주세요.');
+  forgetStores();
+  window.dispatchEvent(new Event(FEED_CHANGE_EVENT));
+}
+
+// ---------- 스탬프 혜택 ----------
+
+export interface StampPolicyInput {
+  requiredStamps: number;
+  reward: string;
+  unit: string;
+  condition: string;
+}
+
+export async function fetchOwnerStampPolicy(storeId: string): Promise<StampPolicyInput | null> {
+  const { data, error } = await getSupabaseClient().from('stamp_policies')
+    .select('required_stamps, reward, unit, condition').eq('store_id', storeId).maybeSingle();
+  if (error) throw new Error('스탬프 혜택을 불러오지 못했어요.');
+  return data ? { requiredStamps: data.required_stamps, reward: data.reward, unit: data.unit, condition: data.condition } : null;
+}
+
+/** DB stamp_policies check 와 같은 검사 */
+export function validateStampPolicy(input: StampPolicyInput): string | null {
+  if (!Number.isInteger(input.requiredStamps) || input.requiredStamps < 1 || input.requiredStamps > 100) return '모을 개수는 1 ~ 100개로 입력해 주세요.';
+  const reward = input.reward.trim();
+  if (reward.length < 1 || reward.length > 300) return '받는 선물을 300자 이내로 입력해 주세요.';
+  const unit = input.unit.trim();
+  if (unit.length < 1 || unit.length > 100) return '1개를 찍어 주는 기준을 100자 이내로 입력해 주세요.';
+  if (input.condition.length > 1000) return '조건은 1000자 이내로 입력해 주세요.';
+  return null;
+}
+
+/** 가게당 규칙은 하나라서, 있으면 고치고 없으면 새로 만든다 */
+export async function saveStampPolicy(storeId: string, input: StampPolicyInput, exists: boolean): Promise<void> {
+  const problem = validateStampPolicy(input);
+  if (problem) throw new Error(problem);
+  const values = { required_stamps: input.requiredStamps, reward: input.reward.trim(), unit: input.unit.trim(), condition: input.condition.trim() };
+  const client = getSupabaseClient();
+  // 권한이 칸별로 나뉘어 있어(insert 는 store_id 포함, update 는 제외) upsert 대신 나눠서 보낸다
+  const { error } = exists
+    ? await client.from('stamp_policies').update(values).eq('store_id', storeId)
+    : await client.from('stamp_policies').insert({ store_id: storeId, ...values });
+  if (error) throw new Error('스탬프 혜택을 저장하지 못했어요.');
   forgetStores();
 }

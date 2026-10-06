@@ -142,6 +142,16 @@ test('공간대여·원데이클래스: 한 가게에 여러 개, 비공개 글�
   assert.equal((await rows('anon', null, 'select id from public.one_day_classes')).length, 2);
 });
 
+test('등록 취소: 사장님만 사유와 함께 취소하고, 취소한 글은 손님에게 안 보인다', async () => {
+  const id = (await rows('authenticated', owner, "insert into public.one_day_classes(store_id,title,starts_at,duration_minutes,price,current_count,max_count) values ($1,'취소 수업',now()+interval '2 day',60,10000,2,6) returning id", [shopA]))[0].id;
+  const cancel = "update public.one_day_classes set status='closed', is_published=false, cancelled_at=now(), cancel_reason=$2 where id=$1 returning id";
+  await rejectsCode(as('authenticated', owner, cancel, [id, '   ']), '23514');
+  assert.equal((await rows('authenticated', neighbor, cancel, [id, '남의 글'])).length, 0);
+  assert.equal((await rows('authenticated', owner, cancel, [id, '재료 수급 문제'])).length, 1);
+  assert.equal((await rows('anon', null, 'select id from public.one_day_classes where id=$1', [id])).length, 0);
+  assert.equal((await rows('authenticated', owner, 'select cancel_reason from public.one_day_classes where id=$1', [id]))[0].cancel_reason, '재료 수급 문제');
+});
+
 test('이메일/소셜 가입 시 프로필 자동 생성, 이름 정리', async () => {
   await db.query("insert into auth.users(id,raw_user_meta_data,email_confirmed_at) values ($1,$2,now()),($3,$4,now()),($5,null,null)", [
     applicant, { display_name: '새 사장님', role: 'owner' }, socialUser, { name: '가'.repeat(70) }, unverified,

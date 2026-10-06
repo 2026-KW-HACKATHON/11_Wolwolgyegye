@@ -7,6 +7,7 @@ import ClosingSalePage from './closing-sale';
 import CouponPage from './coupon';
 import PartnerStoresPage from './partner-stores';
 import UserPage from './user';
+import OwnerCenterPage from './owner/OwnerCenterPage';
 
 /**
  * 1차 탭 id -> 탭 안에 들어갈 화면 컴포넌트 연결표.
@@ -21,5 +22,6 @@ export const PAGE_REGISTRY: Record<string, ComponentType> = {
   'closing-sale': ClosingSalePage,
   coupon: CouponPage,
   'partner-stores': PartnerStoresPage,
+  owner: OwnerCenterPage,
   user: UserPage,
 };

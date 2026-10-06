@@ -38,6 +38,16 @@ export const ICONS = {
   compass:
     '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.8 9.2 13 13l-3.8 1.8L11 11l3.8-1.8Z"/></svg>',
   user: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  bolt: '<svg class="icon" viewBox="0 0 24 24"><path d="M13 2.5 4.5 13.5H12l-1 8 8.5-11H12l1-8Z"/></svg>',
+  chevronLeft: '<svg class="icon" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>',
+  image: '<svg class="icon" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="15.5" cy="9.5" r="1.8"/><path d="m3.5 17 5.5-5.5 4.5 4.5M13.5 16l2-2 5 5"/></svg>',
+  plus: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  minus: '<svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/></svg>',
+  check: '<svg class="icon" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  trash: '<svg class="icon" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5"/></svg>',
+  clock: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  coins: '<svg class="icon" viewBox="0 0 24 24"><ellipse cx="12" cy="7" rx="7" ry="3"/><path d="M5 7v5c0 1.66 3.13 3 7 3s7-1.34 7-3V7M5 12v5c0 1.66 3.13 3 7 3s7-1.34 7-3v-5"/></svg>',
+  stamp: '<svg class="icon" viewBox="0 0 24 24"><path d="M9.5 13.5V11a2.5 2.5 0 1 1 5 0v2.5"/><path d="M5 15.5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2V17H5v-1.5ZM6 20h12"/></svg>',
   menu: '<svg class="icon" viewBox="0 0 24 24"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></svg>',
   locate:
     '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',

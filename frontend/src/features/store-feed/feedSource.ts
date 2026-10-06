@@ -46,6 +46,7 @@ export async function fetchFeedPosts(kind: FeedKind): Promise<FeedPost[]> {
   if (kind === 'space-rental') {
     const { data, error } = await client.from('space_rentals')
       .select('id, store_id, title, summary, body, available_hours, price, capacity, min_hours, status, created_at, space_rental_categories(name), space_rental_images(image_path, sort_order)')
+      .eq('is_published', true) // 사장님은 자기 가게의 비공개(등록 취소한) 글도 읽을 수 있어서, 손님 목록에는 공개 글만
       .order('created_at', { ascending: false });
     if (error) throw new Error('공간 대여 소식을 불러오지 못했어요.');
     posts = ((data ?? []) as unknown as SpaceRow[]).map((row): SpacePost => ({
@@ -58,6 +59,7 @@ export async function fetchFeedPosts(kind: FeedKind): Promise<FeedPost[]> {
   } else {
     const { data, error } = await client.from('one_day_classes')
       .select('id, store_id, title, summary, body, starts_at, duration_minutes, price, max_count, status, created_at, one_day_class_categories(name), one_day_class_images(image_path, sort_order)')
+      .eq('is_published', true)
       .order('starts_at');
     if (error) throw new Error('원데이클래스 소식을 불러오지 못했어요.');
     posts = ((data ?? []) as unknown as ClassRow[]).map((row): ClassPost => ({
@@ -116,7 +118,7 @@ async function categoryId(kind: FeedKind, name: string): Promise<string> {
   return data.id;
 }
 
-async function uploadPostImage(input: PostInput, postId: string): Promise<string> {
+async function uploadPostImage(input: Pick<PostInput, 'storeId' | 'kind' | 'imageUrl'>, postId: string): Promise<string> {
   if (!input.imageUrl.startsWith('data:image/')) return input.imageUrl;
   const response = await fetch(input.imageUrl);
   const blob = await response.blob();
@@ -182,6 +184,21 @@ export async function saveFeedPost(input: PostInput, existingId?: string): Promi
   window.dispatchEvent(new Event(FEED_CHANGE_EVENT));
   const contactPhone = findFeedStore(input.storeId)?.phone ?? '';
   return { ...input, id: row.id, imageUrl, createdAt: row.created_at, contactPhone } as FeedPost;
+}
+
+/**
+ * 대표 사진(sort_order 0) 뒤에 사진을 더 붙인다. 공간 대여 등록처럼 사진을 여러 장 고르는 화면에서 saveFeedPost 다음에 부른다.
+ * dataUrls 는 PostForm 과 같은 data:image 값 (1MB 이하 JPG·PNG·WebP).
+ */
+export async function addPostImages(post: Pick<FeedPost, 'id' | 'storeId' | 'kind'>, dataUrls: string[]): Promise<void> {
+  if (dataUrls.length === 0) return;
+  if (!dataUrls.every((url) => url.startsWith('data:image/') && validImage(url))) throw new Error('사진 형식을 확인해 주세요.');
+  const client = getSupabaseClient();
+  const imageTable = post.kind === 'space-rental' ? 'space_rental_images' : 'one_day_class_images';
+  const foreignKey = post.kind === 'space-rental' ? 'space_rental_id' : 'one_day_class_id';
+  const paths = await Promise.all(dataUrls.map((imageUrl) => uploadPostImage({ storeId: post.storeId, kind: post.kind, imageUrl }, post.id)));
+  const { error } = await client.from(imageTable).insert(paths.map((imagePath, index) => ({ [foreignKey]: post.id, image_path: imagePath, sort_order: index + 1 })));
+  if (error) throw new Error('글은 저장됐지만 추가 사진을 연결하지 못했어요.');
 }
 
 export async function deleteFeedPost(id: string, kind: FeedKind): Promise<void> {
