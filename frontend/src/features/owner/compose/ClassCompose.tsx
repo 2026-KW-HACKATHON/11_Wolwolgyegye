@@ -153,7 +153,7 @@ export default function ClassCompose({ storeId, onClose }: { storeId: string; on
         <DoneStep icon="palette" title="원데이 클래스를 등록했어요" desc="이웃들이 원데이클래스 목록과 지도에서 바로 볼 수 있어요."
           actions={[
             { label: '등록한 글 보기', onClick: () => navigate(`/oneday-class?post=${savedId}`) },
-            { label: '사장님 센터로', onClick: onClose, primary: true },
+            { label: '가게 관리로', onClick: onClose, primary: true },
           ]} />
       )}
 
