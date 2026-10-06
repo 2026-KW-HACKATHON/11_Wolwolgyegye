@@ -215,7 +215,7 @@
   width: 100%;
   min-width: 0;
   height: 32px;
-  padding: 0 6px;
+  padding: 0 4px;
   border: 0;
   background: transparent;
   color: var(--color-text);
@@ -225,8 +225,19 @@
   outline: 0;
 }
 
+/* 브라우저 기본 지우기(×)는 숨긴다: 우리 지우기 버튼과 겹쳐 두 개로 보이고, 안내 문구 자리도 차지한다 */
+.map-store-search input::-webkit-search-cancel-button,
+.map-store-search input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+/* 안내 문구(가게·업종·주소 검색)가 좁은 검색창에 다 보이게 입력 글자보다 작게 */
 .map-store-search input::placeholder {
   color: var(--color-text-muted);
+  font-size: 11px;
+  letter-spacing: -0.03em;
   opacity: 1;
 }
 
