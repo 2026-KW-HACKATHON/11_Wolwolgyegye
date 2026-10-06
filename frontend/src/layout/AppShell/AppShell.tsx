@@ -8,6 +8,7 @@ import { useVisibleCategories } from '../../core/categories/useVisibleCategories
 import { useLayoutMode } from '../../core/device/LayoutModeContext';
 import { panelAxis, TOUCH_PRIMARY_QUERY } from '../../core/device/layoutMode';
 import { fetchStores } from '../../core/source/storeSource';
+import { distanceMeters } from '../../core/utils/geo';
 import { useActivePath } from '../../core/router/useActivePath';
 import type { CategorySupport, GeoPoint, Store } from '../../core/types/place';
 import Icon from '../../shared/Icon';
@@ -70,6 +71,30 @@ function scrollBarByWheel(event: WheelEvent<HTMLElement>) {
 const NO_INSETS: MapInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const matchesStoreName = (name: string, term: string) => !term || name.toLocaleLowerCase().includes(term);
 
+/** 검색 결과로 지도를 옮길 때의 최소 줌. 18 까지는 가까운 가게 핀이 묶여 보여서, 가게 하나가 따로 보이는 19 */
+const SEARCH_RESULT_ZOOM = 19;
+
+/** 가게 이름이 검색어와 얼마나 맞는지 (작을수록 가까움): 똑같음 → 앞부분 → 띄어쓴 단어의 앞부분 → 어딘가 포함. 안 맞으면 -1 */
+function searchRank(name: string, term: string): number {
+  const n = name.toLocaleLowerCase();
+  if (n === term) return 0;
+  if (n.startsWith(term)) return 1;
+  if (n.split(/\s+/).some((word) => word.startsWith(term))) return 2;
+  return n.includes(term) ? 3 : -1;
+}
+
+/** 검색어에 가장 맞는 가게. 맞는 정도가 같으면 from 에서 가까운 곳 */
+function bestSearchResult<T extends { name: string; point: GeoPoint }>(items: T[], term: string, from: GeoPoint): T | null {
+  let best: { item: T; rank: number; distance: number } | null = null;
+  for (const item of items) {
+    const rank = searchRank(item.name, term);
+    if (rank < 0) continue;
+    const distance = distanceMeters(from, item.point);
+    if (!best || rank < best.rank || (rank === best.rank && distance < best.distance)) best = { item, rank, distance };
+  }
+  return best?.item ?? null;
+}
+
 /**
  * 앱 셸: 지도를 뒤에 깔고, 그 위에 카테고리별 1차 탭을 올린다.
  *
@@ -97,6 +122,10 @@ export default function AppShell() {
   const palette = usePalette();
   const secondaryRef = useRef<HTMLElement>(null);
   const autoLocateRequestedRef = useRef(false);
+  /** 마지막으로 확인한 내 위치 (가게 검색에서 가까운 가게를 고르는 기준). 모르면 월계1동 기준점 */
+  const myLocationRef = useRef<GeoPoint>(MAP_CENTER);
+  /** 지도를 이미 옮긴 검색어 (엔터 뒤 키보드가 닫히며 한 번 더 옮기지 않도록) */
+  const searchedTermRef = useRef('');
   const [stage, setStage] = useState({ width: 0, height: 0 });
   const [panelStates, setPanelStates] = useState<Record<string, PanelState>>({});
   const [subId, setSubId] = useState<string | null>(null);
@@ -274,9 +303,26 @@ export default function AppShell() {
 
   const toggleSub = useCallback((id: string) => setSubId((prev) => (prev === id ? null : id)), []);
 
+  // ---- 가게명 검색: 엔터를 치거나 입력을 마치면(검색창을 벗어나면) 가장 맞는 가게로 지도를 옮긴다 ----
+  // 지금 지도에 보이는 가게(업종 필터 포함) 중에서 이름이 가장 맞는 곳, 같으면 내 위치에서 가까운 곳
+  const jumpToSearchResult = () => {
+    if (!storeTerm || storeTerm === searchedTermRef.current) return;
+    searchedTermRef.current = storeTerm;
+    const best = bestSearchResult([
+      ...mapStores.map((store) => ({ name: store.name, point: store.location })),
+      ...places.map((place) => ({ name: place.name, point: { lat: place.lat, lng: place.lng } })),
+    ], storeTerm, myLocationRef.current);
+    if (!best) {
+      showToast(`'${storeQuery.trim()}' 가게를 찾지 못했어요`);
+      return;
+    }
+    if (mapRef.current?.centerOn(best.point, getInsets(), SEARCH_RESULT_ZOOM)) showToast(`${best.name} 위치로 이동했어요`);
+  };
+
   // ---- 현재 위치: 첫 진입 때 자동 표시하고, 버튼으로도 다시 확인 ----
   const locate = useCallback((announceSuccess = true) => {
     const moveTo = (point: GeoPoint, notice?: string) => {
+      myLocationRef.current = point;
       mapRef.current?.showMyLocation(point);
       const moved = mapRef.current?.centerOn(point, getInsets());
       if (!moved) showToast('지도를 불러오지 못해 위치를 표시할 수 없어요');
@@ -373,17 +419,38 @@ export default function AppShell() {
 
           {/* 그 외 카테고리: 모든 화면에서 지도 위쪽에 얇은 한 줄로 늘어놓는다 (넘치면 옆으로 밀기) */}
           <nav className="map-sub-bar" aria-label="가게 검색 및 업종 카테고리" onWheel={scrollBarByWheel}>
-            <div className="map-store-search">
+            <form
+              className="map-store-search"
+              role="search"
+              onSubmit={(event) => {
+                event.preventDefault();
+                jumpToSearchResult();
+                // 모바일 키보드를 내려 지도가 보이게 한다 (blur 로 한 번 더 옮기지는 않는다)
+                (event.currentTarget.querySelector('input') as HTMLInputElement | null)?.blur();
+              }}
+            >
               <Icon name="search" />
               <input
                 type="search"
+                enterKeyHint="search"
                 aria-label="가게명 검색"
                 placeholder="가게명 검색"
                 value={storeQuery}
-                onChange={(event) => setStoreQuery(event.target.value)}
+                onChange={(event) => { searchedTermRef.current = ''; setStoreQuery(event.target.value); }}
+                onBlur={jumpToSearchResult}
               />
-              {storeQuery && <button type="button" aria-label="가게명 검색어 지우기" onClick={() => setStoreQuery('')}>×</button>}
-            </div>
+              {storeQuery && (
+                <button
+                  type="button"
+                  aria-label="가게명 검색어 지우기"
+                  // 누를 때 검색창 포커스를 뺏지 않는다 (blur 로 지우기 전 검색어 위치로 지도가 옮겨가지 않도록)
+                  onPointerDown={(event) => event.preventDefault()}
+                  onClick={() => { searchedTermRef.current = ''; setStoreQuery(''); }}
+                >
+                  ×
+                </button>
+              )}
+            </form>
             <SubCategoryList items={visibleSubs} selectedId={subId} counts={subCounts} onToggle={toggleSub} />
           </nav>
 
