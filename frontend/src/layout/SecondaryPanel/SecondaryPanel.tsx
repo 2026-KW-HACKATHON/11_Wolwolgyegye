@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState, type KeyboardEvent } from 'react';
 import { subCategoryById } from '../../core/categories/subCategories';
 import type { LayoutMode } from '../../core/device/layoutMode';
+import { findKakaoPlace, type KakaoPlace } from '../../core/source/kakaoPlace';
 import { fetchStoreDetail, groupMenus, type StoreDetail } from '../../core/source/storeDetail';
 import { groupBusinessHours } from '../../core/utils/hours';
 import { STORE_SECTIONS } from '../../features/storeSections';
@@ -60,6 +61,8 @@ const SecondaryPanel = forwardRef<HTMLElement, SecondaryPanelProps>(function Sec
   const id = place?.id ?? null;
   const [loaded, setLoaded] = useState<DetailState>(null);
   const [tab, setTab] = useState<string>('home');
+  /** 사장님이 정보를 등록하지 않은 가게: 카카오맵에서 찾은 결과 (place 가 null 이면 못 찾음, 이 가게 결과가 아직 없으면 찾는 중) */
+  const [kakao, setKakao] = useState<{ id: string; place: KakaoPlace | null } | null>(null);
   const panelRef = useRef<HTMLElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -72,6 +75,17 @@ const SecondaryPanel = forwardRef<HTMLElement, SecondaryPanelProps>(function Sec
     void fetchStoreDetail(id).then((detail) => { if (!cancelled) setLoaded({ id, detail }); });
     return () => { cancelled = true; };
   }, [id]);
+
+  // 사장님이 등록한 정보(영업시간·스탬프·글)가 하나도 없으면 카카오맵에서 같은 가게를 찾아 홈을 채운다
+  const loadedDetail = loaded?.id === id ? loaded.detail : null;
+  const ownerEmpty = !!loadedDetail && !loadedDetail.hours.length && !loadedDetail.stamp
+    && !STORE_SECTIONS.some((section) => section.has(loadedDetail));
+  useEffect(() => {
+    if (!loadedDetail || !ownerEmpty) return;
+    let cancelled = false;
+    void findKakaoPlace(loadedDetail).then((place) => { if (!cancelled) setKakao({ id: loadedDetail.id, place }); });
+    return () => { cancelled = true; };
+  }, [loadedDetail, ownerEmpty]);
 
   // 다른 가게를 열거나 1차 탭에서 열면: 그 카테고리 탭(없으면 홈)부터
   useEffect(() => { setTab(focus?.category ?? 'home'); }, [focus, id]);
@@ -223,7 +237,23 @@ const SecondaryPanel = forwardRef<HTMLElement, SecondaryPanelProps>(function Sec
               </ul>
             </section>
           )}
-          {!detail.stamp && !place.facts.length && !hours.length && !sections.length && <p className="sd-empty">아직 사장님이 등록한 정보가 없어요.</p>}
+          {ownerEmpty && (() => {
+            const found = kakao?.id === place.id ? kakao.place : undefined;
+            if (found === undefined) return <p className="sd-empty" aria-live="polite">카카오맵에서 가게 정보를 찾는 중…</p>;
+            if (!found) return !place.facts.length ? <p className="sd-empty">아직 사장님이 등록한 정보가 없어요.</p> : null;
+            return (
+              <section className="sd-section sd-kakao" aria-label="카카오맵 정보">
+                <h3>카카오맵 정보</h3>
+                <dl className="secondary-panel__facts">
+                  {found.phone && <div><dt>전화</dt><dd><a href={`tel:${found.phone}`}>{found.phone}</a></dd></div>}
+                  {found.category && <div><dt>업종</dt><dd>{found.category.split(' > ').slice(1).join(' · ') || found.category}</dd></div>}
+                  {(found.roadAddress || found.address) && <div><dt>주소</dt><dd>{found.roadAddress || found.address}</dd></div>}
+                </dl>
+                <a className="sd-kakao-link" href={found.url} target="_blank" rel="noreferrer">카카오맵에서 영업시간·후기 보기 <Icon name="chevronRight" /></a>
+                <p className="sd-source">사장님이 아직 정보를 등록하지 않아 카카오맵의 정보를 보여 드려요. 실제와 다를 수 있어요.</p>
+              </section>
+            );
+          })()}
         </>}
 
         {/* 가격 */}

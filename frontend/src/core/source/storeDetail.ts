@@ -29,6 +29,9 @@ export interface StoreDetail {
   address: string;
   isMock: boolean;
   phone: string;
+  /** 좌표 (카카오 장소 검색에서 같은 가게를 찾을 때 쓴다) */
+  lat: number | null;
+  lng: number | null;
   /** 대표 사진 공개 URL (store_images 첫 장). 없으면 '' */
   thumbnailUrl: string;
   /** 사진 탭: 가게 사진 + 공개 중인 공간대여·원데이클래스 글 사진 (가게 사진이 앞) */
@@ -51,7 +54,7 @@ export interface StoreDetail {
 }
 
 const COLUMNS = [
-  'id, name, address, is_mock, phone',
+  'id, name, address, is_mock, phone, lat, lng',
   'store_hours(weekday, opens_at, closes_at, is_closed)',
   'store_images(image_path, sort_order)',
   'store_menus(id, name, price, type_id, sort_order, section, kind, description)',
@@ -107,6 +110,8 @@ export async function fetchStoreDetail(id: string): Promise<StoreDetail | null> 
       address: row.address ?? '',
       isMock: Boolean(row.is_mock),
       phone: row.phone ?? '',
+      lat: num(row.lat),
+      lng: num(row.lng),
       thumbnailUrl: thumbnailOf(list(row.store_images)),
       photos: photosOf(row),
       hours: list(row.store_hours) as HoursRow[],
