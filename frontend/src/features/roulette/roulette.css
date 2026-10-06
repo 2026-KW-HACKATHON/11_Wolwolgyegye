@@ -368,6 +368,8 @@
 /* --- 결과 (원판 아래에 뜬다) --- */
 
 .rl-result {
+  /* 결과로 내려갈 때 아래 가장자리에 딱 붙지 않게 */
+  scroll-margin-bottom: var(--space-4);
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -540,6 +542,53 @@
 
 .rl-store-meta {
   color: var(--color-text-muted);
+}
+
+/* 모바일: 원판과 결과 창을 조금씩 줄여, 결과가 나왔을 때 둘이 한 화면에 같이 보이게 */
+@media (max-width: 600px) {
+  .rl-wheel-zone {
+    gap: var(--space-3);
+  }
+
+  .rl-wheel-frame {
+    --rl-label-scale: 0.82;
+    width: min(250px, 100%);
+  }
+
+  .rl-wheel {
+    border-width: 6px;
+  }
+
+  .rl-spin {
+    width: 74px;
+    height: 74px;
+    font-size: 0.85rem;
+  }
+
+  .rl-result {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .rl-result-emoji {
+    width: 38px;
+    height: 38px;
+    font-size: 1.25rem;
+  }
+
+  .rl-result-label {
+    font-size: 0.7rem;
+  }
+
+  .rl-result-headline {
+    font-size: 0.95rem;
+    line-height: 1.3;
+  }
+
+  .rl-see-stores {
+    padding: 8px 13px;
+    font-size: 0.76rem;
+  }
 }
 
 @container (min-width: 720px) {
