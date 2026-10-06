@@ -12,6 +12,8 @@ export interface AuthContextValue {
   status: AuthStatus;
   userId: string | null;
   userName: string | null;
+  /** 사용자가 등록한 소속 단과대 (partners.id). 등록 안 했거나 손님이면 null */
+  collegeId: string | null;
   email: string | null;
   hasEmailLogin: boolean;
   emailVerified: boolean;
@@ -26,7 +28,7 @@ export interface AuthContextValue {
 }
 
 export const AuthContext = createContext<AuthContextValue>({
-  status: 'checking', userId: null, userName: null, email: null,
+  status: 'checking', userId: null, userName: null, collegeId: null, email: null,
   hasEmailLogin: false, emailVerified: false, isAdmin: false, passwordRecovery: false,
   ownedStores: [], ownerApplication: null, error: null,
   refresh: async () => {}, logout: async () => {}, finishPasswordRecovery: () => {},

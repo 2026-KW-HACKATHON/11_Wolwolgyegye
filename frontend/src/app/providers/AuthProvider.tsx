@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { AuthContext, type AuthContextValue, type OwnerApplication } from '../../core/auth/AuthContext';
 import { getSupabaseClient } from '../../core/supabase/client';
 
-type AuthSnapshot = Pick<AuthContextValue, 'status' | 'userId' | 'userName' | 'email' | 'hasEmailLogin' | 'emailVerified' | 'isAdmin' | 'ownedStores' | 'ownerApplication' | 'error'>;
+type AuthSnapshot = Pick<AuthContextValue, 'status' | 'userId' | 'userName' | 'collegeId' | 'email' | 'hasEmailLogin' | 'emailVerified' | 'isAdmin' | 'ownedStores' | 'ownerApplication' | 'error'>;
 
 const GUEST: AuthSnapshot = {
-  status: 'guest', userId: null, userName: null, email: null,
+  status: 'guest', userId: null, userName: null, collegeId: null, email: null,
   hasEmailLogin: false, emailVerified: false, isAdmin: false,
   ownedStores: [], ownerApplication: null, error: null,
 };
@@ -32,8 +32,10 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const [profile, stores, applications, admin] = await Promise.all([
+      const [profile, college, stores, applications, admin] = await Promise.all([
         client.from('profiles').select('display_name').eq('user_id', user.id).maybeSingle(),
+        // 내 단과대는 따로 읽는다: 칸이 아직 없는 DB 에서도 이름·사장님 정보는 그대로 불러오도록
+        client.from('profiles').select('college_id').eq('user_id', user.id).maybeSingle(),
         client.from('stores').select('id, name').eq('owner_id', user.id),
         client.from('owner_applications').select('id, status, review_note, store_name').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1),
         client.rpc('is_current_user_admin'),
@@ -44,6 +46,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         status: ownedStores.length ? 'owner' : 'customer',
         userId: user.id,
         userName: profile.data?.display_name ?? user.user_metadata?.display_name ?? '월계 주민',
+        collegeId: college.error ? null : (college.data as { college_id: string | null } | null)?.college_id ?? null,
         email: user.email ?? null,
         hasEmailLogin: user.identities?.some((identity) => identity.provider === 'email') ??
           (Array.isArray(user.app_metadata?.providers) && user.app_metadata.providers.includes('email')),
