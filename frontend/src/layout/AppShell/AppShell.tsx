@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type WheelEvent } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ALL_PANELS, DEFAULT_LANDING_PATH, OWNER_PORTRAIT_BAR_IDS, PORTRAIT_BAR_IDS, USER_PANEL } from '../../core/categories/categories';
 import type { Category, PanelMeta } from '../../core/categories/categoryTypes';
 import { MAP_FILTERS, subCategoryById } from '../../core/categories/subCategories';
@@ -69,6 +69,20 @@ function scrollBarByWheel(event: WheelEvent<HTMLElement>) {
 }
 
 const NO_INSETS: MapInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+
+/** 열린 가게 창(2차 탭)을 주소에 남기는 쿼리 이름 (예: /recommend?place=가게ID). store 는 스탬프·제휴 화면이 쓰고 있다 */
+const PLACE_PARAM = 'place';
+/** 가게 창을 열면서 새로 쌓은 기록인지 (history.state.usr 에 둔다). 그렇다면 닫을 때 뒤로가기로 그 기록을 걷어낸다 */
+type PlaceHistoryState = { placePushed?: boolean } | null;
+
+/** 지금 브라우저 주소에 place 만 바꾼 주소. 같은 렌더 안에서 다른 화면이 쿼리를 바꿨을 수 있어 window.location 을 읽는다 */
+function urlWithPlace(id: string | null): string {
+  const params = new URLSearchParams(window.location.search);
+  if (id) params.set(PLACE_PARAM, id);
+  else params.delete(PLACE_PARAM);
+  const search = params.toString();
+  return `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`;
+}
 const matchesStoreName = (name: string, term: string) => !term || name.toLocaleLowerCase().includes(term);
 
 /** 검색 결과로 지도를 옮길 때의 최소 줌. 18 까지는 가까운 가게 핀이 묶여 보여서, 가게 하나가 따로 보이는 19 */
@@ -109,6 +123,8 @@ export default function AppShell() {
   const mode = useLayoutMode();
   const axis = panelAxis(mode);
   const navigate = useNavigate();
+  const { search } = useLocation();
+  const urlPlaceId = new URLSearchParams(search).get(PLACE_PARAM);
   const activePath = useActivePath();
   const categories = useVisibleCategories();
   const showToast = useToast();
@@ -132,6 +148,8 @@ export default function AppShell() {
   const [storeQuery, setStoreQuery] = useState('');
   const [mapData, setMapData] = useState<MapStoreData | null>(null);
   const [categoryStores, setCategoryStores] = useState<Store[]>([]);
+  /** 가게 목록 두 가지를 다 받아 봤는지 (실패해도 true). 주소로 들어온 가게는 이 뒤에 찾아서 연다 */
+  const [storesLoaded, setStoresLoaded] = useState({ category: false, map: false });
   const [mapStoreIds, setMapStoreIds] = useState<string[] | null>(null);
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   /** 2차 탭에 연 지도 가게 (카테고리 가게와 동시에 열리지 않는다) */
@@ -210,7 +228,13 @@ export default function AppShell() {
       setPanelState(panel.id, (panelStates[panel.id] ?? 'half') === 'closed' ? 'half' : 'closed');
       return;
     }
-    navigate(panel.path);
+    navigateKeepingPlace(panel.path);
+  }
+
+  /** 다른 카테고리로 가도 열어 둔 가게 창은 그대로 둔다 (주소의 ?place= 를 따라 붙인다) */
+  function navigateKeepingPlace(path: string) {
+    const place = new URLSearchParams(window.location.search).get(PLACE_PARAM);
+    navigate(place ? `${path}?${PLACE_PARAM}=${encodeURIComponent(place)}` : path);
   }
 
   /** 전체 메뉴에서 고르기: 메뉴를 닫고 그 탭으로 간다. 지금 탭이면 접지 않고 펼쳐서 보여준다 */
@@ -220,14 +244,22 @@ export default function AppShell() {
       if ((panelStates[panel.id] ?? 'half') === 'closed') setPanelState(panel.id, 'half');
       return;
     }
-    navigate(panel.path);
+    navigateKeepingPlace(panel.path);
   }
 
   // ---- 카테고리 가게(아직 없음) · 지도 가게(DB 의 공개 가게, 월계1동 상가정보) ----
   useEffect(() => {
     let cancelled = false;
-    void fetchStores().then((stores) => { if (!cancelled) setCategoryStores(stores); });
-    void fetchMapStores().then((data) => { if (!cancelled) setMapData(data); });
+    void fetchStores().then((stores) => {
+      if (cancelled) return;
+      setCategoryStores(stores);
+      setStoresLoaded((prev) => ({ ...prev, category: true }));
+    });
+    void fetchMapStores().then((data) => {
+      if (cancelled) return;
+      setMapData(data);
+      setStoresLoaded((prev) => ({ ...prev, map: true }));
+    });
     return () => { cancelled = true; };
   }, []);
 
@@ -278,6 +310,37 @@ export default function AppShell() {
     if (place) selectPlace(place);
     else selectStore(storeId);
   }, [selectPlace, selectStore]);
+
+  // ---- 열린 가게 창 ↔ 주소(?place=ID) 맞추기: 뒤로가기로 닫고, 주소를 공유·새로고침해도 같은 가게가 열린다 ----
+  // 주소가 바뀌었으면(뒤로·앞으로가기, 공유 링크) 창을 주소에 맞추고, 창이 바뀌었으면(가게 열기·닫기) 주소를 창에 맞춘다
+  const storesReady = storesLoaded.category && storesLoaded.map;
+  const syncedRef = useRef<{ open: string | null; url: string | null }>({ open: null, url: null });
+  useEffect(() => {
+    const prev = syncedRef.current;
+    if (urlPlaceId !== prev.url && urlPlaceId !== focusedId) {
+      if (!urlPlaceId) {
+        closeSecondary();
+      } else {
+        // 지도 가게인지 카테고리 가게인지 알아야 층·건물까지 보여줄 수 있어서, 가게 목록을 받은 뒤에 연다
+        if (!storesReady) return;
+        setFocus(null);
+        selectAnyStore(urlPlaceId);
+      }
+    } else if (focusedId !== prev.open && focusedId !== urlPlaceId) {
+      const pushed = (window.history.state?.usr as PlaceHistoryState)?.placePushed === true;
+      if (!focusedId) {
+        // 창을 열며 쌓은 기록이면 걷어내서, 닫은 뒤 뒤로가기가 같은 가게를 다시 열지 않게 한다
+        if (pushed) navigate(-1);
+        else navigate(urlWithPlace(null), { replace: true });
+      } else if (urlPlaceId) {
+        // 가게 창이 열린 채 다른 가게로: 기록을 늘리지 않고 바꾼다 (뒤로가기 한 번이면 창이 닫힌다)
+        navigate(urlWithPlace(focusedId), { replace: true, state: { placePushed: pushed } });
+      } else {
+        navigate(urlWithPlace(focusedId), { state: { placePushed: true } });
+      }
+    }
+    syncedRef.current = { open: focusedId, url: urlPlaceId };
+  }, [urlPlaceId, focusedId, storesReady, closeSecondary, selectAnyStore, navigate]);
 
   // 가게를 열면 그 자리를 탭·가게 창에 가려지지 않은 영역 가운데로 (2차 탭 크기가 반영된 뒤에)
   const focusPoint = selectedPlace ?? selectedStore?.location ?? (selectedStoreId ? mapData?.stores.find((p) => p.id === selectedStoreId) : undefined) ?? null;
