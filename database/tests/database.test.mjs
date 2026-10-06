@@ -120,6 +120,16 @@ test('단과대 제휴 가게: 운영자만 연결하고 공개 가게 관계만
   assert.equal((await rows('authenticated', owner, 'select store_id from public.store_partners')).length, 1);
 });
 
+test('내 단과대: 사용자는 자기 프로필에만 등록·해제하고, 단과대가 지워지면 비워진다', async () => {
+  const partner = (await rows('service_role', null, "insert into public.partners(name) values ('자연과학대') returning id"))[0].id;
+  assert.equal((await as('authenticated', owner, 'update public.profiles set college_id=$1 where user_id=$2', [partner, owner])).affectedRows, 1);
+  assert.equal((await as('authenticated', owner, 'update public.profiles set college_id=$1 where user_id=$2', [partner, neighbor])).affectedRows, 0);
+  assert.equal(await scalar('select college_id from public.profiles where user_id=$1', [neighbor]), null);
+  await rejectsCode(as('authenticated', owner, 'update public.profiles set college_id=gen_random_uuid() where user_id=$1', [owner]), '23503');
+  await as('service_role', null, 'delete from public.partners where id=$1', [partner]);
+  assert.equal(await scalar('select college_id from public.profiles where user_id=$1', [owner]), null);
+});
+
 test('마감세일: 금액·퍼센트·무료 제공 세 유형과 각 유형의 필수값', async () => {
   const insert = 'insert into public.closing_sales(store_id,discount_type,discount_amount,discount_rate,offer,starts_at,ends_at) values ($1,$2,$3,$4,$5,now(),now()+interval \'2 hours\')';
   await as('authenticated', owner, insert, [shopA, 'amount', 2000, null, '']);

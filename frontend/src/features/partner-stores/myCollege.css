@@ -1,0 +1,83 @@
+/* 유저 탭의 내 단과대 등록 (MyCollegeSection). 설정 칸과 같은 모양을 쓴다 */
+.mc-section {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.mc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: 4px;
+}
+
+.mc-head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.mc-clear {
+  padding: 4px 2px;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.mc-desc {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.mc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-2);
+}
+
+.mc-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  word-break: keep-all;
+}
+
+.mc-option.is-on {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+  font-weight: 800;
+}
+
+.mc-option:disabled {
+  cursor: default;
+}
+
+.mc-option b {
+  color: var(--color-primary);
+}
+
+.mc-option small {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+}
+
+.mc-error {
+  margin: var(--space-2) 0 0;
+  color: var(--color-danger);
+  font-size: 0.8rem;
+}

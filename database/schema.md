@@ -8,6 +8,7 @@ auth.users                         로그인 계정 (Supabase 가 관리)
 └─ profiles                        사용자 프로필
    ├─ user_id                      계정 번호
    ├─ display_name                 표시 이름
+   ├─ college_id → partners        내 단과대 (사용자가 직접 등록. 비어 있으면 미등록)
    ├─ owner_applications           사장님 신청서
    │  ├─ applicant_name            신청자 이름
    │  ├─ contact_phone             연락처

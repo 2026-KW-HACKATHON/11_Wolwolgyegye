@@ -7,6 +7,7 @@ import { useFavoriteStores } from '../../shared/favorites/useFavoriteStores';
 import { COLLEGES } from './colleges';
 import { AUDIENCE_EVENT, readAudience, saveAudience } from './PartnerSection';
 import { collegeOf, distanceLabel, industryOf, money } from './presentation';
+import { useMyCollege } from './myCollege';
 import { fetchPartnerStores } from './source';
 import type { PartnerAudience, PartnerIndustry, PartnerStoreView } from './types';
 import './partner.css';
@@ -37,6 +38,7 @@ export default function PartnerStoresPage() {
   const [sort, setSort] = useState<SortKey>('near');
   const [focusId, setFocusId] = useState<string | null>(null);
   const [collegesOpen, setCollegesOpen] = useState(false);
+  const myCollege = useMyCollege();
   const college = collegeOf(audience);
   const current = COLLEGES.find((item) => item.key === college);
 
@@ -51,6 +53,14 @@ export default function PartnerStoresPage() {
   }, [attempt]);
 
   useEffect(() => { if (readAudience() !== audience) saveAudience(audience); }, [audience]);
+  // 내 단과대를 등록해 두었으면 제휴 가게 화면에 들어올 때마다 그 단과대 제휴 가게부터 보여준다.
+  // 이 화면은 탭을 옮겨도 숨겨질 뿐이라, 보일 때(active)마다 다시 맞춘다. 화면 안에서 다른 칩을 고르는 건 자유
+  useEffect(() => {
+    if (active && myCollege) {
+      setAudience(myCollege);
+      setCollegesOpen(false);
+    }
+  }, [active, myCollege]);
   useEffect(() => {
     const sync = () => setAudience(readAudience());
     window.addEventListener(AUDIENCE_EVENT, sync);
@@ -157,7 +167,6 @@ export default function PartnerStoresPage() {
             <div className="ps-card-title"><p>{view.store.cuisineType ?? '생활·문화'} · 기준점 {distanceLabel(view.referenceDistanceMeters)}</p><h3>{view.store.name}</h3></div>
             <button className={`ps-heart${favorite ? ' is-on' : ''}`} type="button" aria-label={`${view.store.name} 찜 ${favorite ? '해제' : '하기'}`} aria-pressed={favorite} onClick={() => toggle(view.storeId)}><Icon name="heart" /></button>
           </div>
-          <div className="ps-ticket"><div className="ps-ticket-main"><span className="ps-ticket-label">제휴 단과대</span><strong>{colleges.map((item) => item.label).join(' · ')}</strong><p>가게를 선택하면 실제 등록 메뉴 {view.menus.length}개를 확인할 수 있어요.</p></div></div>
           {menu && <div className="ps-price"><span>{menu.name}</span><b>{money(menu.price)}</b></div>}
           <div className="ps-tags" aria-label="제휴 단과대">{colleges.map((item) => <span className={college === item.key ? 'is-on' : ''} key={item.key}>{item.label}</span>)}</div>
           <div className="ps-card-foot"><span>{view.store.address}</span><button type="button" className="ps-more" onClick={() => openStore(view.storeId, { category: 'partner-stores' })}>지도에서 메뉴 보기 <Icon name="chevronRight" /></button></div>
