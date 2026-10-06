@@ -52,8 +52,7 @@ const COMPOSERS = {
 export default function OwnerCenterPage() {
   const active = usePageActive();
   const { ownedStores, refresh } = useAuth();
-  const [storeId, setStoreId] = useState(() => ownedStores[0]?.id ?? '');
-  const store = ownedStores.find((s) => s.id === storeId) ?? ownedStores[0];
+  const store = ownedStores[0];
   const [data, setData] = useState<OwnerDashboard | null>(null);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<OwnerNewsKind | 'all'>('all');
@@ -127,11 +126,7 @@ export default function OwnerCenterPage() {
       </header>
 
       <div className="oc-store-row">
-        {ownedStores.length > 1 ? (
-          <select className="op-store-select" aria-label="관리할 가게" value={store.id} onChange={(e) => { setStoreId(e.target.value); setData(null); }}>
-            {ownedStores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
-        ) : <strong className="oc-store-name">{store.name}</strong>}
+        <strong className="oc-store-name">{store.name}</strong>
         <button type="button" className="oc-store-edit" onClick={() => setSheet('info')}>가게 정보 관리 <Icon name="chevronRight" /></button>
       </div>
 

@@ -12,10 +12,13 @@ const neighbor = 'a0000000-0000-4000-8000-000000000002';
 const applicant = 'a0000000-0000-4000-8000-000000000003';
 const socialUser = 'a0000000-0000-4000-8000-000000000004';
 const unverified = 'a0000000-0000-4000-8000-000000000005';
+const hiddenOwner = 'a0000000-0000-4000-8000-000000000006';
+const secondApplicant = 'a0000000-0000-4000-8000-000000000007';
 const shopA = '10000000-0000-4000-8000-000000000001'; // owner 의 가게
 const shopB = '10000000-0000-4000-8000-000000000002'; // neighbor 의 가게
-const hidden = '10000000-0000-4000-8000-000000000003'; // 비공개, owner 소유
+const hidden = '10000000-0000-4000-8000-000000000003'; // 비공개, 별도 사장 소유
 const freeShop = '10000000-0000-4000-8000-000000000004'; // 주인 없음 (승인 대상)
+const freeShop2 = '10000000-0000-4000-8000-000000000005'; // 주인 없음 (1:1 제약 검사)
 const request = 'b0000000-0000-4000-8000-000000000001';
 let applicationId;
 
@@ -43,14 +46,15 @@ before(async () => {
   for (const name of (await readdir(folder)).filter((name) => name.endsWith('.sql')).sort()) {
     await db.exec(await readFile(new URL(name, folder), 'utf8'));
   }
-  await db.query("insert into auth.users(id,raw_user_meta_data,email_confirmed_at) values ($1,null,now()),($2,null,now())", [owner, neighbor]);
-  await db.query("insert into auth.identities(user_id,provider) values ($1,'email'),($2,'email')", [owner, neighbor]);
+  await db.query("insert into auth.users(id,raw_user_meta_data,email_confirmed_at) values ($1,null,now()),($2,null,now()),($3,null,now())", [owner, neighbor, hiddenOwner]);
+  await db.query("insert into auth.identities(user_id,provider) values ($1,'email'),($2,'email'),($3,'email')", [owner, neighbor, hiddenOwner]);
   await db.exec("insert into public.store_types(id,name,group_name) values ('korean','한식','restaurant'),('cafe','카페','cafe')");
   await db.query(`insert into public.stores(id,owner_id,sbiz_id,name,type_id,address,lat,lng,floor,building_id,is_published) values
-    ($1,$5,'MA001','가게 A','korean','주소 1',37.62,127.06,1,'B1',true),
-    ($2,$6,'MA002','가게 B','cafe','주소 2',37.62,127.06,-1,'B1',true),
-    ($3,$5,null,'비공개 가게',null,'주소 3',37.62,127.06,null,'',false),
-    ($4,null,'MA004','주인 없는 가게','korean','주소 4',37.62,127.06,2,'B2',true)`, [shopA, shopB, hidden, freeShop, owner, neighbor]);
+    ($1,$6,'MA001','가게 A','korean','주소 1',37.62,127.06,1,'B1',true),
+    ($2,$8,'MA002','가게 B','cafe','주소 2',37.62,127.06,-1,'B1',true),
+    ($3,$7,null,'비공개 가게',null,'주소 3',37.62,127.06,null,'',false),
+    ($4,null,'MA004','주인 없는 가게','korean','주소 4',37.62,127.06,2,'B2',true),
+    ($5,null,'MA005','두 번째 빈 가게','cafe','주소 5',37.62,127.06,1,'B2',true)`, [shopA, shopB, hidden, freeShop, freeShop2, owner, hiddenOwner, neighbor]);
 });
 after(async () => { await db.close(); });
 
@@ -62,10 +66,10 @@ test('모든 앱 표에 RLS 적용', async () => {
 
 test('비로그인: 공개 가게와 유형만 보이고, 비공개 가게는 사장님 본인만 본다', async () => {
   const visible = (await rows('anon', null, 'select id from public.stores')).map((r) => r.id);
-  assert.equal(visible.length, 3);
+  assert.equal(visible.length, 4);
   assert.ok(!visible.includes(hidden));
   assert.equal((await rows('anon', null, 'select id from public.store_types')).length, 2);
-  assert.equal((await rows('authenticated', owner, 'select id from public.stores where id=$1', [hidden])).length, 1);
+  assert.equal((await rows('authenticated', hiddenOwner, 'select id from public.stores where id=$1', [hidden])).length, 1);
   assert.equal((await rows('authenticated', neighbor, 'select id from public.stores where id=$1', [hidden])).length, 0);
 });
 
@@ -91,9 +95,9 @@ test('메뉴·영업시간·이미지: 자기 가게만 쓰고, 공개 가게 �
   await rejectsCode(as('authenticated', owner, 'insert into public.store_hours(store_id,weekday) values ($1,2)', [shopA]), '23514');
   await rejectsCode(as('authenticated', owner, "insert into public.store_hours(store_id,weekday,opens_at,closes_at) values ($1,7,'09:00','18:00')", [shopA]), '23514');
 
-  await as('authenticated', owner, "insert into public.store_images(store_id,image_path) values ($1,$2)", [hidden, hidden + '/a.webp']);
+  await as('authenticated', hiddenOwner, "insert into public.store_images(store_id,image_path) values ($1,$2)", [hidden, hidden + '/a.webp']);
   assert.equal((await rows('anon', null, 'select id from public.store_images where store_id=$1', [hidden])).length, 0);
-  assert.equal((await rows('authenticated', owner, 'select id from public.store_images where store_id=$1', [hidden])).length, 1);
+  assert.equal((await rows('authenticated', hiddenOwner, 'select id from public.store_images where store_id=$1', [hidden])).length, 1);
 });
 
 test('제휴: 운영자만 등록하고, 혜택 하나를 여러 제휴사에 건다', async () => {
@@ -166,6 +170,8 @@ test('이메일/소셜 가입 시 프로필 자동 생성, 이름 정리', async
     applicant, { display_name: '새 사장님', role: 'owner' }, socialUser, { name: '가'.repeat(70) }, unverified,
   ]);
   await db.query("insert into auth.identities(user_id,provider) values ($1,'email'),($2,'kakao'),($3,'email')", [applicant, socialUser, unverified]);
+  await db.query("insert into auth.users(id,raw_user_meta_data,email_confirmed_at) values ($1,null,now())", [secondApplicant]);
+  await db.query("insert into auth.identities(user_id,provider) values ($1,'email')", [secondApplicant]);
   assert.equal(await scalar('select display_name from public.profiles where user_id=$1', [applicant]), '새 사장님');
   assert.equal(await scalar('select length(display_name) from public.profiles where user_id=$1', [socialUser]), 40);
   assert.equal(await scalar('select display_name from public.profiles where user_id=$1', [unverified]), '월계 주민');
@@ -181,12 +187,16 @@ test('사장님 신청: 인증 계정이 실제 DB 가게를 선택하고 관리
   applicationId = (await rows('authenticated', applicant, apply, [applicant, freeShop]))[0].id;
   assert.equal(await scalar('select store_name from public.owner_applications where id=$1', [applicationId]), '주인 없는 가게');
   assert.equal(await scalar('select business_registration_number from public.owner_applications where id=$1', [applicationId]), '1234567890');
+  assert.equal((await rows('authenticated', secondApplicant, "select * from public.search_claimable_stores('주인 없는')")).length, 0);
+  await rejectsCode(as('authenticated', secondApplicant, apply, [secondApplicant, freeShop]), '23505');
   await rejectsCode(as('authenticated', applicant, apply, [applicant, freeShop]), '23505');
   await rejectsCode(as('authenticated', applicant, "select public.review_owner_application($1,'approved',$2)", [applicationId, freeShop]), '42501');
   // 신청자가 고르지 않은 다른 가게로 바꾸어 승인할 수 없다.
   await rejectsCode(as('service_role', null, "select public.review_owner_application($1,'approved',$2)", [applicationId, shopA]), '22023');
   await as('service_role', null, "select public.review_owner_application($1,'approved',$2,'확인')", [applicationId, freeShop]);
   assert.equal(await scalar('select owner_id from public.stores where id=$1', [freeShop]), applicant);
+  await rejectsCode(as('authenticated', applicant, apply, [applicant, freeShop2]), '23505');
+  await rejectsCode(as('service_role', null, 'update public.stores set owner_id=$1 where id=$2', [applicant, freeShop2]), '23505');
   assert.equal((await as('authenticated', applicant, "update public.stores set phone='010-0000-0000' where id=$1", [freeShop])).affectedRows, 1);
 });
 

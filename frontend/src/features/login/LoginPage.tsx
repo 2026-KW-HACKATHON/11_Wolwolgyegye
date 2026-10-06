@@ -26,6 +26,9 @@ function authMessage(error: unknown): string {
   if (/provider.*(not enabled|disabled|unsupported)|unsupported provider/i.test(message)) return '카카오 로그인이 아직 설정되지 않았어요.';
   if (/Invalid business registration number/i.test(message)) return '사업자등록번호 10자리를 확인해 주세요.';
   if (/Store is not available for owner application/i.test(message)) return '현재 신청할 수 없는 가게예요. 목록을 다시 검색해 주세요.';
+  if (/Owner account already linked to/i.test(message)) return '사장님 계정 하나에는 가게 하나만 연결할 수 있어요.';
+  if (/Store already has pending owner application/i.test(message)) return '이 가게는 다른 사장님 신청을 검토 중이에요. 관리자에게 문의해 주세요.';
+  if (/duplicate key.*owner_applications_one_pending_store/i.test(message)) return '이 가게는 다른 사장님 신청을 검토 중이에요. 관리자에게 문의해 주세요.';
   if (/duplicate key.*owner_applications_one_pending/i.test(message)) return '이미 검토 중인 사장님 신청이 있어요.';
   if (/rate limit/i.test(message)) return '잠시 후 다시 시도해 주세요.';
   return message || '요청을 처리하지 못했어요. 다시 시도해 주세요.';
@@ -216,7 +219,7 @@ export default function LoginPage() {
         <p className="lp-sub">{accountEmail ?? '월계1동 이웃들과 함께하고 있어요'}</p>
         {accountError && <p className="lp-error" role="alert">{accountError}</p>}
         {passwordRecovery && <form className="lp-name-form lp-account-section" onSubmit={handleNewPassword}><h3>새 비밀번호 설정</h3><label>새 비밀번호<input className="lp-name-input" required type="password" minLength={6} autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></label><button className="lp-submit" type="submit" disabled={busy}>비밀번호 변경</button></form>}
-        {status === 'owner' && <div className="lp-account-section"><p>관리할 가게: {ownedStores.map((store) => store.name).join(', ')}</p><Link className="lp-link-button" to="/owner">사장님 화면 열기</Link></div>}
+        {status === 'owner' && <div className="lp-account-section"><p>관리 가게: {ownedStores[0]?.name}</p><small className="lp-field-help">사장님 계정 하나에는 승인된 가게 하나만 연결돼요.</small><Link className="lp-link-button" to="/owner">사장님 화면 열기</Link></div>}
         {isAdmin && <div className="lp-account-section"><strong>관리자 계정</strong><p>사장님 가입 신청과 가게 공개 상태를 관리할 수 있어요.</p><Link className="lp-link-button" to="/admin">관리자 페이지 열기</Link></div>}
         {ownerApplication?.status === 'pending' && <div className="lp-account-section"><strong>사장님 승인 대기 중</strong><p>{ownerApplication.store_name} 신청을 검토하고 있어요.</p></div>}
         {ownerApplication?.status === 'rejected' && <div className="lp-account-section"><strong>이전 신청이 반려됐어요</strong><p>{ownerApplication.review_note || '입력 내용을 확인한 뒤 다시 신청해 주세요.'}</p></div>}
@@ -224,7 +227,7 @@ export default function LoginPage() {
         {status !== 'owner' && ownerApplication?.status !== 'pending' && ownerApplication?.status !== 'approved' && (wantsOwner ? (
           hasEmailLogin && emailVerified ? <form className="lp-name-form lp-account-section" onSubmit={handleApplication}>
             <h3>사장님 신청</h3>
-            <p className="lp-sub">DB에 등록된 실제 가게를 선택하고 사업자 정보를 제출해 주세요. 관리자가 확인한 뒤 선택한 가게에만 권한을 연결합니다.</p>
+            <p className="lp-sub">DB에 등록된 실제 가게를 검색해 선택하고 사업자 정보를 제출해 주세요. 승인되면 이 계정은 선택한 가게 한 곳에만 연결됩니다.</p>
             <label>신청자 이름<input className="lp-name-input" required maxLength={80} value={name} placeholder={userName ?? ''} onChange={(event) => setName(event.target.value)} /></label>
             <label>연락처<input className="lp-name-input" required type="tel" minLength={8} maxLength={25} pattern="[0-9+() -]+" value={phone} onChange={(event) => setPhone(event.target.value)} /></label>
             <label>내 가게 검색<input className="lp-name-input" type="search" minLength={2} maxLength={100} value={storeQuery} placeholder="가게명 또는 주소 2글자 이상" onChange={(event) => { setStoreQuery(event.target.value); setSelectedStore(null); setStoreConfirmed(false); }} /></label>
