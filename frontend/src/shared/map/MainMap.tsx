@@ -24,8 +24,8 @@ export interface MapInsets {
 }
 
 export interface MainMapHandle {
-  /** point 를 보이는 지도 영역의 가운데로 옮긴다. 지도가 아직 없으면 false */
-  centerOn(point: GeoPoint, insets: MapInsets): boolean;
+  /** point 를 보이는 지도 영역의 가운데로 옮긴다. minZoom 을 주면 적어도 그만큼 확대한다. 지도가 아직 없으면 false */
+  centerOn(point: GeoPoint, insets: MapInsets, minZoom?: number): boolean;
   /** 내 위치 점을 표시한다 */
   showMyLocation(point: GeoPoint): void;
 }
@@ -84,7 +84,7 @@ function minZoomFor(map: L.Map, portrait: boolean): number {
 }
 
 /** point 가 탭에 가려지지 않은 영역의 가운데에 오도록 지도 중심을 옮긴다 */
-function centerInVisibleArea(map: L.Map, point: GeoPoint, insets: MapInsets) {
+function centerInVisibleArea(map: L.Map, point: GeoPoint, insets: MapInsets, minZoom = 0) {
   const shift = L.point((insets.right - insets.left) / 2, (insets.bottom - insets.top) / 2);
   const centerAt = (zoom: number) => map.unproject(map.project([point.lat, point.lng], zoom).add(shift), zoom);
   // 지도는 이동 범위(maxBounds) 밖으로 못 나가서, 줌이 낮으면 가게를 가려지지 않은 곳 가운데로 끌어올 수 없다.
@@ -95,7 +95,7 @@ function centerInVisibleArea(map: L.Map, point: GeoPoint, insets: MapInsets) {
     const center = map.project(centerAt(zoom), zoom);
     return limit.contains(L.latLngBounds(map.unproject(center.subtract(half), zoom), map.unproject(center.add(half), zoom)));
   };
-  let zoom = map.getZoom();
+  let zoom = Math.min(Math.max(map.getZoom(), minZoom), map.getMaxZoom());
   while (!fits(zoom) && zoom < map.getMaxZoom()) zoom += 1;
   if (zoom === map.getZoom()) map.panTo(centerAt(zoom));
   else map.setView(centerAt(zoom), zoom);
@@ -149,10 +149,10 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
   useEffect(() => { getInsetsRef.current = getInsets; }, [getInsets]);
 
   useImperativeHandle(ref, () => ({
-    centerOn(point, insets) {
+    centerOn(point, insets, minZoom) {
       const map = mapRef.current;
       if (!map) return false;
-      centerInVisibleArea(map, point, insets);
+      centerInVisibleArea(map, point, insets, minZoom);
       return true;
     },
     showMyLocation(point) {
