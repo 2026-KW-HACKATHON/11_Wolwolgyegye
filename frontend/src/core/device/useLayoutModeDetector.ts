@@ -14,11 +14,13 @@ export function useLayoutModeDetector(): LayoutMode {
     const touchQuery = window.matchMedia(TOUCH_PRIMARY_QUERY);
     window.addEventListener('resize', update);
     window.addEventListener('orientationchange', update);
+    window.screen.orientation?.addEventListener('change', update);
     touchQuery.addEventListener('change', update);
 
     return () => {
       window.removeEventListener('resize', update);
       window.removeEventListener('orientationchange', update);
+      window.screen.orientation?.removeEventListener('change', update);
       touchQuery.removeEventListener('change', update);
     };
   }, []);
