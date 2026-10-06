@@ -1,97 +1,84 @@
+import type { MenuKind } from '../../core/source/storeDetail';
 import { fetchStoresByIds, getUserLocation } from '../../core/source/storeSource';
 import { getSupabaseClient } from '../../core/supabase/client';
 import { distanceMeters } from '../../core/utils/geo';
 import { COLLEGES } from './colleges';
-import type { CollegeKey, PartnerBenefit, PartnerStoreMenuItem, PartnerStoreView } from './types';
+import type { CollegeKey, PartnerStoreMenuItem, PartnerStoreView } from './types';
 
-/**
- * 제휴 정보 목록을 가져오는 지점. 화면은 이 함수만 바라본다.
- * DB: partner_benefits(혜택) — benefit_partners — partners(제휴사 = 단과대학 정식 명칭), 메뉴는 store_menus.
- * 혜택 행들을 가게별로 묶어 단과대별 혜택 문구로 바꾼다.
- */
-interface BenefitRow {
-  id: string;
+interface PartnershipRow {
   store_id: string;
-  discount_amount: number | null;
-  discount_rate: number | string | null;
-  condition: string;
-  benefit_partners: { partners: { name: string } | null }[];
+  partners: { name: string } | { name: string }[] | null;
 }
 
-type Discount = { type: 'amount' | 'percent'; value: number };
+const collegeByName = new Map(COLLEGES.map((college) => [college.name, college.key]));
 
-const collegeByName = new Map(COLLEGES.map((c) => [c.name, c.key]));
-
-/** 한 혜택 행의 할인. DB 는 비율과 금액을 함께 둘 수 있어서 둘 다 돌려준다 (비율 먼저) */
-function discountsOf(row: BenefitRow): Discount[] {
-  const list: Discount[] = [];
-  // numeric 칸은 문자열로 올 수 있다
-  if (row.discount_rate !== null) list.push({ type: 'percent', value: Math.round(Number(row.discount_rate) * 100) });
-  if (row.discount_amount !== null) list.push({ type: 'amount', value: row.discount_amount });
-  return list;
+function partnerName(value: PartnershipRow['partners']): string {
+  if (Array.isArray(value)) return value[0]?.name ?? '';
+  return value?.name ?? '';
 }
-const discountText = (list: Discount[]) =>
-  list.map((d) => (d.type === 'percent' ? `${d.value}%` : `${d.value.toLocaleString('ko-KR')}원`)).join(' + ') + ' 할인';
 
-/** 가게별 혜택 + 가게별·단과대별 할인 (메뉴 할인 계산용) */
-async function fetchBenefitRows(): Promise<{ benefits: PartnerBenefit[]; discounts: Map<string, Partial<Record<CollegeKey, Discount>>> }> {
-  const byStore = new Map<string, PartnerBenefit>();
-  const discounts = new Map<string, Partial<Record<CollegeKey, Discount>>>();
-  try {
-    const { data, error } = await getSupabaseClient().from('partner_benefits')
-      .select('id, store_id, discount_amount, discount_rate, condition, benefit_partners(partners(name))');
-    if (error) throw error;
-    for (const row of (data ?? []) as unknown as BenefitRow[]) {
-      const rowDiscounts = discountsOf(row);
-      if (!rowDiscounts.length) continue;
-      const benefit = byStore.get(row.store_id) ?? { storeId: row.store_id, benefits: {}, condition: '' };
-      const storeDiscounts = discounts.get(row.store_id) ?? {};
-      for (const link of row.benefit_partners ?? []) {
-        const key = link.partners ? collegeByName.get(link.partners.name) : undefined;
-        if (!key) continue;
-        const text = discountText(rowDiscounts);
-        benefit.benefits[key] = benefit.benefits[key] ? `${benefit.benefits[key]} / ${text}` : text;
-        // 메뉴 할인가 계산은 한 가지 할인만 쓴다
-        storeDiscounts[key] ??= rowDiscounts[0];
-      }
-      if (row.condition && !benefit.condition.split(' · ').includes(row.condition)) {
-        benefit.condition = benefit.condition ? `${benefit.condition} · ${row.condition}` : row.condition;
-      }
-      byStore.set(row.store_id, benefit);
-      discounts.set(row.store_id, storeDiscounts);
-    }
-  } catch {
-    return { benefits: [], discounts };
+async function fetchPartnerships(): Promise<Map<string, CollegeKey[]>> {
+  const { data, error } = await getSupabaseClient()
+    .from('store_partners')
+    .select('store_id, partners(name)');
+  if (error) throw error;
+  const result = new Map<string, CollegeKey[]>();
+  for (const row of (data ?? []) as unknown as PartnershipRow[]) {
+    const college = collegeByName.get(partnerName(row.partners));
+    if (!college) continue;
+    const colleges = result.get(row.store_id) ?? [];
+    if (!colleges.includes(college)) colleges.push(college);
+    result.set(row.store_id, colleges);
   }
-  return { benefits: [...byStore.values()].filter((b) => Object.keys(b.benefits).length > 0), discounts };
+  return result;
 }
 
-async function fetchMenuRows(storeIds: string[], discounts: Map<string, Partial<Record<CollegeKey, Discount>>>): Promise<PartnerStoreMenuItem[]> {
+async function fetchMenuRows(storeIds: string[]): Promise<PartnerStoreMenuItem[]> {
   if (!storeIds.length) return [];
-  try {
-    const { data, error } = await getSupabaseClient().from('store_menus')
-      .select('id, store_id, name, price, sort_order').in('store_id', storeIds).order('sort_order');
+  const rows: PartnerStoreMenuItem[] = [];
+  for (let index = 0; index < storeIds.length; index += 100) {
+    const { data, error } = await getSupabaseClient()
+      .from('store_menus')
+      .select('id, store_id, name, price, section, kind, description, sort_order')
+      .in('store_id', storeIds.slice(index, index + 100))
+      .order('sort_order');
     if (error) throw error;
-    return ((data ?? []) as { id: string; store_id: string; name: string; price: number }[]).map((m) => ({
-      id: m.id, storeId: m.store_id, name: m.name, price: m.price, discounts: discounts.get(m.store_id),
-    }));
-  } catch {
-    return [];
+    rows.push(...((data ?? []) as {
+      id: string; store_id: string; name: string; price: number; section: string | null;
+      kind: MenuKind | null; description: string | null;
+    }[]).map((menu) => ({
+      id: menu.id,
+      storeId: menu.store_id,
+      name: menu.name,
+      price: menu.price,
+      section: menu.section || null,
+      kind: menu.kind,
+      description: menu.description || null,
+    })));
   }
+  return rows;
 }
 
 export async function fetchPartnerStores(): Promise<PartnerStoreView[]> {
-  const { benefits: rows, discounts } = await fetchBenefitRows();
-  const ids = rows.map((r) => r.storeId);
-  const [menus, stores, here] = await Promise.all([fetchMenuRows(ids, discounts), fetchStoresByIds(ids), getUserLocation()]);
-  return rows.flatMap((row) => {
-    const store = stores.get(row.storeId);
+  const partnerships = await fetchPartnerships();
+  const ids = [...partnerships.keys()];
+  const [menus, stores, here] = await Promise.all([
+    fetchMenuRows(ids),
+    fetchStoresByIds(ids),
+    getUserLocation(),
+  ]);
+  const menusByStore = new Map<string, PartnerStoreMenuItem[]>();
+  for (const menu of menus) menusByStore.set(menu.storeId, [...(menusByStore.get(menu.storeId) ?? []), menu]);
+
+  return ids.flatMap((storeId) => {
+    const store = stores.get(storeId);
     if (!store) return [];
     return [{
-      ...row, store,
+      storeId,
+      colleges: partnerships.get(storeId) ?? [],
+      store,
       referenceDistanceMeters: distanceMeters(here, store.location),
-      menus: menus.filter((menu) => menu.storeId === row.storeId),
-      dataMode: store.isMock ? 'demo' as const : 'live' as const,
+      menus: menusByStore.get(storeId) ?? [],
     }];
   });
 }

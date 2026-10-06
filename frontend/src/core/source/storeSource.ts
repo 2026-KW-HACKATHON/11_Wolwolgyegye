@@ -73,7 +73,7 @@ const SUPPORT_TABLES: [keyof CategorySupport, string][] = [
   ['closing-sale', 'closing_sales'],
   ['space-rental', 'space_rentals'],
   ['oneday-class', 'one_day_classes'],
-  ['partner-stores', 'partner_benefits'],
+  ['partner-stores', 'store_partners'],
   ['coupon', 'stamp_policies'],
   ['roulette', 'store_menus'],
 ];

@@ -48,6 +48,8 @@ interface MainMapProps {
   onPlaceSelect: (place: MapStore) => void;
   /** 상가정보 기준월 (예: 202606). 데이터가 없으면 null */
   placesMonth: string | null;
+  /** 제휴 가게처럼 월계1동 경계 밖의 인접 가게도 표시할 때 true */
+  allowOutsideWolgye?: boolean;
 }
 
 type Status = 'loading' | 'ready' | 'missing';
@@ -125,7 +127,7 @@ function storeIcon(store: Store, selected: boolean): L.DivIcon {
  *
  * 그리는 순서 (아래 → 위): 영역(학교 → 아파트 단지 → 강·하천 → 산) → 도로 → 건물 → 학교 건물 → 월계1동 경계 점선 → 가게 핀
  */
-const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ stores, selectedId, onSelect, getInsets, showZoomControl, portrait, places, selectedPlaceId, onPlaceSelect, placesMonth }, ref) {
+const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ stores, selectedId, onSelect, getInsets, showZoomControl, portrait, places, selectedPlaceId, onPlaceSelect, placesMonth, allowOutsideWolgye = false }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const pinLayerRef = useRef<L.LayerGroup | null>(null);
@@ -339,13 +341,13 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
     layer.clearLayers();
     for (const store of stores) {
       const { lat, lng } = store.location;
-      if (!isInWolgye1(lat, lng, adminDongRef.current)) continue;
+      if (!allowOutsideWolgye && !isInWolgye1(lat, lng, adminDongRef.current)) continue;
       const selected = store.id === selectedId;
       L.marker([lat, lng], { icon: storeIcon(store, selected), title: store.name, zIndexOffset: selected ? 1000 : 0 })
         .on('click', () => onSelectRef.current(store.id))
         .addTo(layer);
     }
-  }, [stores, selectedId, status]);
+  }, [stores, selectedId, status, allowOutsideWolgye]);
 
   // 선택한 가게를 가운데로 옮기는 건 AppShell 이 한다 (가게 창 크기가 정해진 뒤에, centerOn)
 

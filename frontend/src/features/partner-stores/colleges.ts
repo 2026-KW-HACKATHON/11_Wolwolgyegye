@@ -9,5 +9,4 @@ export const COLLEGES: College[] = [
   { key: 'hss', label: '인문사회', name: '인문사회과학대학' },
   { key: 'law', label: '정책법학', name: '정책법학대학' },
   { key: 'biz', label: '경영', name: '경영대학' },
-  { key: 'chambit', label: '참빛인재', name: '참빛인재대학' },
 ];

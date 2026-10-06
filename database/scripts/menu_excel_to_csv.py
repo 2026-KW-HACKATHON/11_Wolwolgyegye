@@ -35,6 +35,8 @@ OUTPUT_COLUMNS = [
     "menu_image",          # 메뉴판 파일
     "sort_order",          # 가게 안에서의 순서 (엑셀 순서)
     "source_row",          # 엑셀 행 번호 (오류 추적용)
+    "review_status",       # 확인 완료 / 확인 필요
+    "data_source",         # 월계1동 메뉴판 / 광운대 단과대 제휴자료
 ]
 
 
@@ -151,9 +153,68 @@ def merged_values(ws):
     return filled
 
 
+def convert_cleaned(ws):
+    """Codex가 만든 DB 업로드용 정제본(헤더 이름 기반)을 CSV로 바꾼다."""
+    headers = {text(cell.value): cell.column for cell in ws[1] if text(cell.value)}
+    required = {"식당명", "분류", "메뉴", "가격(원)", "항목구분", "검수상태", "데이터출처"}
+    missing = required - headers.keys()
+    if missing:
+        sys.exit(f"정제본 필수 열이 없습니다: {', '.join(sorted(missing))}")
+
+    def value(row, name):
+        col = headers.get(name)
+        return ws.cell(row, col).value if col else None
+
+    rows, warnings = [], []
+    order = Counter()
+    for r in range(2, ws.max_row + 1):
+        store = text(value(r, "식당명"))
+        menu = text(value(r, "메뉴"))
+        if not store and not menu:
+            continue
+        category = text(value(r, "분류"))
+        price_cell = value(r, "가격(원)")
+        price = parse_price(price_cell)
+        registered = value(r, "메뉴판 등록일")
+        registered_on = parse_date(registered)
+        item_kind = text(value(r, "항목구분"))
+        kind = "extra" if item_kind in {"토핑", "사리", "추가금", "무료 옵션"} else classify(category, menu)
+
+        if not store:
+            warnings.append(f"{r}행: 식당명 없음")
+        if not menu:
+            warnings.append(f"{r}행: 메뉴명 없음")
+        if price is None:
+            warnings.append(f"{r}행: 가격 해석 불가 ({text(price_cell)!r})")
+        if text(registered) and registered_on is None:
+            warnings.append(f"{r}행: 등록일 해석 불가 ({text(registered)!r})")
+
+        order[store] += 1
+        rows.append({
+            "store_name": store,
+            "category": category,
+            "section": category,
+            "kind": kind,
+            "menu_name": menu,
+            "description": text(value(r, "옵션/비고")),
+            "price": "" if price is None else price,
+            "price_raw": text(price_cell),
+            "menu_registered_on": registered_on or "",
+            "menu_image": text(value(r, "메뉴판 파일")),
+            "sort_order": order[store],
+            "source_row": r,
+            "review_status": text(value(r, "검수상태")) or "확인 필요",
+            "data_source": text(value(r, "데이터출처")),
+        })
+    return rows, warnings
+
+
 def convert(xlsx_path, sheet_name=None):
     wb = load_workbook(xlsx_path, data_only=True)  # 수식은 계산된 값으로
     ws = wb[sheet_name] if sheet_name else wb.worksheets[0]
+    first_row = {text(cell.value) for cell in ws[1]}
+    if {"식당명", "메뉴", "가격(원)", "검수상태", "데이터출처"} <= first_row:
+        return convert_cleaned(ws)
     merged = merged_values(ws)
 
     def cell(row, col):
@@ -200,6 +261,8 @@ def convert(xlsx_path, sheet_name=None):
             "menu_image": image,
             "sort_order": order[store],
             "source_row": r,
+            "review_status": "확인 필요" if any(word in text(category) for word in ("판독", "추정", "오타", "확인 필요")) else "확인 완료",
+            "data_source": "월계1동 메뉴판",
         })
 
     return rows, warnings

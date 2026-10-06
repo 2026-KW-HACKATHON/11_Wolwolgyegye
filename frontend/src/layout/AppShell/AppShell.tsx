@@ -93,11 +93,13 @@ export default function AppShell() {
   const mapRef = useRef<MainMapHandle>(null);
   const palette = usePalette();
   const secondaryRef = useRef<HTMLElement>(null);
+  const autoLocateRequestedRef = useRef(false);
   const [stage, setStage] = useState({ width: 0, height: 0 });
   const [panelStates, setPanelStates] = useState<Record<string, PanelState>>({});
   const [subId, setSubId] = useState<string | null>(null);
   const [mapData, setMapData] = useState<MapStoreData | null>(null);
   const [categoryStores, setCategoryStores] = useState<Store[]>([]);
+  const [mapStoreIds, setMapStoreIds] = useState<string[] | null>(null);
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   /** 2차 탭에 연 지도 가게 (카테고리 가게와 동시에 열리지 않는다) */
   const [selectedPlace, setSelectedPlace] = useState<MapStore | null>(null);
@@ -146,6 +148,7 @@ export default function AppShell() {
   // 다른 카테고리로 오면, 닫혀 있던 탭은 반쯤 열어서 내용을 보여준다
   useEffect(() => {
     if (!activeId) return;
+    setMapStoreIds(null);
     setPanelStates((prev) => (prev[activeId] === 'closed' ? { ...prev, [activeId]: 'half' } : prev));
   }, [activeId]);
 
@@ -207,8 +210,10 @@ export default function AppShell() {
   const mapStores = useMemo(() => {
     if (focusedId) return selectedStore ? [selectedStore] : [];
     // 그 외 카테고리를 고른 동안에는 카테고리 가게 핀을 숨기고 지도 가게만 보여준다
-    return subCategory ? [] : storesForPanel(categoryStores, activeId ?? '');
-  }, [focusedId, subCategory, activeId, selectedStore, categoryStores]);
+    const panelStores = storesForPanel(categoryStores, activeId ?? '');
+    const allowed = mapStoreIds ? new Set(mapStoreIds) : null;
+    return subCategory ? [] : allowed ? panelStores.filter((store) => allowed.has(store.id)) : panelStores;
+  }, [focusedId, subCategory, activeId, selectedStore, categoryStores, mapStoreIds]);
   // 지도 가게: 그 외 카테고리를 고르면 그 유형만, 아니면 전부. 카테고리 핀으로 이미 나온 가게는 두 번 그리지 않는다
   const places = useMemo(() => {
     if (!mapData) return [];
@@ -264,8 +269,8 @@ export default function AppShell() {
 
   const toggleSub = useCallback((id: string) => setSubId((prev) => (prev === id ? null : id)), []);
 
-  // ---- 내 위치 버튼: 현재 위치를 보이는 지도 영역 가운데로 ----
-  function locate() {
+  // ---- 현재 위치: 첫 진입 때 자동 표시하고, 버튼으로도 다시 확인 ----
+  const locate = useCallback((announceSuccess = true) => {
     const moveTo = (point: GeoPoint, notice?: string) => {
       mapRef.current?.showMyLocation(point);
       const moved = mapRef.current?.centerOn(point, getInsets());
@@ -278,11 +283,23 @@ export default function AppShell() {
     }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => { setLocating(false); moveTo({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
+      (pos) => {
+        setLocating(false);
+        moveTo(
+          { lat: pos.coords.latitude, lng: pos.coords.longitude },
+          announceSuccess ? '현재 위치를 지도에 표시했어요' : undefined,
+        );
+      },
       () => { setLocating(false); moveTo(MAP_CENTER, '위치 권한이 없어 월계1동 기준점으로 이동했어요'); },
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 },
     );
-  }
+  }, [getInsets, showToast]);
+
+  useEffect(() => {
+    if (autoLocateRequestedRef.current) return;
+    autoLocateRequestedRef.current = true;
+    locate(false);
+  }, [locate]);
 
   // 가게를 보여줄 때 1차 탭이 지도를 가리지 않게 접는다 (세로 화면: 닫기 / 가로 화면: 전체면 반으로)
   const layoutRef = useRef({ activeId, axis });
@@ -306,6 +323,7 @@ export default function AppShell() {
 
   const api = useMemo<ShellApi>(() => ({
     openStore,
+    setMapStoreIds,
     setActivePanelState(state) {
       if (activeId) setPanelState(activeId, state);
     },
@@ -345,6 +363,7 @@ export default function AppShell() {
             getInsets={getInsets}
             showZoomControl={mode === 'wide' && !window.matchMedia(TOUCH_PRIMARY_QUERY).matches}
             portrait={mode === 'portrait'}
+            allowOutsideWolgye={activeId === 'partner-stores'}
           />
 
           {/* 그 외 카테고리: 모든 화면에서 지도 위쪽에 얇은 한 줄로 늘어놓는다 (넘치면 옆으로 밀기) */}
@@ -370,8 +389,16 @@ export default function AppShell() {
             <button type="button" className="map-fab map-fab--text" aria-haspopup="dialog" onClick={() => setListOpen(true)}>
               목록
             </button>
-            <button type="button" className="map-fab" aria-label="내 위치로 이동" title="내 위치로 이동" aria-busy={locating} onClick={locate}>
+            <button
+              type="button"
+              className="map-fab map-location-fab"
+              aria-label={locating ? '현재 위치 확인 중' : '내 위치로 이동'}
+              aria-busy={locating}
+              disabled={locating}
+              onClick={() => locate()}
+            >
               <Icon name="locate" />
+              <span>{locating ? '위치 확인 중…' : '내 위치'}</span>
             </button>
           </div>
 

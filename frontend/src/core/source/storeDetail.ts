@@ -47,7 +47,8 @@ export interface StoreDetail {
     offer: string;
     endsAt: string;
   }[];
-  benefits: { id: string; discountAmount: number | null; discountRate: number | null; condition: string; partners: string[] }[];
+  /** 이 가게와 직접 연결된 제휴 단과대학 이름 */
+  partnerColleges: string[];
   spaceRentals: { id: string; title: string; summary: string; category: string; price: number; capacity: number; minHours: number | null; availableHours: string }[];
   classes: { id: string; title: string; summary: string; category: string; startsAt: string; durationMinutes: number; price: number; currentCount: number; maxCount: number }[];
   stamp: { requiredStamps: number; reward: string; unit: string; condition: string } | null;
@@ -59,7 +60,7 @@ const COLUMNS = [
   'store_images(image_path, sort_order)',
   'store_menus(id, name, price, type_id, sort_order, section, kind, description)',
   'closing_sales(id, discount_type, discount_amount, discount_rate, condition, offer, ends_at)',
-  'partner_benefits(id, discount_amount, discount_rate, condition, benefit_partners(partners(name)))',
+  'store_partners(partners(name))',
   'space_rentals(id, title, summary, price, capacity, min_hours, available_hours, created_at, is_published, space_rental_categories(name), space_rental_images(image_path, sort_order))',
   'one_day_classes(id, title, summary, starts_at, duration_minutes, price, current_count, max_count, is_published, one_day_class_categories(name), one_day_class_images(image_path, sort_order))',
   'stamp_policies(required_stamps, reward, unit, condition)',
@@ -128,10 +129,7 @@ export async function fetchStoreDetail(id: string): Promise<StoreDetail | null> 
           id: s.id, discountType: s.discount_type, discountAmount: s.discount_amount, discountRate: num(s.discount_rate),
           condition: s.condition, offer: s.offer, endsAt: s.ends_at,
         })),
-      benefits: list(row.partner_benefits).map((b) => ({
-        id: b.id, discountAmount: b.discount_amount, discountRate: num(b.discount_rate), condition: b.condition,
-        partners: list(b.benefit_partners).map((l) => l.partners?.name).filter(Boolean),
-      })),
+      partnerColleges: list(row.store_partners).map((link) => link.partners?.name).filter(Boolean),
       // 사장님은 RLS 로 자기 가게의 비공개(등록 취소한) 글도 읽으므로, 손님 화면에는 공개 글만 남긴다
       spaceRentals: list(row.space_rentals).filter((r) => r.is_published)
         .sort((a, b) => b.created_at.localeCompare(a.created_at))

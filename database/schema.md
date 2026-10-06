@@ -56,6 +56,8 @@ stores                             가게
 │  ├─ description                  옵션·비고 (예: HOT, ICE 변경가능)
 │  ├─ board_date                   메뉴판 등록일
 │  ├─ board_image                  메뉴판 사진 파일 이름
+│  ├─ review_status                엑셀 검수 상태 (confirmed / needs_review)
+│  ├─ data_source                  메뉴를 가져온 원본 자료
 │  └─ sort_order                   보여줄 순서
 ├─ store_hours                     영업시간 (요일마다 한 줄)
 │  ├─ weekday                      요일 (0=일 … 6=토)
@@ -77,6 +79,8 @@ stores                             가게
 │  ├─ condition                    조건
 │  └─ benefit_partners             혜택 ↔ 제휴사 연결
 │     └─ partner_id → partners     제휴사
+├─ store_partners                  단과대 제휴 가게 연결
+│  └─ partner_id → partners        제휴 단과대학
 ├─ space_rentals                   공간대여 글
 │  ├─ category_id → space_rental_categories  분류
 │  ├─ title / summary / body       제목 / 간단 설명 / 본문
@@ -105,7 +109,7 @@ stores                             가게
    └─ user_stamps                  사용자별 스탬프 수 (사용자 + 가게)
       └─ stamp_transactions        적립·사용 기록 (서버에서만 기록)
 
-partners                           제휴사 (광운대 단과대학 8곳)
+partners                           제휴사 (광운대 단과대학 7곳)
 └─ name                            제휴사 이름
 
 space_rental_categories            공간대여 분류 (모임·파티 / 스터디·회의 / 촬영·작업 / 연습·공연 / 공유주방 / 전시·팝업)

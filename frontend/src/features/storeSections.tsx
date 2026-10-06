@@ -23,5 +23,5 @@ export const STORE_SECTIONS: StoreSection[] = [
   { id: 'space-rental', label: '공간대여', has: (d) => d.spaceRentals.length > 0, count: (d) => d.spaceRentals.length, render: (id) => <StoreFeedSection kind="space-rental" storeId={id} /> },
   { id: 'oneday-class', label: '원데이클래스', has: (d) => d.classes.length > 0, count: (d) => d.classes.length, render: (id) => <StoreFeedSection kind="oneday-class" storeId={id} /> },
   { id: 'closing-sale', label: '마감세일', has: (d) => d.sales.length > 0, count: (d) => d.sales.length, render: (id) => <ClosingSaleSection storeId={id} /> },
-  { id: 'partner-stores', label: '제휴 혜택', has: (d) => d.benefits.length > 0, count: (d) => d.benefits.length, render: (id) => <PartnerSection storeId={id} /> },
+  { id: 'partner-stores', label: '단과대 제휴 메뉴', has: (d) => d.partnerColleges.length > 0, count: (d) => d.partnerColleges.length, render: (id) => <PartnerSection storeId={id} /> },
 ];

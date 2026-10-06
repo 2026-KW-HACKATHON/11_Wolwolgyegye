@@ -14,8 +14,8 @@
 //      - 띄어쓰기·괄호를 무시하고 같으면 연결
 //      - 아니면 지점명(…점)을 떼고 비교해서 후보가 하나뿐이면 연결 (미리보기에 "확인 필요"로 보여준다)
 //      - 자동으로 못 잇거나 같은 이름이 여러 곳이면 STORE_ALIASES 에 상가업소번호(sbiz_id)를 직접 적는다
-//   2. 연결된 가게마다 "엑셀에서 가져온 메뉴"(board_image 가 채워진 메뉴)를 지우고 다시 넣는다.
-//      여러 번 실행해도 두 번 쌓이지 않고, 사장님이 직접 넣은 메뉴(board_image 빈칸)는 건드리지 않는다.
+//   2. 연결된 가게마다 같은 엑셀 원본(data_source)과 예전 메뉴판 가져오기(board_image) 메뉴만 지우고 다시 넣는다.
+//      여러 번 실행해도 두 번 쌓이지 않고, 사장님이 직접 넣은 메뉴(data_source 빈칸)는 건드리지 않는다.
 //   3. 사장님이 연결된 가게는 사장님 정보를 지키기 위해 건너뛴다 (import-stores.js 와 같은 원칙).
 // =====================================================================
 
@@ -43,7 +43,20 @@ const STORE_ALIASES = {
   '파리바게뜨 광운대역': 'MA010120220803617036', // 파리바게뜨광운대역점
   '파스토보이 월계점': 'MA0101202209A0035956', // 파스토보이 (중복)
   '한국통닭 석계점': 'MA0101202209A0002672', // 한국통닭석계점 (중복)
+  'FM25.1ST': 'MA010120220805289171', // 에프엠25.1
+  '더진국 수육국밥 광운대점': 'MA0101202406A0280430', // 더진국 광운대점
+  '민들레뜨락2': 'MA0101202406A0013025', // 민들레뜨락이 (같은 가게의 두 번째 메뉴판)
+  '서초우동 광운대역점': 'MA010120220803943534', // 서초우동2
+  '진심카츠 광운대점': 'MA010120220805188847', // 카츠3.3 광운대점
+  '매머드익스프레스 광운대후문점': 'MA0106202408A0426243',
+  '빽다방 석계역문화공원점': 'MA0101202311A0057160',
+  '로스2000': 'MA010120220803957956', // DB에는 전각 숫자 로스２０００으로 저장됨
+  '아따통닭석계점': 'MA0101202503A0038522', // 아따통닭
+  '펍피맥 석계점': 'MA010120220804367296', // 피맥
 };
+
+// 두 엑셀 식당명이 실제로 같은 DB 가게를 가리키는 경우만 허용한다.
+const MERGED_STORE_NAMES = new Set(['민들레뜨락', '민들레뜨락2']);
 
 // ---------------------------------------------------------------------
 // 키 (값은 어디에도 출력하지 않는다)
@@ -138,6 +151,8 @@ function toMenu(r, storeId) {
     description: r.description.slice(0, 300),
     board_date: r.menu_registered_on || null,
     board_image: r.menu_image.slice(0, 300),
+    review_status: r.review_status === '확인 필요' ? 'needs_review' : 'confirmed',
+    data_source: r.data_source.slice(0, 100),
     sort_order: Number.parseInt(r.sort_order, 10) || 0,
   };
 }
@@ -181,11 +196,11 @@ async function main() {
   const targets = linked.filter((n) => !matches.get(n).store.owner_id);
   const unlinked = csvNames.filter((n) => !matches.get(n).store);
 
-  // 같은 DB 가게에 CSV 가게 두 곳이 붙으면 메뉴가 섞이므로 멈춘다
+  // 같은 DB 가게에 서로 다른 CSV 가게가 붙으면 메뉴가 섞일 수 있으므로, 확인된 병합만 허용한다.
   const used = new Map();
   for (const n of linked) {
     const id = matches.get(n).store.id;
-    if (used.has(id)) {
+    if (used.has(id) && !(MERGED_STORE_NAMES.has(used.get(id)) && MERGED_STORE_NAMES.has(n))) {
       console.error(`"${used.get(id)}" 와 "${n}" 이 같은 DB 가게(${matches.get(n).store.name})에 연결됐습니다. STORE_ALIASES 로 나눠 주세요.`);
       process.exit(1);
     }
@@ -210,17 +225,28 @@ async function main() {
   }
   if (owned.length) console.log(`\n[사장님 가게라 건너뜀] ${owned.join(', ')}`);
 
-  const menus = targets.flatMap((n) => rows.filter((r) => r.store_name === n).map((r) => toMenu(r, matches.get(n).store.id)));
+  const menuKeys = new Set();
+  const menus = targets.flatMap((n) => rows.filter((r) => r.store_name === n).map((r) => toMenu(r, matches.get(n).store.id)))
+    .filter((menu) => {
+      const key = [menu.store_id, menu.name, menu.price, menu.section, menu.description].join('\u001f');
+      if (menuKeys.has(key)) return false;
+      menuKeys.add(key);
+      return true;
+    });
   console.log(`\n넣을 메뉴: ${menus.length}개 / 가게 ${targets.length}곳`);
   if (!apply) {
     console.log('미리보기라 DB 는 바꾸지 않았습니다. 확인 후 --apply 를 붙여 다시 실행하세요.');
     return;
   }
 
-  const ids = targets.map((n) => matches.get(n).store.id);
+  const ids = [...new Set(targets.map((n) => matches.get(n).store.id))];
+  const sources = [...new Set(menus.map((menu) => menu.data_source).filter(Boolean))];
   for (let i = 0; i < ids.length; i += 100) {
-    const { error } = await db.from('store_menus').delete().in('store_id', ids.slice(i, i + 100)).neq('board_image', '');
-    if (error) throw new Error(`예전에 가져온 메뉴 지우기 실패: ${error.message}`);
+    const batch = ids.slice(i, i + 100);
+    const { error: legacyError } = await db.from('store_menus').delete().in('store_id', batch).neq('board_image', '');
+    if (legacyError) throw new Error(`예전 메뉴판 가져오기 데이터 지우기 실패: ${legacyError.message}`);
+    const { error: sourceError } = await db.from('store_menus').delete().in('store_id', batch).in('data_source', sources);
+    if (sourceError) throw new Error(`같은 엑셀 원본 메뉴 지우기 실패: ${sourceError.message}`);
   }
   for (let i = 0; i < menus.length; i += CHUNK) {
     const { error } = await db.from('store_menus').insert(menus.slice(i, i + CHUNK));

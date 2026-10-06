@@ -85,6 +85,29 @@
   display: block;
 }
 
+.map-location-fab {
+  display: inline-flex;
+  width: auto;
+  min-width: 104px;
+  padding: 0 16px;
+  gap: 8px;
+  border-radius: 24px;
+  color: #1f67d2;
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.map-location-fab .icon {
+  flex: 0 0 auto;
+  font-size: 21px;
+}
+
+.map-location-fab:disabled {
+  cursor: wait;
+  opacity: 0.82;
+}
+
 .map-fab[aria-expanded='true'] {
   border-color: var(--color-brand);
   color: var(--color-brand);

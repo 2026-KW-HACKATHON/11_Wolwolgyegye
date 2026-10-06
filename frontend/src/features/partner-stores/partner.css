@@ -126,6 +126,7 @@
 .ps-card-title { flex: 1; min-width: 0; }
 .ps-card-title p { margin: 0; color: var(--ps-muted); font-size: 0.78rem; font-weight: 600; }
 .ps-card-title h3 { margin: 0; }
+.ps-card-title h3 { font-size: 1.12rem; font-weight: 850; letter-spacing: -0.02em; line-height: 1.4; }
 
 /* 가게 이름 = 지도 펼치기 버튼 */
 .ps-name {
@@ -201,6 +202,7 @@
 .ps-map-facts dd { margin: 0; }
 
 .ps-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 52px; border-top: 1px solid var(--ps-line); }
+.ps-card-foot > span { color: var(--ps-muted); font-size: 0.74rem; line-height: 1.45; }
 .ps-stamp-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 36px; padding: 0 10px; border-radius: 999px; background: var(--ps-brand-soft); color: var(--ps-brand); font-size: 0.78rem; font-weight: 800; text-decoration: none; }
 .ps-more { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 0 0 8px; border: 0; background: transparent; color: var(--ps-accent); font-size: 0.86rem; font-weight: 800; }
 
@@ -241,6 +243,10 @@
 .ps-note { margin: 12px 0 0; color: var(--ps-muted); font-size: 0.78rem; line-height: 1.75; }
 .ps-menu-list { margin: 0; padding: 0; list-style: none; }
 .ps-menu-list li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 10px 0; font-size: 0.9rem; }
+.ps-menu-list li > span { display: grid; gap: 3px; }
+.ps-menu-list small { color: var(--ps-muted); font-size: 0.74rem; line-height: 1.5; }
+.ps-menu-group + .ps-menu-group { margin-top: 18px; }
+.ps-menu-group h5 { margin: 0 0 4px; color: var(--ps-muted); font-size: 0.82rem; }
 .ps-stamp-link { display: flex; align-items: center; gap: 12px; margin: 20px 0 0; padding: 14px; border-radius: 16px; background: var(--ps-brand-soft); color: var(--ps-brand); text-decoration: none; }
 .ps-stamp-link-icon { display: grid; flex-shrink: 0; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--ps-paper); font-size: 1.1rem; }
 .ps-stamp-link > span:nth-child(2) { flex: 1; }

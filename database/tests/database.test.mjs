@@ -56,7 +56,7 @@ after(async () => { await db.close(); });
 
 test('모든 앱 표에 RLS 적용', async () => {
   const tables = (await db.query("select relname,relrowsecurity from pg_class c join pg_namespace n on c.relnamespace=n.oid where n.nspname='public' and c.relkind='r'")).rows;
-  assert.equal(tables.length, 23);
+  assert.equal(tables.length, 24);
   assert.deepEqual(tables.filter((t) => !t.relrowsecurity).map((t) => t.relname), []);
 });
 
@@ -105,6 +105,15 @@ test('제휴: 운영자만 등록하고, 혜택 하나를 여러 제휴사에 �
   await rejectsCode(as('service_role', null, 'insert into public.benefit_partners(benefit_id,partner_id) values ($1,$2)', [benefit, p1]), '23505');
   await rejectsCode(as('service_role', null, 'insert into public.partner_benefits(store_id) values ($1)', [shopA]), '23514');
   assert.equal((await rows('anon', null, 'select id from public.benefit_partners')).length, 2);
+});
+
+test('단과대 제휴 가게: 운영자만 연결하고 공개 가게 관계만 읽는다', async () => {
+  const partner = (await rows('service_role', null, "select id from public.partners where name='경영대'"))[0].id;
+  await rejectsCode(as('authenticated', owner, 'insert into public.store_partners(store_id,partner_id) values ($1,$2)', [shopA, partner]), '42501');
+  await as('service_role', null, 'insert into public.store_partners(store_id,partner_id) values ($1,$2),($3,$2)', [shopA, partner, hidden]);
+  await rejectsCode(as('service_role', null, 'insert into public.store_partners(store_id,partner_id) values ($1,$2)', [shopA, partner]), '23505');
+  assert.equal((await rows('anon', null, 'select store_id from public.store_partners')).length, 1);
+  assert.equal((await rows('authenticated', owner, 'select store_id from public.store_partners')).length, 1);
 });
 
 test('마감세일: 금액·퍼센트·무료 제공 세 유형과 각 유형의 필수값', async () => {
