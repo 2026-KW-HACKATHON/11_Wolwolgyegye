@@ -22,12 +22,37 @@
   width: min(400px, 44%); /* 카테고리 상세(사진·혜택 표)가 들어가서 조금 넓게 */
 }
 
-/* 세로 화면: 지도 내 하단 (1차 탭 위에 겹친다) */
+/*
+ * 세로 화면: 하단 시트. 가게를 고르면 1차 탭은 접히고(AppShell), 이 시트가 아래에 붙어 올라온다.
+ * 위쪽 지도와 상단의 검색·필터 줄은 가리지 않는다.
+ */
 .secondary-panel[data-layout='portrait'] {
-  right: 8px;
-  bottom: 8px;
-  left: 8px;
-  max-height: 70%;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  max-height: 55%; /* 위쪽 지도와 상단 검색·필터 줄이 보이게 남긴다 */
+  border-bottom: 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  animation: secondary-sheet-up 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 시트 손잡이 (모양만) */
+.secondary-panel[data-layout='portrait']::before {
+  content: '';
+  flex: none;
+  align-self: center;
+  width: 40px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+}
+
+@keyframes secondary-sheet-up {
+  from { transform: translateY(24px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .secondary-panel[data-layout='portrait'] { animation: none; }
 }
 
 /* 예시 표시·닫기(✕) 줄: 탭 안을 스크롤해도 맨 위에 붙어 있다.
@@ -56,8 +81,8 @@
 }
 
 .secondary-panel__close {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   color: var(--color-text-muted);
   font-size: 16px;
@@ -71,6 +96,11 @@
   border-radius: var(--radius-md);
   object-fit: cover;
   background: var(--color-surface-alt);
+}
+
+.secondary-panel__close:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: -3px;
 }
 
 .secondary-panel__name {

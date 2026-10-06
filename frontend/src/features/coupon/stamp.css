@@ -17,8 +17,9 @@
   --st-gold: var(--color-tag-coupon-text);
   --st-gold-soft: var(--color-tag-coupon-bg);
   --st-gold-pale: var(--color-cat-coupon-bg);
-  --st-partner: var(--color-tag-partner-text);
-  --st-partner-soft: var(--color-tag-partner-bg);
+  /* 제휴 가게 안내 링크는 '정보 안내'라서 파란색을 쓴다 */
+  --st-partner: var(--color-info);
+  --st-partner-soft: var(--color-info-soft);
   --st-like: var(--color-like);
   --st-shadow: var(--shadow-soft);
   max-width: 1180px;
@@ -59,7 +60,8 @@
 .st-large-goal b { font-size: 1.6rem; color: var(--st-brand); }
 .st-large-goal > span { color: var(--st-muted); font-size: 0.9rem; }
 .st-meter-progress { display: block; margin: 12px 0; }
-.st-btn--primary { background: var(--st-brand); color: var(--color-on-primary); }
+/* 채워진 버튼은 적립 코드 열기 같은 핵심 행동에만 쓴다 */
+.st-btn--primary { background: var(--color-primary); color: var(--color-on-primary); }
 .st-btn--line { background: var(--st-paper); border-color: var(--st-line); color: var(--st-ink); }
 .st-btn--block { width: 100%; }
 
@@ -153,8 +155,10 @@
   font-size: 0.74rem;
   text-align: center;
 }
-.st-filters button.is-on { background: var(--st-brand); border-color: var(--st-brand); color: var(--color-on-dark); }
-.st-filters button.is-on span { background: var(--color-on-dark-soft); color: var(--color-on-dark); }
+.st-filters button.is-on { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary); }
+.st-filters button.is-on span { background: var(--color-on-dark-soft); color: var(--color-on-primary); }
+/* 선택 상태를 색만으로 전하지 않도록 체크 표시를 함께 붙인다 */
+.st-filters button.is-on::before { content: '✓'; font-weight: 900; }
 
 .st-list-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; }
 .st-list-head h2 { margin: 0; font-size: 1.12rem; font-weight: 850; letter-spacing: -0.02em; }

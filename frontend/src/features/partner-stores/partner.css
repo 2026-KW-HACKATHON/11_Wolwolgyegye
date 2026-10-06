@@ -1,6 +1,6 @@
 /* ==========================================================================
-   제휴 가게 화면 (/partner-stores). 홈·스탬프와 같은 아이보리·자주색 바탕에
-   제휴 태그의 파란색(--color-tag-partner-*)을 혜택 강조색으로 쓴다.
+   제휴 가게 화면 (/partner-stores). 홈·스탬프와 같은 아이보리·자주색 바탕.
+   선택 상태·혜택 강조는 주색(--color-primary) 하나(--ps-accent)로 통일한다.
    ========================================================================== */
 .ps-page {
   --ps-ink: var(--color-text);
@@ -11,9 +11,9 @@
   --ps-cream-2: var(--color-surface-alt);
   --ps-brand: var(--color-brand);
   --ps-brand-soft: var(--color-brand-soft);
-  --ps-blue: var(--color-tag-partner-text);
-  --ps-blue-soft: var(--color-tag-partner-bg);
-  --ps-blue-pale: color-mix(in srgb, var(--ps-blue-soft) 45%, var(--ps-paper));
+  --ps-accent: var(--color-primary);
+  --ps-accent-soft: var(--color-tag-partner-bg);
+  --ps-accent-pale: color-mix(in srgb, var(--ps-accent-soft) 45%, var(--ps-paper));
   --ps-green: var(--color-neighborhood);
   --ps-green-soft: var(--color-neighborhood-soft);
   --ps-gold: var(--color-tag-coupon-text);
@@ -29,7 +29,7 @@
 .ps-page button, .ps-page select, .ps-page input, .ps-page a { font: inherit; }
 .ps-page button, .ps-page select { cursor: pointer; }
 .ps-page button:disabled { cursor: not-allowed; opacity: 0.55; }
-.ps-page :is(button, a, input, select):focus-visible { outline: 3px solid var(--ps-brand); outline-offset: 2px; }
+.ps-page :is(button, a, input, select):focus-visible { outline: 3px solid var(--ps-accent); outline-offset: 2px; }
 .ps-page .icon { font-size: 1.15em; }
 .ps-sr { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
@@ -56,8 +56,14 @@
   white-space: nowrap;
 }
 .ps-colleges button span { min-width: 20px; padding: 1px 6px; border-radius: 999px; background: var(--ps-cream-2); font-size: 0.72rem; text-align: center; }
-.ps-colleges button.is-on { background: var(--ps-brand); border-color: var(--ps-brand); color: var(--color-on-dark); }
-.ps-colleges button.is-on span { background: var(--color-on-dark-soft); color: var(--color-on-dark); }
+.ps-colleges button.is-on { background: var(--ps-accent); border-color: var(--ps-accent); color: var(--color-on-primary); }
+.ps-colleges button.is-on span { background: var(--color-on-dark-soft); color: var(--color-on-primary); }
+/* 선택 상태를 색만으로 전하지 않도록 체크 표시를 함께 붙인다 */
+.ps-colleges button.is-on::before, .ps-college-panel button.is-on::before, .ps-filters button.is-on::before { content: '✓'; font-weight: 900; }
+.ps-colleges .ps-more-chip { gap: 2px; border-style: dashed; color: var(--ps-ink); }
+.ps-college-panel { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; padding: 12px; border: 1px solid var(--ps-line); border-radius: 16px; background: var(--ps-cream); }
+.ps-college-panel button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 1px solid var(--ps-line); border-radius: 999px; background: var(--ps-paper); color: var(--ps-muted); font-size: 0.88rem; font-weight: 700; white-space: nowrap; }
+.ps-college-panel button.is-on { background: var(--ps-accent); border-color: var(--ps-accent); color: var(--color-on-primary); }
 
 /* --- 검색·필터 --- */
 .ps-tools { display: flex; gap: 8px; }
@@ -65,21 +71,21 @@
 .ps-search input { width: 100%; min-width: 0; min-height: 48px; border: 0; background: transparent; color: var(--ps-ink); font-size: 0.9rem; }
 .ps-search input:focus { outline: none; }
 .ps-search input::placeholder { color: var(--color-text-faint); }
-.ps-search:focus-within { border-color: var(--ps-brand); }
+.ps-search:focus-within { border-color: var(--ps-accent); }
 .ps-saved { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 76px; min-height: 50px; padding: 0 14px; border: 1px solid var(--ps-line); border-radius: 999px; background: var(--ps-paper); color: var(--ps-muted); font-size: 0.88rem; font-weight: 700; }
 .ps-saved.is-on { background: color-mix(in srgb, var(--ps-like) 12%, var(--ps-paper)); border-color: color-mix(in srgb, var(--ps-like) 45%, transparent); color: var(--ps-like); }
 .ps-saved.is-on .icon, .ps-heart.is-on .icon { fill: currentColor; }
 
 .ps-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 20px; }
-.ps-filters button { flex: none; min-height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--ps-cream-2); color: var(--ps-muted); font-size: 0.84rem; font-weight: 700; white-space: nowrap; }
-.ps-filters button.is-on { background: var(--ps-ink); color: var(--ps-paper); }
+.ps-filters button { display: inline-flex; align-items: center; gap: 5px; flex: none; min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--ps-cream-2); color: var(--ps-muted); font-size: 0.84rem; font-weight: 700; white-space: nowrap; }
+.ps-filters button.is-on { background: var(--ps-accent); color: var(--color-on-primary); }
 .ps-sort {
   flex-shrink: 0;
-  min-height: 40px;
-  padding: 0 30px 0 12px;
-  border: 1px solid var(--ps-line);
-  border-radius: 999px;
-  background: var(--ps-paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236f655c' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center / 14px;
+  min-height: 44px;
+  padding: 0 24px 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23686868' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 4px center / 14px;
   color: var(--ps-ink);
   font-size: 0.82rem;
   font-weight: 700;
@@ -90,8 +96,8 @@
 .ps-list-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; margin-bottom: 10px; }
 .ps-list-head > div { display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; min-width: 0; }
 .ps-list-head h2 { margin: 0; font-size: 1.12rem; font-weight: 850; letter-spacing: -0.02em; }
-.ps-list-head h2 > span { margin-left: 4px; color: var(--ps-blue); }
-.ps-text-button { min-height: 44px; padding: 0 4px; border: 0; background: transparent; color: var(--ps-brand); font-size: 0.85rem; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.ps-list-head h2 > span { margin-left: 4px; color: var(--ps-accent); }
+.ps-text-button { min-height: 44px; padding: 0 4px; border: 0; background: transparent; color: var(--ps-accent); font-size: 0.85rem; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 
 .ps-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin: 0; padding: 0; list-style: none; }
 
@@ -107,7 +113,7 @@
   box-shadow: var(--ps-shadow);
   scroll-margin-top: 12px;
 }
-.ps-card.is-focus { border-color: color-mix(in srgb, var(--ps-blue) 55%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ps-blue) 14%, transparent), var(--ps-shadow); }
+.ps-card.is-focus { border-color: color-mix(in srgb, var(--ps-accent) 55%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ps-accent) 14%, transparent), var(--ps-shadow); }
 .ps-card-top { grid-area: top; display: flex; align-items: center; gap: 12px; }
 .ps-ticket { grid-area: ticket; }
 .ps-price { grid-area: price; }
@@ -115,7 +121,7 @@
 .ps-map-panel { grid-area: map; }
 .ps-card-foot { grid-area: foot; }
 
-.ps-store-icon { display: grid; flex-shrink: 0; place-items: center; width: 46px; height: 46px; border-radius: 15px; background: var(--ps-blue-pale); color: var(--ps-blue); font-size: 1.3rem; }
+.ps-store-icon { display: grid; flex-shrink: 0; place-items: center; width: 46px; height: 46px; border-radius: 15px; background: var(--ps-accent-pale); color: var(--ps-accent); font-size: 1.3rem; }
 .ps-store-icon.is-cafe { background: var(--ps-gold-soft); color: var(--ps-gold); }
 .ps-card-title { flex: 1; min-width: 0; }
 .ps-card-title p { margin: 0; color: var(--ps-muted); font-size: 0.78rem; font-weight: 600; }
@@ -162,29 +168,29 @@
 .ps-name[aria-expanded='true'] .ps-name-chevron { transform: rotate(180deg); }
 .ps-name[aria-expanded='true'] .ps-name-hint { background: var(--ps-green); color: var(--color-on-dark); }
 
-.ps-heart { display: grid; flex-shrink: 0; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; color: var(--ps-muted); font-size: 1.05rem; }
-.ps-heart.is-on { color: var(--ps-like); background: color-mix(in srgb, var(--ps-like) 12%, transparent); }
+.ps-heart { display: grid; flex-shrink: 0; place-items: center; width: 44px; height: 44px; border: 1px solid var(--ps-line); border-radius: 50%; background: transparent; color: var(--ps-muted); font-size: 1.05rem; }
+.ps-heart.is-on { border-color: color-mix(in srgb, var(--ps-like) 45%, transparent); color: var(--ps-like); background: color-mix(in srgb, var(--ps-like) 12%, transparent); }
 
 /* 혜택 티켓 */
 .ps-ticket {
   border-radius: 16px;
-  background: var(--ps-blue-pale);
+  background: var(--ps-accent-pale);
 }
 .ps-ticket-main { display: grid; gap: 4px; padding: 14px 14px 14px 16px; min-width: 0; }
-.ps-ticket-label { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; color: var(--ps-blue); font-size: 0.78rem; font-weight: 800; }
-.ps-ticket-main strong { color: var(--ps-blue); font-size: 1.32rem; font-weight: 900; letter-spacing: -0.035em; line-height: 1.3; word-break: keep-all; }
+.ps-ticket-label { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; color: var(--ps-accent); font-size: 0.78rem; font-weight: 800; }
+.ps-ticket-main strong { color: var(--ps-accent); font-size: 1.32rem; font-weight: 900; letter-spacing: -0.035em; line-height: 1.3; word-break: keep-all; }
 .ps-ticket-main p { margin: 0; color: var(--ps-muted); font-size: 0.82rem; line-height: 1.55; }
 
 .ps-condition { margin: 0; font-size: 0.86rem; line-height: 1.65; }
-.ps-status { flex-shrink: 0; padding: 2px 7px; border: 1px solid color-mix(in srgb, var(--ps-blue) 28%, transparent); border-radius: 6px; background: var(--ps-paper); color: var(--ps-muted); font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
+.ps-status { flex-shrink: 0; padding: 2px 7px; border: 1px solid color-mix(in srgb, var(--ps-accent) 28%, transparent); border-radius: 6px; background: var(--ps-paper); color: var(--ps-muted); font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
 
 .ps-price { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; padding: 0 2px; font-size: 0.86rem; }
 .ps-price small { color: var(--ps-muted); font-size: 0.72rem; }
 .ps-price del, .ps-menu-list del { margin-right: 7px; color: var(--ps-muted); font-size: 0.8rem; }
-.ps-price b, .ps-menu-list b { color: var(--ps-blue); }
+.ps-price b, .ps-menu-list b { color: var(--ps-accent); }
 .ps-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .ps-tags span { padding: 4px 8px; border-radius: 8px; background: var(--ps-cream-2); color: var(--ps-muted); font-size: 0.74rem; font-weight: 600; }
-.ps-tags span.is-on { background: var(--ps-blue-soft); color: var(--ps-blue); font-weight: 800; }
+.ps-tags span.is-on { background: var(--ps-accent-soft); color: var(--ps-accent); font-weight: 800; }
 
 /* 펼친 지도 */
 .ps-map-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding-top: 4px; animation: ps-open 0.22s ease-out; }
@@ -196,7 +202,7 @@
 
 .ps-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 52px; border-top: 1px solid var(--ps-line); }
 .ps-stamp-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 36px; padding: 0 10px; border-radius: 999px; background: var(--ps-brand-soft); color: var(--ps-brand); font-size: 0.78rem; font-weight: 800; text-decoration: none; }
-.ps-more { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 0 0 8px; border: 0; background: transparent; color: var(--ps-ink); font-size: 0.86rem; font-weight: 800; }
+.ps-more { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 0 0 8px; border: 0; background: transparent; color: var(--ps-accent); font-size: 0.86rem; font-weight: 800; }
 
 .ps-skeleton { height: 250px; border-radius: 22px; background: linear-gradient(100deg, var(--ps-cream-2) 30%, var(--ps-cream) 50%, var(--ps-cream-2) 70%) 0 0 / 200% 100%; animation: ps-loading 1.4s infinite; }
 @keyframes ps-loading { to { background-position: -200% 0; } }
@@ -207,7 +213,7 @@
 .ps-empty p { max-width: 420px; margin: 0 auto 18px; color: var(--ps-muted); font-size: 0.86rem; line-height: 1.7; }
 
 .ps-primary, .ps-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 48px; padding: 12px 16px; border-radius: 14px; font-size: 0.88rem; font-weight: 800; line-height: 1.4; text-decoration: none; }
-.ps-primary { background: var(--ps-brand); border: 1px solid var(--ps-brand); color: var(--color-on-dark); }
+.ps-primary { background: var(--ps-accent); border: 1px solid var(--ps-accent); color: var(--color-on-primary); }
 .ps-secondary { background: var(--ps-paper); border: 1px solid var(--ps-line); color: var(--ps-ink); }
 .ps-full { width: 100%; }
 
@@ -221,13 +227,13 @@
 .ps-demo b { flex-shrink: 0; }
 .ps-detail-audience { display: grid; gap: 8px; margin-bottom: 14px; font-size: 0.84rem; font-weight: 800; }
 .ps-detail-audience select { min-height: 48px; padding: 0 12px; border: 1px solid var(--ps-line); border-radius: 12px; background: var(--ps-paper); color: var(--ps-ink); font-size: 0.9rem; }
-.ps-detail-offer { padding: 18px; border-radius: 16px; background: var(--ps-blue-pale); }
-.ps-detail-offer > strong { display: block; margin: 8px 0 6px; color: var(--ps-blue); font-size: 1.6rem; font-weight: 900; line-height: 1.35; }
+.ps-detail-offer { padding: 18px; border-radius: 16px; background: var(--ps-accent-pale); }
+.ps-detail-offer > strong { display: block; margin: 8px 0 6px; color: var(--ps-accent); font-size: 1.6rem; font-weight: 900; line-height: 1.35; }
 .ps-detail-offer > b { font-size: 0.9rem; line-height: 1.7; }
 .ps-detail-offer > p { margin: 6px 0; color: var(--ps-muted); font-size: 0.82rem; }
 .ps-benefit-list { margin: 10px 0 0; padding: 0; list-style: none; }
-.ps-benefit-list li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px dashed color-mix(in srgb, var(--ps-blue) 22%, transparent); color: var(--ps-muted); font-size: 0.84rem; line-height: 1.5; }
-.ps-benefit-list li.is-on { color: var(--ps-blue); font-weight: 700; }
+.ps-benefit-list li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px dashed color-mix(in srgb, var(--ps-accent) 22%, transparent); color: var(--ps-muted); font-size: 0.84rem; line-height: 1.5; }
+.ps-benefit-list li.is-on { color: var(--ps-accent); font-weight: 700; }
 .ps-benefit-list li b { text-align: right; }
 .ps-detail-section { padding: 20px 0; border-bottom: 1px solid var(--ps-line); }
 .ps-detail-section h4 { margin: 0 0 12px; font-size: 0.98rem; }
@@ -242,15 +248,16 @@
 .ps-stamp-link small { display: block; margin-top: 2px; color: var(--ps-muted); font-size: 0.76rem; line-height: 1.6; }
 .ps-detail-bottom { padding-top: 20px; }
 .ps-detail-bottom .ps-note { text-align: center; }
-.ps-presentation { padding: 28px 20px; border-radius: 18px; background: var(--ps-blue-pale); text-align: center; }
+.ps-presentation { padding: 28px 20px; border-radius: 18px; background: var(--ps-accent-pale); text-align: center; }
 .ps-presentation > span { font-size: 0.92rem; }
-.ps-presentation > strong { display: block; margin: 18px 0; color: var(--ps-blue); font-size: 2.2rem; line-height: 1.35; }
+.ps-presentation > strong { display: block; margin: 18px 0; color: var(--ps-accent); font-size: 2.2rem; line-height: 1.35; }
 .ps-presentation p { font-size: 0.9rem; line-height: 1.8; }
 .ps-presentation b { display: block; font-size: 0.86rem; line-height: 1.8; }
 .ps-presentation ~ .ps-secondary { margin-top: 20px; }
 
 @container (min-width: 720px) {
   .ps-colleges { flex-wrap: wrap; margin: 0; padding: 0; overflow: visible; }
+  .ps-college-panel { width: fit-content; max-width: 100%; }
   .ps-card {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
     grid-template-areas: 'top ticket' 'price ticket' 'tags ticket' 'foot ticket' 'map map';
@@ -260,7 +267,7 @@
   }
   .ps-card-foot { justify-content: flex-start; min-height: 44px; border-top: 0; }
   .ps-card-foot > span:empty { display: none; }
-  .ps-more { padding: 0 12px; border-radius: 999px; background: var(--ps-cream-2); min-height: 38px; }
+  .ps-more { padding: 0 4px; min-height: 44px; }
   .ps-price { align-self: start; }
   .ps-tags { align-self: end; }
   .ps-ticket { align-self: stretch; }

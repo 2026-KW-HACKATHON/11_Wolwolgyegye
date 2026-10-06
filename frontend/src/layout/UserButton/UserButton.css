@@ -35,17 +35,17 @@
 }
 
 .user-button[aria-current='page'] {
-  color: var(--color-brand);
+  color: var(--color-primary);
   font-weight: 800;
 }
 
 .user-button[aria-current='page'] .user-button__avatar {
-  border-color: var(--color-brand);
-  box-shadow: 0 0 0 3px var(--color-brand-soft);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-tag-partner-bg);
 }
 
 .user-button:focus-visible {
-  outline: 3px solid var(--color-brand);
+  outline: 3px solid var(--color-primary);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }

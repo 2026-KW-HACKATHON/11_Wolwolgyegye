@@ -551,6 +551,7 @@
   --white: #ffffff;
   --red-600: #b23b2e;
   --map-me: #2f7cf6; /* 내 위치 점 (지도 앱 관례색) */
+  --blue-600: #2a62b8; /* 정보 안내 (흰 바탕 4.5:1 이상) */
   --kakao-yellow: #fee500; /* 카카오 로그인 규정색 */
   --kakao-brown: #3c1e1e;
 }
@@ -574,6 +575,10 @@
   --color-brand: var(--strong-600);
   --color-brand-soft: var(--accent-50);
   --color-accent-soft: var(--accent-50);
+
+  /* 파란색은 지도·정보 안내처럼 따로 의미가 있을 때만 쓴다. 선택·주 버튼은 --color-primary 하나로 */
+  --color-info: var(--blue-600);
+  --color-info-soft: color-mix(in srgb, var(--blue-600) 12%, var(--white));
 
   /* 동네·공간 (보조색) */
   --color-neighborhood: var(--support-600);
@@ -697,4 +702,6 @@
   --color-cat-partner-bg: color-mix(in srgb, var(--deep-950) 75%, var(--primary-400));
 
   --shadow-color: 0 0 0;
+  --color-info: #9cc3ea;
+  --color-info-soft: color-mix(in srgb, var(--deep-950) 80%, #9cc3ea);
 }
