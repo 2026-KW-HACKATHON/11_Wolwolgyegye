@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { Navigate, useNavigate } from 'react-router-dom';
 import { ALL_PANELS, DEFAULT_LANDING_PATH, OWNER_PORTRAIT_BAR_IDS, PORTRAIT_BAR_IDS, USER_PANEL } from '../../core/categories/categories';
 import type { Category, PanelMeta } from '../../core/categories/categoryTypes';
-import { SUB_CATEGORIES, subCategoryById } from '../../core/categories/subCategories';
+import { MAP_FILTERS, subCategoryById } from '../../core/categories/subCategories';
 import { fetchMapStores, floorLabel, type MapStore, type MapStoreData } from '../../core/supabase/stores';
 import { useVisibleCategories } from '../../core/categories/useVisibleCategories';
 import { useLayoutMode } from '../../core/device/LayoutModeContext';
@@ -193,11 +193,12 @@ export default function AppShell() {
   }, []);
 
   // ---- 지도에 표시할 가게 ----
-  const subCategory = SUB_CATEGORIES.find((s) => s.id === subId) ?? null;
-  const subCounts = useMemo(() => Object.fromEntries(SUB_CATEGORIES.map((s) =>
-    [s.id, mapData ? mapData.stores.filter((p) => p.typeId === s.id).length : 0])), [mapData]);
+  // 지도 위쪽 필터는 대표 유형 여러 개를 묶은 것 (MAP_FILTERS)
+  const subCategory = MAP_FILTERS.find((s) => s.id === subId) ?? null;
+  const subCounts = useMemo(() => Object.fromEntries(MAP_FILTERS.map((s) =>
+    [s.id, mapData ? mapData.stores.filter((p) => p.typeId !== null && s.typeIds.includes(p.typeId)).length : 0])), [mapData]);
   // 가게가 한 곳도 없는 항목은 목록에서 뺀다 (데이터가 아직 없으면 전부 보여준다)
-  const visibleSubs = useMemo(() => (mapData ? SUB_CATEGORIES.filter((s) => subCounts[s.id] > 0) : SUB_CATEGORIES), [mapData, subCounts]);
+  const visibleSubs = useMemo(() => (mapData ? MAP_FILTERS.filter((s) => subCounts[s.id] > 0) : MAP_FILTERS), [mapData, subCounts]);
   const mapStores = useMemo(() => {
     // 그 외 카테고리를 고른 동안에는 카테고리 가게 핀을 숨기고 지도 가게만 보여준다
     const list = subCategory ? [] : storesForPanel(categoryStores, activeId ?? '');
@@ -207,7 +208,7 @@ export default function AppShell() {
   const places = useMemo(() => {
     if (!mapData) return [];
     const shown = new Set(mapStores.map((s) => s.id));
-    return mapData.stores.filter((p) => !shown.has(p.id) && (!subCategory || p.typeId === subCategory.id));
+    return mapData.stores.filter((p) => !shown.has(p.id) && (!subCategory || (p.typeId !== null && subCategory.typeIds.includes(p.typeId))));
   }, [mapData, subCategory, mapStores]);
 
   // ---- 2차 탭: 카테고리 가게 또는 지도 가게 하나만 연다 ----
