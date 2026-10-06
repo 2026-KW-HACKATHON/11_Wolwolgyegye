@@ -39,7 +39,7 @@ export const CATEGORIES: Category[] = [
     path: '/roulette',
     icon: 'wheel',
     isFixed: false,
-    sheetHalf: 0.75,
+    sheetHalf: 0.8, // 반만 열어도 원판이 다 보이게
     panelHalf: 480,
   },
   {
