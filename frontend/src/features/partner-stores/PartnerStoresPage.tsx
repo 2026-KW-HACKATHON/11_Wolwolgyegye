@@ -22,6 +22,8 @@ const SORTS = [
   { key: 'name', label: '이름순' },
 ] as const;
 type SortKey = (typeof SORTS)[number]['key'];
+/** 내 소속 줄에 바로 보이는 단과대 수 (나머지는 더보기) */
+const QUICK_COLLEGES = 3;
 
 /**
  * 제휴 가게 화면 (/partner-stores).
@@ -48,6 +50,7 @@ export default function PartnerStoresPage() {
   const [openMaps, setOpenMaps] = useState<string[]>([]);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [scrollTo, setScrollTo] = useState<string | null>(null);
+  const [collegesOpen, setCollegesOpen] = useState(false);
   const college = collegeOf(audience);
   const current = COLLEGES.find((c) => c.key === college);
 
@@ -106,6 +109,24 @@ export default function PartnerStoresPage() {
     return counts;
   }, [stores]);
 
+  // 자주 쓰는 칩(혜택이 많은 단과대 3곳 + 지금 고른 곳)만 바로 보여주고 나머지는 '더보기' 패널에 넣는다
+  const quickColleges = useMemo(() => {
+    const top = [...COLLEGES].filter((c) => (collegeCounts[c.key] ?? 0) > 0)
+      .sort((a, b) => collegeCounts[b.key] - collegeCounts[a.key]).slice(0, QUICK_COLLEGES);
+    const picked = COLLEGES.find((c) => c.key === audience);
+    return COLLEGES.filter((c) => top.includes(c) || c === picked);
+  }, [collegeCounts, audience]);
+  const moreColleges = COLLEGES.filter((c) => !quickColleges.includes(c));
+  // 칩 숫자는 고른 칩에만 붙인다 (모든 칩의 0개 배지는 소음). 개수는 읽기 프로그램용 이름에 넣는다
+  const audienceChip = (key: PartnerAudience, label: string, name: string) => {
+    const on = audience === key;
+    const count = collegeCounts[key] ?? 0;
+    return <button key={key} type="button" className={on ? 'is-on' : ''} aria-pressed={on} title={name} aria-label={`${name} (${count}곳)`}
+      onClick={() => changeFilters(() => { setAudience(key); setCollegesOpen(false); })}>
+      {label}{on && <span>{count}</span>}
+    </button>;
+  };
+
   const hasFilters = !!query || industry !== '전체' || savedOnly;
   const resetFilters = () => changeFilters(() => { setQuery(''); setIndustry('전체'); setSavedOnly(false); });
   const toggleMap = (id: string) => setOpenMaps((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
@@ -118,13 +139,15 @@ export default function PartnerStoresPage() {
         <p>이 기기에만 저장돼요</p>
       </div>
       <div className="ps-colleges" role="group" aria-label="혜택 대상 선택">
-        <button type="button" className={audience === 'all' ? 'is-on' : ''} aria-pressed={audience === 'all'} onClick={() => changeFilters(() => setAudience('all'))}>전체 혜택<span>{collegeCounts.all}</span></button>
-        {COLLEGES.map((c) => (
-          <button key={c.key} type="button" className={audience === c.key ? 'is-on' : ''} aria-pressed={audience === c.key} title={c.name} aria-label={`${c.name} (${collegeCounts[c.key] ?? 0}곳)`} onClick={() => changeFilters(() => setAudience(c.key))}>
-            {c.label}<span>{collegeCounts[c.key] ?? 0}</span>
-          </button>
-        ))}
+        {audienceChip('all', '전체 혜택', '전체 혜택')}
+        {quickColleges.map((c) => audienceChip(c.key, c.label, c.name))}
+        {moreColleges.length > 0 && <button type="button" className="ps-more-chip" aria-expanded={collegesOpen} aria-controls="ps-college-panel" onClick={() => setCollegesOpen(!collegesOpen)}>
+          단과대 더보기<Icon name={collegesOpen ? 'chevronUp' : 'chevronDown'} />
+        </button>}
       </div>
+      {collegesOpen && moreColleges.length > 0 && <div className="ps-college-panel" id="ps-college-panel" role="group" aria-label="다른 단과대">
+        {moreColleges.map((c) => audienceChip(c.key, c.label, c.name))}
+      </div>}
     </section>
 
     <div className="ps-tools">

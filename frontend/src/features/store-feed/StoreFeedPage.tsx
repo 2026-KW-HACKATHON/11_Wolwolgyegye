@@ -17,6 +17,8 @@ const COPY = {
   'space-rental': { label: '공간 대여', eyebrow: '우리 동네, 우리만의 공간', title: '좋은 공간을 나누면,\n일상이 조금 특별해져요.', description: '쉬는 날의 카페부터 조용한 작업실까지. 사장님이 직접 소개하는 동네 공간을 만나보세요.', icon: 'house' as const },
   'oneday-class': { label: '원데이클래스', eyebrow: '동네에서 발견하는 새로운 취향', title: '처음이라 더 즐거운,\n하루의 작은 배움.', description: '반죽을 만지고, 커피를 내리고, 나만의 작품을 만들어요. 동네 사장님이 오늘은 선생님이 됩니다.', icon: 'paletteColor' as const },
 };
+/** 분류 줄에 바로 보이는 분류 수 ('전체' 제외. 나머지는 더보기) */
+const QUICK_CATEGORIES = 3;
 
 /**
  * 공간대여 / 원데이클래스 화면 (1차 탭).
@@ -37,6 +39,7 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [category, setCategory] = useState('전체');
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [sort, setSort] = useState('latest');
   const [editing, setEditing] = useState<FeedPost | null | undefined>(undefined);
   const [now, setNow] = useState(Date.now);
@@ -88,18 +91,28 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
   }, [posts, category, sort]);
 
   function resetFilters() { setCategory('전체'); }
+  // 분류 칩은 자주 쓰는 앞쪽 몇 개(+ 지금 고른 것)만 바로 보여주고 나머지는 '더보기' 패널에 넣는다
+  const allCategories = ['전체', ...FEED_CATEGORIES[kind]];
+  const quickCategories = allCategories.filter((c, i) => i <= QUICK_CATEGORIES || c === category);
+  const moreCategories = allCategories.filter((c) => !quickCategories.includes(c));
+  const categoryChip = (c: string) => <button key={c} type="button" aria-pressed={category === c} className={category === c ? 'is-active' : ''} onClick={() => { setCategory(c); setCategoriesOpen(false); }}>{c}</button>;
 
   return <div className={`sf-page sf-page--${kind}`}>
+    {/* 소개 배너는 한 줄 높이로 줄여 검색·필터·첫 카드가 첫 화면에 함께 보이게 한다 */}
     <section className="sf-hero">
-      <div><span className="sf-eyebrow">{copy.eyebrow}</span><h1>{copy.title}</h1><p>{copy.description}</p>
-        {canWrite && <button type="button" className="sf-primary" onClick={() => setEditing(null)}>＋ 사장님 글쓰기</button>}
-      </div>
+      <span className="sf-hero-art" aria-hidden="true"><Icon name={copy.icon} /></span>
+      <div><span className="sf-eyebrow">{copy.eyebrow}</span><h1>{copy.title.replace('\n', ' ')}</h1></div>
+      {canWrite && <button type="button" className="sf-secondary sf-hero-write" onClick={() => setEditing(null)}>＋ 글쓰기</button>}
     </section>
 
     <section className="sf-feed-section" aria-label={copy.label + ' 게시글'}>
       <div className="sf-toolbar">
-        <div className="sf-filters" aria-label="분류">{['전체', ...FEED_CATEGORIES[kind]].map((c) => <button key={c} type="button" aria-pressed={category === c} className={category === c ? 'is-active' : ''} onClick={() => setCategory(c)}>{c}</button>)}</div>
+        <div className="sf-filters" role="group" aria-label="분류">
+          {quickCategories.map(categoryChip)}
+          {moreCategories.length > 0 && <button type="button" className="sf-more-chip" aria-expanded={categoriesOpen} aria-controls={`sf-more-${kind}`} onClick={() => setCategoriesOpen(!categoriesOpen)}>더보기<Icon name={categoriesOpen ? 'chevronUp' : 'chevronDown'} /></button>}
+        </div>
       </div>
+      {categoriesOpen && moreCategories.length > 0 && <div className="sf-filter-panel" id={`sf-more-${kind}`} role="group" aria-label="다른 분류">{moreCategories.map(categoryChip)}</div>}
       <div className="sf-count-row"><p className="sf-count" aria-live="polite">{loading ? '소식을 불러오고 있어요…' : <>총 <b>{visible.length}</b>개의 이야기</>}</p><label className="sf-sort">정렬<select value={sort} onChange={(e) => setSort(e.target.value)}><option value="latest">최신순</option><option value="price">가격 낮은순</option>{kind === 'oneday-class' && <option value="date">수업일순</option>}</select></label></div>
       {error ? <div className="sf-empty" role="alert"><p>{error}</p><button type="button" className="sf-secondary" onClick={() => void reload()}>다시 불러오기</button></div> : !loading && visible.length === 0 ? <div className="sf-empty"><Icon name={copy.icon} /><h3>아직 보여드릴 소식이 없어요</h3><p>분류 조건을 바꾸거나, 동네의 첫 이야기를 올려보세요.</p><button type="button" className="sf-secondary" onClick={resetFilters}>조건 초기화</button></div> : <ul className="sf-grid">
         {visible.map((post) => {

@@ -24,11 +24,12 @@
 }
 
 .sub-cats__item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 5px;
-  height: 30px;
-  padding: 0 10px 0 4px;
+  height: 34px;
+  padding: 0 10px 0 6px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
   background: var(--color-surface);
@@ -38,6 +39,13 @@
   font-weight: 600;
   letter-spacing: -0.03em;
   white-space: nowrap;
+}
+
+/* 보이는 칩은 얇게 두고, 누르는 영역만 위아래로 넓혀 44px 를 맞춘다 */
+.sub-cats__item::after {
+  content: '';
+  position: absolute;
+  inset: -5px 0;
 }
 
 .sub-cats__num {
@@ -60,18 +68,25 @@
 }
 
 .sub-cats__item[aria-pressed='true'] {
-  border-color: var(--color-brand);
-  background: var(--color-brand-soft);
-  color: var(--color-brand);
+  border-color: var(--color-primary);
+  background: var(--color-tag-partner-bg);
+  color: var(--color-primary);
   font-weight: 800;
 }
 
+/* 선택 상태를 색만으로 전하지 않도록 번호 자리에 체크 표시 */
 .sub-cats__item[aria-pressed='true'] .sub-cats__num {
-  background: var(--color-brand);
+  background: var(--color-primary);
   color: var(--color-on-primary);
+  font-size: 0;
+}
+
+.sub-cats__item[aria-pressed='true'] .sub-cats__num::before {
+  content: '✓';
+  font-size: 11px;
 }
 
 .sub-cats__item:focus-visible {
-  outline: 3px solid var(--color-brand);
+  outline: 3px solid var(--color-primary);
   outline-offset: -3px;
 }

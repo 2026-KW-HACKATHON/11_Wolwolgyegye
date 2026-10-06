@@ -1,0 +1,51 @@
+.mpl-search {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 16px; /* iOS 확대 방지 */
+}
+
+.mpl-count {
+  margin: var(--space-3) 0 var(--space-2);
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.mpl-list {
+  max-height: 55dvh;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.mpl-list button {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.mpl-list strong {
+  font-size: 14px;
+}
+
+.mpl-list span {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mpl-empty {
+  margin: var(--space-3) 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}

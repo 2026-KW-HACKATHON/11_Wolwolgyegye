@@ -17,6 +17,7 @@ import { MAP_CENTER } from '../../shared/map/vworld/mapExtent';
 import { useToast } from '../../shared/toast/ToastContext';
 import CategoryNav from '../CategoryNav/CategoryNav';
 import KeepAlivePages from '../KeepAlivePages/KeepAlivePages';
+import MapPlaceList, { type MapListItem } from '../MapPlaceList/MapPlaceList';
 import SecondaryPanel, { type SecondaryPlace } from '../SecondaryPanel/SecondaryPanel';
 import SubCategoryList from '../SubCategories/SubCategoryList';
 import type { PanelState } from '../SwipePanel/SwipePanel';
@@ -102,6 +103,7 @@ export default function AppShell() {
   /** 2차 탭을 1차 탭에서 열었을 때 처음 보여줄 카테고리(항목). seq 는 같은 곳을 다시 눌러도 스크롤하도록 */
   const [focus, setFocus] = useState<(SecondaryFocus & { seq: number }) | null>(null);
   const [locating, setLocating] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
 
   // 지도 영역 크기 (1차 탭 크기 계산용)
   useLayoutEffect(() => {
@@ -201,8 +203,13 @@ export default function AppShell() {
   const selectPlace = useCallback((place: MapStore) => { setSelectedStoreId(null); setSelectedPlace(place); }, []);
   const closeSecondary = useCallback(() => { setFocus(null); setSelectedStoreId(null); setSelectedPlace(null); }, []);
   // 지도에서 가게를 직접 고르면 2차 탭을 가게 정보(맨 위)부터 보여준다
-  const pickStoreOnMap = useCallback((id: string) => { setFocus(null); selectStore(id); }, [selectStore]);
-  const pickPlaceOnMap = useCallback((place: MapStore) => { setFocus(null); selectPlace(place); }, [selectPlace]);
+  // 세로 화면: 가게 정보는 하단 시트로 열리므로, 아래에 깔린 1차 탭을 접어 지도와 정보가 서로 가리지 않게 한다
+  const collapseForSheet = useCallback(() => {
+    if (axis !== 'y' || !activeId) return;
+    setPanelStates((prev) => (prev[activeId] === 'closed' ? prev : { ...prev, [activeId]: 'closed' }));
+  }, [axis, activeId]);
+  const pickStoreOnMap = useCallback((id: string) => { setFocus(null); selectStore(id); collapseForSheet(); }, [selectStore, collapseForSheet]);
+  const pickPlaceOnMap = useCallback((place: MapStore) => { setFocus(null); selectPlace(place); collapseForSheet(); }, [selectPlace, collapseForSheet]);
 
   // 1차 탭에서 가게를 열 때 가게를 찾는 곳 (카테고리 가게 → 지도 가게 순)
   const lookupRef = useRef({ categoryStores, mapData });
@@ -220,6 +227,18 @@ export default function AppShell() {
     const frame = requestAnimationFrame(() => mapRef.current?.centerOn(selectedPlace, getInsets()));
     return () => cancelAnimationFrame(frame);
   }, [selectedPlace, getInsets]);
+
+  // ---- 지도 대체 목록: 지금 지도에 보이는 가게를 글 목록으로 ----
+  const listItems = useMemo<MapListItem[]>(() => [
+    ...mapStores.map((store) => ({ id: store.id, name: store.name, category: store.cuisineType ?? '', address: store.address })),
+    ...places.map((place) => ({ id: place.id, name: place.name, category: placeToSecondary(place).category, address: place.address })),
+  ], [mapStores, places]);
+  const pickFromList = useCallback((id: string) => {
+    setListOpen(false);
+    const place = places.find((p) => p.id === id);
+    if (place) pickPlaceOnMap(place);
+    else pickStoreOnMap(id);
+  }, [places, pickPlaceOnMap, pickStoreOnMap]);
 
   const toggleSub = useCallback((id: string) => setSubId((prev) => (prev === id ? null : id)), []);
 
@@ -306,10 +325,21 @@ export default function AppShell() {
           </nav>
 
           <div className="map-fabs">
-            <button type="button" className="map-fab" aria-label="내 위치로 이동" aria-busy={locating} onClick={locate}>
+            <button type="button" className="map-fab map-fab--text" aria-haspopup="dialog" onClick={() => setListOpen(true)}>
+              목록
+            </button>
+            <button type="button" className="map-fab" aria-label="내 위치로 이동" title="내 위치로 이동" aria-busy={locating} onClick={locate}>
               <Icon name="locate" />
             </button>
           </div>
+
+          <MapPlaceList
+            open={listOpen}
+            items={listItems}
+            filterLabel={subCategory?.label ?? null}
+            onPick={pickFromList}
+            onClose={() => setListOpen(false)}
+          />
 
           <SecondaryPanel ref={secondaryRef} place={secondaryPlace} layout={mode} onClose={closeSecondary} focus={focus} />
 

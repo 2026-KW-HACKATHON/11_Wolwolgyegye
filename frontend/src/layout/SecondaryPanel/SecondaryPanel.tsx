@@ -101,7 +101,7 @@ const SecondaryPanel = forwardRef<HTMLElement, SecondaryPanelProps>(function Sec
     <aside ref={panelRef} className="secondary-panel" data-layout={layout} aria-label={`${name} 정보`}>
       <div className="secondary-panel__head">
         {detail?.isMock ? <span className="secondary-panel__badge is-mock">예시 가게</span> : <span />}
-        <button type="button" className="secondary-panel__close" aria-label="가게 정보 닫기" onClick={onClose}>✕</button>
+        <button type="button" className="secondary-panel__close" aria-label="가게 정보 닫기" title="닫기" onClick={onClose}>✕</button>
       </div>
 
       {/* ① 가게 정보 */}

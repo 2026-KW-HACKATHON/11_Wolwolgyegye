@@ -76,8 +76,8 @@ export default function StampList({ stamps, error, onRetry, missingId, query, on
 
       <div className="st-filters" role="group" aria-label="적립 상태">
         {STAMP_FILTERS.map((f) => (
-          <button key={f.key} type="button" className={filter === f.key ? 'is-on' : ''} aria-pressed={filter === f.key} onClick={() => onFilter(f.key)}>
-            {f.label}<span>{counts[f.key]}</span>
+          <button key={f.key} type="button" className={filter === f.key ? 'is-on' : ''} aria-pressed={filter === f.key} aria-label={`${f.label} (${counts[f.key]}곳)`} onClick={() => onFilter(f.key)}>
+            {f.label}{filter === f.key && <span>{counts[f.key]}</span>}
           </button>
         ))}
       </div>

@@ -1,22 +1,32 @@
 .sf-page { max-width: 1120px; margin: 0 auto; color: var(--color-text); padding-bottom: 32px; }
 .sf-page button, .sf-dialog button { cursor: pointer; font: inherit; }
-.sf-page button:focus-visible, .sf-dialog button:focus-visible, .sf-page a:focus-visible, .sf-dialog a:focus-visible { outline: 3px solid var(--color-primary-light); outline-offset: 4px; }
-.sf-primary, .sf-secondary { display: inline-flex; gap: 10px; align-items: center; justify-content: center; border: 1px solid transparent; padding: 12px 20px; border-radius: var(--radius-md); font-size: 14px; font-weight: 700; text-decoration: none; }
+.sf-page :is(button, a, select):focus-visible, .sf-dialog :is(button, a):focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
+.sf-primary, .sf-secondary { display: inline-flex; gap: 10px; align-items: center; justify-content: center; min-height: 44px; border: 1px solid transparent; padding: 12px 20px; border-radius: var(--radius-md); font-size: 14px; font-weight: 700; text-decoration: none; }
+/* 채워진 버튼은 문의하기처럼 핵심 행동에만 쓴다 */
 .sf-primary { background: var(--color-primary); color: var(--color-on-primary); }
 .sf-primary:hover { background: var(--color-primary-dark); }
 .sf-primary span { font-size: 11px; border: 1px solid currentColor; border-radius: 5px; padding: 1px 5px; }
 .sf-secondary { border-color: var(--color-border); background: var(--color-surface); color: var(--color-text); }
-.sf-hero { display: block; border-radius: 26px; padding: 38px 44px; background: var(--color-bg); overflow: hidden; }
-.sf-eyebrow { font-size: 16px; font-weight: 700; letter-spacing: .07em; color: var(--color-text-muted); }
-.sf-hero h1 { font-size: clamp(30px, 3.6vw, 44px); line-height: 1.4; letter-spacing: -.05em; white-space: pre-line; margin: 14px 0; }
-.sf-hero p { max-width: 520px; font-size: 14px; line-height: 1.85; color: var(--color-text-muted); margin: 0 0 24px; }
-.sf-feed-section { margin-top: 30px; }
+/* 소개 배너는 한 줄 높이로 줄여 검색·필터·첫 카드가 첫 화면에 함께 보이게 한다 */
+.sf-hero { display: flex; align-items: center; gap: 14px; border-radius: var(--radius-lg); padding: 14px 18px; background: var(--color-bg); }
+.sf-hero > div { flex: 1; min-width: 0; }
+.sf-eyebrow { font-size: 12px; font-weight: 700; color: var(--color-text-muted); }
+.sf-hero h1 { font-size: 18px; line-height: 1.4; letter-spacing: -.04em; margin: 2px 0 0; }
+.sf-hero-art { display: grid; flex: none; place-items: center; width: 52px; height: 52px; border-radius: 16px; background: var(--color-cat-space-bg); }
+.sf-page--oneday-class .sf-hero-art { background: var(--color-cat-class-bg); }
+.sf-hero-art .icon { width: 28px; height: 28px; stroke-width: 1.4; }
+.sf-hero-write { flex: none; padding: 10px 14px; }
+.sf-feed-section { margin-top: 18px; }
 .sf-toolbar { display: flex; gap: 16px; justify-content: space-between; align-items: center; }
 .sf-filters { display: flex; gap: 8px; flex-wrap: wrap; min-width: 0; }
-.sf-filters button { border: 1px solid var(--color-border); color: var(--color-text-muted); background: var(--color-surface); border-radius: var(--radius-pill); padding: 9px 15px; font-size: 13px; }
-.sf-filters button.is-active { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary); }
+.sf-filters button, .sf-filter-panel button { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; border: 1px solid var(--color-border); color: var(--color-text-muted); background: var(--color-surface); border-radius: var(--radius-pill); padding: 9px 15px; font-size: 13px; white-space: nowrap; }
+.sf-filters button.is-active, .sf-filter-panel button.is-active { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary); font-weight: 700; }
+/* 선택 상태를 색만으로 전하지 않도록 체크 표시를 함께 붙인다 */
+.sf-filters button.is-active::before, .sf-filter-panel button.is-active::before { content: '✓'; font-weight: 900; }
+.sf-filters .sf-more-chip { gap: 2px; border-style: dashed; color: var(--color-text); }
+.sf-filter-panel { display: flex; flex-wrap: wrap; gap: 8px; width: fit-content; max-width: 100%; margin-top: 8px; padding: 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); }
 .sf-sort { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--color-text-muted); }
-.sf-sort select { border: none; background: transparent; color: var(--color-text); font: inherit; padding: 6px; }
+.sf-sort select { min-height: 44px; border: none; background: transparent; color: var(--color-text); font: inherit; padding: 6px; }
 .sf-count-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 20px 0 14px; }
 .sf-count { font-size: 13px; color: var(--color-text-muted); margin: 0; }
 .sf-count b { color: var(--color-text); }
@@ -40,7 +50,7 @@
 .sf-status { font-size: 10px; padding: 4px 7px; border-radius: 5px; background: var(--color-tag-space-bg); color: var(--color-tag-space-text); }
 .sf-status.is-closed { background: var(--color-surface-alt); color: var(--color-text-muted); }
 .sf-capacity { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-muted); }
-.sf-text-btn { background: transparent; border: none; padding: 8px 4px; color: var(--color-primary); font-weight: 700 !important; font-size: 13px !important; }
+.sf-text-btn { min-height: 44px; background: transparent; border: none; padding: 8px 4px; color: var(--color-primary); font-weight: 700 !important; font-size: 13px !important; }
 .sf-empty { text-align: center; padding: 55px 20px; border: 1px dashed var(--color-border); border-radius: var(--radius-lg); background: var(--color-bg); }
 .sf-empty > .icon { width: 40px; height: 40px; color: var(--color-text-muted); }
 .sf-empty h3 { font-size: 19px; }
@@ -49,7 +59,7 @@
 .sf-dialog::backdrop { background: var(--color-overlay); backdrop-filter: blur(3px); }
 .sf-dialog-head { position: sticky; top: 0; z-index: 2; background: var(--color-surface); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--color-border); }
 .sf-dialog-head h2 { font-size: 17px; margin: 0; }
-.sf-icon-btn { width: 36px; height: 36px; font-size: 26px !important; border-radius: 50%; border: none; background: var(--color-surface-alt); color: var(--color-text); }
+.sf-icon-btn { width: 44px; height: 44px; font-size: 26px !important; border-radius: 50%; border: none; background: var(--color-surface-alt); color: var(--color-text); }
 .sf-dialog > .sf-visual { height: 250px; }
 .sf-form, .sf-detail { padding: 24px; }
 .sf-form { display: flex; flex-direction: column; gap: 20px; }
@@ -57,7 +67,7 @@
 .sf-form label { display: flex; flex-direction: column; gap: 8px; font-size: 13px; font-weight: 700; min-width: 0; }
 .sf-form input, .sf-form select, .sf-form textarea { width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1px solid var(--color-border); border-radius: 9px; background: var(--color-surface); color: var(--color-text); font: inherit; font-weight: 400; min-height: 44px; }
 .sf-form textarea { resize: vertical; line-height: 1.7; }
-.sf-form input:focus, .sf-form select:focus, .sf-form textarea:focus { outline: 2px solid var(--color-primary-light); outline-offset: 1px; }
+.sf-form input:focus, .sf-form select:focus, .sf-form textarea:focus { outline: 2px solid var(--color-primary); outline-offset: 1px; }
 .sf-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .sf-form small, .sf-facts small { display: block; font-size: 11px; font-weight: 400; color: var(--color-text-muted); line-height: 1.6; }
 .sf-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; }
@@ -76,11 +86,11 @@
 .sf-manage { border-top: 1px solid var(--color-border); margin-top: 24px; padding-top: 14px; }.sf-manage > p { color: var(--color-text-muted); font-size: 12px; }
 .sf-delete-confirm { margin-top: 16px; padding: 14px; border: 1px solid var(--color-danger); border-radius: 10px; font-size: 13px; line-height: 1.7; }
 .sf-dialog button:disabled { opacity: .55; cursor: wait; }
-@container (max-width: 900px) { .sf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.sf-hero { grid-template-columns: 1fr 180px; padding: 30px; }.sf-hero-art { width: 160px; height: 160px; }.sf-hero-art > span > .icon { width: 70px; height: 70px; }.sf-art-note { right: -10px; font-size: 10px; padding: 9px 12px; } }
+@container (max-width: 900px) { .sf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @container (max-width: 600px) {
-  .sf-hero { padding: 20px 22px 6px; }.sf-hero .sf-eyebrow { font-size: 14px; }.sf-hero h1 { font-size: 25px; line-height: 1.35; margin: 8px 0 0; }.sf-hero p { display: none; }.sf-hero .sf-primary { margin-top: 18px; }
+  .sf-hero { gap: 12px; padding: 12px 14px; }.sf-hero .sf-eyebrow { font-size: 11px; }.sf-hero h1 { font-size: 16px; }.sf-hero-art { width: 44px; height: 44px; border-radius: 14px; }.sf-hero-art .icon { width: 24px; height: 24px; }
   .sf-feed-section { margin-top: 14px; }.sf-grid { grid-template-columns: 1fr; gap: 18px; }
-  .sf-toolbar { gap: 8px; }.sf-filters { gap: 6px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }.sf-filters::-webkit-scrollbar { display: none; }.sf-filters button { flex-shrink: 0; font-size: 12px; padding: 8px 11px; }.sf-sort select { padding: 6px 2px; }
+  .sf-toolbar { gap: 8px; }.sf-filters { gap: 6px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }.sf-filters::-webkit-scrollbar { display: none; }.sf-filters button { flex-shrink: 0; font-size: 12px; padding: 8px 12px; }.sf-sort select { padding: 6px 2px; }
   .sf-visual { height: 200px; }.sf-card h3 { min-height: auto; }.sf-excerpt { min-height: auto; }
   .sf-page { padding-bottom: 16px; }
 }
