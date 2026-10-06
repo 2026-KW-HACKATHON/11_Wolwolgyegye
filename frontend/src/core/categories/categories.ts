@@ -69,6 +69,16 @@ export const CATEGORIES: Category[] = [
     sheetHalf: 0.6,
     panelHalf: 460,
   },
+  {
+    id: 'owner',
+    name: '사장님',
+    path: '/owner',
+    icon: 'storefront',
+    isFixed: true,
+    ownerOnly: true,
+    sheetHalf: 0.85,
+    panelHalf: 520,
+  },
 ];
 
 /**
@@ -76,6 +86,9 @@ export const CATEGORIES: Category[] = [
  * 나머지 카테고리와 유저 탭은 지도 왼쪽 위 전체 메뉴(세줄 버튼)에서 연다.
  */
 export const PORTRAIT_BAR_IDS: string[] = ['recommend', 'coupon', 'partner-stores', 'roulette'];
+
+/** 사장님 계정의 세로 화면 하단 바. 사장님 센터와 유저(내 정보) 버튼을 함께 둔다 */
+export const OWNER_PORTRAIT_BAR_IDS: string[] = ['recommend', 'coupon', 'owner'];
 
 /**
  * 유저 및 설정 탭. 카테고리 바에 나열하지 않고 전용 유저 버튼으로만 연다.

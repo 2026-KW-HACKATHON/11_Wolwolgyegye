@@ -1,174 +1,344 @@
-.op-shell {
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-bg);
-  color: var(--color-text);
+/* ---------- 사장님 센터 (1차 탭) ---------- */
+.oc-page {
+  display: grid;
+  gap: var(--space-5);
+  padding-bottom: var(--space-5);
 }
 
-.op-header {
+.oc-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.oc-head-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background: var(--color-brand-soft);
+  color: var(--color-primary-dark);
+  font-size: 30px;
+}
+
+.oc-head-text h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.oc-head-text p,
+.oc-sub {
+  margin: 2px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.oc-store-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-4) var(--space-5);
-  background: var(--color-header);
-  color: var(--color-on-primary);
-  box-shadow: var(--shadow-header);
-}
-
-.op-brand {
-  font-weight: 700;
-  font-size: 1.1rem;
-}
-
-.op-body {
-  flex: 1;
-  padding: var(--space-5);
-  display: flex;
-  flex-direction: column;
-  max-width: 640px;
-  width: 100%;
-  margin: 0 auto;
-}
-
-.op-cta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  width: 100%;
-  padding: var(--space-4);
-  margin-bottom: var(--space-5);
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  border-radius: var(--radius-md);
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.op-cta:hover {
-  background: var(--color-primary-dark);
-}
-
-.op-menu-grid {
-  display: grid;
-  grid-template-columns: 1fr;
   gap: var(--space-3);
+  margin-top: calc(var(--space-2) * -1);
 }
 
-.op-menu-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  text-align: left;
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.op-menu-item:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-hover);
-}
-
-.op-menu-item.is-wide {
-  grid-column: 1 / -1;
-}
-
-.op-menu-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
-  background: var(--color-surface-alt);
-  color: var(--color-primary);
-  font-size: 1.4rem;
-  flex-shrink: 0;
-}
-
-.op-menu-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.op-menu-label {
-  display: block;
-  font-weight: 700;
-  font-size: 0.98rem;
-  margin-bottom: 2px;
-}
-
-.op-menu-desc {
-  display: block;
-  font-size: 0.78rem;
-  color: var(--color-text-muted);
-  white-space: pre-line;
-  line-height: 1.35;
-}
-
-.op-menu-chevron {
-  color: var(--color-text-faint);
-  flex-shrink: 0;
-}
-
-.op-link-row {
-  text-align: center;
-  padding: var(--space-3) 0;
-  font-size: 0.78rem;
-  color: var(--color-text-faint);
-}
-
-.op-link-row a {
-  color: var(--color-text-muted);
-  text-decoration: underline;
-}
-
-@media (min-width: 640px) {
-  .op-menu-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* ---------- 헤더의 가게 이름 / 가게 고르기 ---------- */
-.op-store-name {
-  font-size: 0.85rem;
-  opacity: 0.85;
+.oc-store-name {
+  overflow: hidden;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .op-store-select {
-  max-width: 50%;
-  padding: 6px 10px;
-  border: 0;
+  min-width: 0;
+  max-width: 60%;
+  min-height: 40px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
-  background: var(--color-on-primary);
+  background: var(--color-surface);
   color: var(--color-text);
   font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.oc-store-edit {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  min-height: 40px;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.oc-section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.oc-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.oc-sub {
+  margin-top: calc(var(--space-3) * -1 + 2px);
+}
+
+/* 새 소식 등록 카드 */
+.oc-compose {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+
+@container (max-width: 420px) {
+  .oc-compose {
+    grid-template-columns: 1fr;
+  }
+}
+
+.oc-compose-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  color: var(--color-text);
+  text-align: left;
+}
+
+.oc-compose-icon,
+.oc-news-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--color-brand-soft);
+  color: var(--color-primary-dark);
+  font-size: 24px;
+}
+
+.oc-compose-icon .icon,
+.oc-news-icon .icon,
+.oc-chevron .icon,
+.oc-store-edit .icon {
+  display: block;
+}
+
+.oc-compose-text,
+.oc-news-text {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+}
+
+.oc-compose-text strong {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.oc-compose-text span {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.oc-chevron {
+  flex: none;
+  align-self: center;
+  color: var(--color-text-muted);
+  font-size: 18px;
+}
+
+/* 운영 중인 소식 */
+.oc-news-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.oc-sort {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
   font-size: 0.85rem;
 }
 
-.op-menu-item.is-pending {
+.oc-sort select {
+  min-height: 40px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 700;
+}
+
+.oc-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin: 0 calc(var(--space-4) * -1);
+  padding: 2px var(--space-4);
+  scrollbar-width: none;
+}
+
+.oc-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.oc-chips button {
+  flex: none;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 고른 칩: 채운 색 + 체크 (색만으로 전하지 않는다) */
+.oc-chips button[aria-pressed='true'] {
+  border-color: var(--color-primary-dark);
+  background: var(--color-primary-dark);
+  color: var(--color-on-primary);
+  font-weight: 800;
+}
+
+.oc-chips button[aria-pressed='true']::before {
+  content: '✓ ';
+}
+
+.oc-news {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.oc-news-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-align: left;
+}
+
+.oc-news-item[data-off] {
   opacity: 0.6;
 }
 
-.op-badge {
-  margin-left: 6px;
-  padding: 1px 6px;
+.oc-tag {
+  justify-self: start;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand-soft);
+  color: var(--color-brand);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.oc-news-text strong {
+  overflow: hidden;
+  font-size: 0.95rem;
+  font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.oc-news-when {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 상태 배지: 점 + 글자 */
+.oc-status {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
   border-radius: var(--radius-pill);
   background: var(--color-surface-alt);
   color: var(--color-text-muted);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  vertical-align: 1px;
+  white-space: nowrap;
 }
 
-/* ---------- 마감세일 · 가게 정보 창 (shared/sheet) ---------- */
-.op-shell .sh-sheet {
+.oc-status::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.oc-status[data-tone='on'] {
+  background: var(--color-neighborhood-soft);
+  color: var(--color-neighborhood);
+}
+
+.oc-status[data-tone='soon'] {
+  background: var(--color-tag-coupon-bg);
+  color: var(--color-tag-coupon-text);
+}
+
+.oc-empty {
+  margin: 0;
+  padding: var(--space-5) var(--space-4);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.oc-page button:focus-visible,
+.oc-page select:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ---------- 마감세일 · 스탬프 · 가게 정보 창 (shared/sheet) ---------- */
+.oc-page .sh-sheet {
   width: min(560px, calc(100% - 32px));
+}
+
+@media (max-width: 719px) {
+  .oc-page .sh-sheet {
+    width: 100%;
+  }
 }
 
 .op-panel {
@@ -355,4 +525,165 @@
   .op-form-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ---------- 운영 중인 소식 > 공간대여·클래스 상세 창 ---------- */
+.opd-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.opd-applied {
+  display: grid;
+  gap: 8px;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+}
+
+.opd-applied-num {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.opd-applied-num strong {
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+.opd-applied-num span {
+  color: var(--color-text-muted);
+}
+
+.opd-bar {
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+}
+
+.opd-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary-dark);
+}
+
+.opd-info {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.opd-info div {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: var(--space-3);
+  font-size: 0.9rem;
+}
+
+.opd-info dt {
+  color: var(--color-text-muted);
+}
+
+.opd-info dd {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.opd-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.opd-danger {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-danger);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.opd-danger.is-solid {
+  background: var(--color-danger);
+  color: var(--color-on-dark);
+}
+
+.opd-danger:disabled {
+  opacity: 0.6;
+}
+
+.opd-cancel {
+  display: grid;
+  gap: 8px;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.opd-cancel label {
+  font-weight: 800;
+}
+
+.opd-req {
+  margin-left: 4px;
+  color: var(--color-danger);
+}
+
+.opd-cancel textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.opd-cancel textarea[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+.opd-cancel p {
+  margin: 0;
+}
+
+.opd-warn {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-tag-coupon-bg);
+  color: var(--color-tag-coupon-text);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.opd-cancelled {
+  display: grid;
+  gap: 4px;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  font-size: 0.9rem;
+}
+
+.opd-cancelled p {
+  margin: 0;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.op-panel :is(button, textarea):focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
 }

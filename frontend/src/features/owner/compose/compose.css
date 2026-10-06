@@ -1,0 +1,831 @@
+/* ---------- 사장님 등록 화면 (전체 화면) ---------- */
+.ow-page {
+  position: fixed;
+  z-index: 100; /* 하단 바(30)·2차 탭보다 위 */
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.ow-top {
+  display: grid;
+  flex: none;
+  grid-template-columns: 48px 1fr 48px;
+  align-items: center;
+  padding: calc(env(safe-area-inset-top) + 4px) 8px 4px;
+}
+
+.ow-top h1 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  text-align: center;
+}
+
+.ow-top h1:focus {
+  outline: none;
+}
+
+.ow-back {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--color-text);
+  font-size: 24px;
+}
+
+.ow-back .icon {
+  display: block;
+}
+
+.ow-step {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.ow-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.ow-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  overflow-y: auto;
+  padding: var(--space-2) var(--space-4) var(--space-5);
+}
+
+.ow-foot {
+  flex: none;
+  padding: var(--space-3) var(--space-4) calc(env(safe-area-inset-bottom) + var(--space-3));
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.ow-submit,
+.ow-secondary {
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  min-height: 52px;
+  margin: 0 auto;
+  border-radius: var(--radius-pill);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.ow-submit {
+  background: var(--color-primary-dark);
+  color: var(--color-on-primary);
+}
+
+.ow-submit:disabled {
+  opacity: 0.6;
+}
+
+.ow-secondary {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+/* 카드 */
+.ow-card {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.ow-card-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.ow-field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ow-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.ow-req {
+  margin-left: 4px;
+  color: var(--color-danger);
+}
+
+.ow-hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.ow-hint--outside {
+  margin-top: calc(var(--space-2) * -1);
+  padding: 0 var(--space-2);
+}
+
+.ow-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.ow-narrow {
+  max-width: 220px;
+}
+
+/* 입력칸 공통 */
+.ow-input,
+.ow-won,
+.ow-addon,
+.ow-slot select,
+.ow-slot .ow-time-range {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 16px; /* iOS 확대 방지 */
+}
+
+.ow-input {
+  padding: 12px 14px;
+}
+
+textarea.ow-input {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.ow-input::placeholder,
+.ow-won input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.8;
+}
+
+.ow-won {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+}
+
+.ow-won input {
+  flex: 1;
+  width: 0; /* 칸 폭에 맞춰 줄어들도록 (input 기본 폭 무시) */
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.ow-won input[aria-invalid='true'] {
+  color: var(--color-danger);
+}
+
+/* 왼쪽 아이콘 칸 + 입력 */
+.ow-addon {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.ow-addon > .icon,
+.ow-addon > span:first-child {
+  display: grid;
+  flex: none;
+  place-items: center;
+  align-self: stretch;
+  width: 52px;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  font-size: 20px;
+}
+
+.ow-addon > span:first-child .icon {
+  display: block;
+}
+
+.ow-addon-prefix {
+  flex: none;
+  padding-left: 14px;
+  font-weight: 700;
+}
+
+.ow-addon input,
+.ow-addon select,
+.ow-addon .ow-time-range {
+  flex: 1;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.ow-time-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ow-time-range input {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+/* 하나 고르는 칩 */
+.ow-chips {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+
+.ow-chips[data-cols='2'] {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.ow-chips button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ow-chips button .icon {
+  display: block;
+  font-size: 18px;
+}
+
+/* 고른 칩: 채운 색 + 체크 (색만으로 전하지 않는다) */
+.ow-chips button[aria-checked='true'] {
+  border-color: var(--color-primary-dark);
+  background: var(--color-primary-dark);
+  color: var(--color-on-primary);
+  font-weight: 800;
+}
+
+@media (max-width: 400px) {
+  .ow-chips[data-cols='3'] {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 요일 */
+.ow-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.ow-days button {
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.ow-days button[aria-pressed='true'] {
+  border-color: var(--color-primary-dark);
+  background: var(--color-primary-dark);
+  color: var(--color-on-primary);
+  font-weight: 800;
+}
+
+/* 요일별 시간 */
+.ow-slots {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ow-slot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  grid-template-areas: 'day del' 'time time';
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+}
+
+.ow-slot select {
+  grid-area: day;
+  max-width: 140px;
+  padding: 0 8px;
+  font-weight: 800;
+}
+
+.ow-slot .ow-time-range {
+  grid-area: time;
+  padding: 0 10px;
+}
+
+.ow-slot .ow-icon-btn {
+  grid-area: del;
+}
+
+/* 넓으면 한 줄로 [요일][시간][지우기] */
+@media (min-width: 480px) {
+  .ow-slot {
+    grid-template-columns: 110px minmax(0, 1fr) 44px;
+    grid-template-areas: 'day time del';
+  }
+}
+
+/* 시각 칸: 시계 아이콘을 빼서 글자가 잘리지 않게 (눌러서 고르는 건 그대로) */
+.ow-time-range input {
+  text-align: center;
+}
+
+.ow-page input[type='time']::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+.ow-icon-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+  font-size: 20px;
+}
+
+.ow-icon-btn .icon,
+.ow-dashed .icon {
+  display: block;
+}
+
+.ow-dashed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 48px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+/* − 값 + */
+.ow-stepper {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 48px;
+  min-height: 48px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+}
+
+.ow-stepper > button {
+  display: grid;
+  place-items: center;
+  color: var(--color-text);
+  font-size: 20px;
+}
+
+.ow-stepper > button:disabled {
+  opacity: 0.35;
+}
+
+.ow-stepper > button .icon {
+  display: block;
+}
+
+.ow-stepper-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.ow-stepper-value input {
+  width: 4ch;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: right;
+  -moz-appearance: textfield;
+}
+
+.ow-stepper-value input::-webkit-inner-spin-button,
+.ow-stepper-value input::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+/* 켜기/끄기 */
+.ow-toggle-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+}
+
+.ow-toggle-icon {
+  flex: none;
+  font-size: 22px;
+}
+
+.ow-toggle-icon .icon {
+  display: block;
+}
+
+.ow-toggle-text {
+  flex: 1;
+}
+
+.ow-toggle-text label {
+  font-weight: 800;
+}
+
+.ow-toggle-text p {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.ow-switch {
+  position: relative;
+  flex: none;
+  width: 52px;
+  height: 30px;
+  margin: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+  cursor: pointer;
+  appearance: none;
+  transition: background 0.2s;
+}
+
+.ow-switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s;
+}
+
+.ow-switch:checked {
+  background: var(--color-primary-dark);
+}
+
+.ow-switch:checked::after {
+  transform: translateX(22px);
+}
+
+/* 사진 */
+.ow-photos {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+@media (max-width: 400px) {
+  .ow-photos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.ow-photo {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+}
+
+.ow-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ow-photo-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-header-dark) 70%, transparent);
+  color: var(--color-on-dark);
+  font-size: 18px;
+}
+
+.ow-photo-remove .icon {
+  display: block;
+}
+
+.ow-cover .ow-photo {
+  aspect-ratio: 16 / 9;
+}
+
+.ow-photo-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.ow-photo-add.is-tile {
+  aspect-ratio: 1;
+}
+
+.ow-photo-add.is-wide {
+  min-height: 140px;
+  border-radius: var(--radius-lg);
+}
+
+.ow-photo-add-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  font-size: 24px;
+}
+
+.ow-photo-add-icon .icon {
+  display: block;
+}
+
+/* 안내 띠 */
+.ow-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-alt);
+}
+
+.ow-banner strong {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.ow-banner p {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.ow-banner-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--color-brand-soft);
+  color: var(--color-primary-dark);
+  font-size: 26px;
+}
+
+.ow-banner-icon .icon {
+  display: block;
+}
+
+.ow-banner.is-strong {
+  background: var(--color-primary-dark);
+  color: var(--color-on-primary);
+}
+
+.ow-banner.is-strong p {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.ow-banner.is-strong .ow-banner-icon {
+  background: color-mix(in srgb, var(--color-on-primary) 14%, transparent);
+  color: var(--color-brand-soft);
+}
+
+/* 할인율 배지 */
+.ow-badge {
+  justify-self: start;
+  margin: calc(var(--space-2) * -1) 0 0;
+  padding: 4px 14px;
+  border: 1px solid var(--color-brand);
+  border-radius: var(--radius-pill);
+  background: var(--color-brand-soft);
+  color: var(--color-brand);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+/* 적립 안내 한 줄 */
+.ow-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.ow-info .icon {
+  display: block;
+  font-size: 24px;
+  color: var(--color-text);
+}
+
+/* 스탬프 줄 */
+.ow-stamp-caption {
+  margin: calc(var(--space-2) * -1) 0 calc(var(--space-2) * -1);
+  font-weight: 800;
+}
+
+.ow-stamps {
+  display: grid;
+  grid-template-columns: repeat(var(--per-row, 10), minmax(0, 36px));
+  justify-content: space-between;
+  gap: 4px;
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  list-style: none;
+}
+
+.ow-stamps li {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 18px;
+}
+
+.ow-stamps li .icon {
+  display: block;
+}
+
+.ow-stamps li.is-goal {
+  border-color: var(--color-primary-dark);
+  background: var(--color-primary-dark);
+  color: var(--color-on-primary);
+}
+
+/* 확인 표 */
+.ow-review {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.ow-review div {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: var(--space-3);
+  font-size: 0.9rem;
+}
+
+.ow-review dt {
+  color: var(--color-text-muted);
+}
+
+.ow-review dd {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.ow-error {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface));
+  color: var(--color-danger);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+/* 완료 */
+.ow-done {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  margin: auto 0;
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+.ow-done-icon {
+  display: grid;
+  place-items: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--color-brand-soft);
+  color: var(--color-primary-dark);
+  font-size: 40px;
+}
+
+.ow-done-icon .icon {
+  display: block;
+}
+
+.ow-done h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 900;
+}
+
+.ow-done p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.ow-done-actions {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 360px;
+  margin-top: var(--space-4);
+}
+
+.ow-page :is(button, input, select, textarea):focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type WheelEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { ALL_PANELS, DEFAULT_LANDING_PATH, PORTRAIT_BAR_IDS, USER_PANEL } from '../../core/categories/categories';
+import { ALL_PANELS, DEFAULT_LANDING_PATH, OWNER_PORTRAIT_BAR_IDS, PORTRAIT_BAR_IDS, USER_PANEL } from '../../core/categories/categories';
 import type { Category, PanelMeta } from '../../core/categories/categoryTypes';
 import { SUB_CATEGORIES, subCategoryById } from '../../core/categories/subCategories';
 import { fetchMapStores, floorLabel, type MapStore, type MapStoreData } from '../../core/supabase/stores';
@@ -307,9 +307,10 @@ export default function AppShell() {
 
   const activeState = panelStates[active.id] ?? 'half';
   const portrait = mode === 'portrait';
-  // 세로 화면 하단 바는 정해 둔 몇 개만, 나머지는 전체 메뉴로 (PORTRAIT_BAR_IDS 순서대로)
+  // 세로 화면 하단 바는 정해 둔 몇 개만, 나머지는 전체 메뉴로. 사장님은 사장님 센터 + 내 정보 버튼까지 바에 둔다
+  const ownerBar = categories.some((c) => c.id === 'owner');
   const barItems = portrait
-    ? PORTRAIT_BAR_IDS.map((id) => categories.find((c) => c.id === id)).filter((c): c is Category => !!c)
+    ? (ownerBar ? OWNER_PORTRAIT_BAR_IDS : PORTRAIT_BAR_IDS).map((id) => categories.find((c) => c.id === id)).filter((c): c is Category => !!c)
     : categories;
   const userButton = <UserButton active={active.id === USER_PANEL.id} onClick={() => openPanel(USER_PANEL)} />;
 
@@ -348,7 +349,7 @@ export default function AppShell() {
               aria-label="전체 메뉴"
               aria-haspopup="dialog"
               aria-expanded={menuOpen}
-              data-active={!barItems.some((c) => c.id === active.id) || undefined /* 하단 바에 없는 탭을 보는 중 */}
+              data-active={(!barItems.some((c) => c.id === active.id) && !(ownerBar && active.id === USER_PANEL.id)) || undefined /* 하단 바에 없는 탭을 보는 중 */}
               onClick={() => setMenuOpen(true)}
             >
               <Icon name="menu" />
@@ -403,7 +404,7 @@ export default function AppShell() {
           items={barItems}
           activeId={active.id}
           onSelect={openPanel}
-          userButton={portrait ? undefined : userButton}
+          userButton={portrait && !ownerBar ? undefined : userButton}
           userPlacement={mode === 'wide' ? 'end' : 'list'}
         />
       </div>

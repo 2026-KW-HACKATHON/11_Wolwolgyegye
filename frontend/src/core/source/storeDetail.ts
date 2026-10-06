@@ -55,8 +55,8 @@ const COLUMNS = [
   'store_menus(id, name, price, type_id, sort_order, section, kind, description)',
   'closing_sales(id, discount_type, discount_amount, discount_rate, condition, offer, ends_at)',
   'partner_benefits(id, discount_amount, discount_rate, condition, benefit_partners(partners(name)))',
-  'space_rentals(id, title, summary, price, capacity, min_hours, available_hours, created_at, space_rental_categories(name))',
-  'one_day_classes(id, title, summary, starts_at, duration_minutes, price, current_count, max_count, one_day_class_categories(name))',
+  'space_rentals(id, title, summary, price, capacity, min_hours, available_hours, created_at, is_published, space_rental_categories(name))',
+  'one_day_classes(id, title, summary, starts_at, duration_minutes, price, current_count, max_count, is_published, one_day_class_categories(name))',
   'stamp_policies(required_stamps, reward, unit, condition)',
 ].join(', ');
 
@@ -111,13 +111,14 @@ export async function fetchStoreDetail(id: string): Promise<StoreDetail | null> 
         id: b.id, discountAmount: b.discount_amount, discountRate: num(b.discount_rate), condition: b.condition,
         partners: list(b.benefit_partners).map((l) => l.partners?.name).filter(Boolean),
       })),
-      spaceRentals: list(row.space_rentals)
+      // 사장님은 RLS 로 자기 가게의 비공개(등록 취소한) 글도 읽으므로, 손님 화면에는 공개 글만 남긴다
+      spaceRentals: list(row.space_rentals).filter((r) => r.is_published)
         .sort((a, b) => b.created_at.localeCompare(a.created_at))
         .map((r) => ({
           id: r.id, title: r.title, summary: r.summary, category: r.space_rental_categories?.name ?? '', price: r.price,
           capacity: r.capacity, minHours: r.min_hours, availableHours: r.available_hours,
         })),
-      classes: list(row.one_day_classes)
+      classes: list(row.one_day_classes).filter((c) => c.is_published)
         .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
         .map((c) => ({
           id: c.id, title: c.title, summary: c.summary, category: c.one_day_class_categories?.name ?? '', startsAt: c.starts_at,

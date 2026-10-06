@@ -78,6 +78,8 @@ const SUPPORT_TABLES: [keyof CategorySupport, string][] = [
   ['roulette', 'store_menus'],
 ];
 
+const PUBLISHED_TABLES = new Set(['space_rentals', 'one_day_classes']);
+
 let supportsLoad: Promise<Map<string, CategorySupport>> | null = null;
 
 /** 가게 id → 그 가게가 있는 카테고리. 한 번 읽어 두고, refresh 면 다시 읽는다. 실패하면 빈 표 (다음에 다시 시도) */
@@ -86,7 +88,10 @@ function loadSupports(refresh = false): Promise<Map<string, CategorySupport>> {
   supportsLoad = (async () => {
     const supports = new Map<string, CategorySupport>();
     const client = getSupabaseClient();
-    const results = await Promise.all(SUPPORT_TABLES.map(([, table]) => client.from(table).select('store_id')));
+    // 글 표는 공개 글만 센다 (사장님은 자기 가게의 비공개·등록 취소 글도 읽을 수 있어서)
+    const results = await Promise.all(SUPPORT_TABLES.map(([, table]) => (PUBLISHED_TABLES.has(table)
+      ? client.from(table).select('store_id').eq('is_published', true)
+      : client.from(table).select('store_id'))));
     results.forEach(({ data, error }, i) => {
       if (error) throw error;
       const key = SUPPORT_TABLES[i][0];

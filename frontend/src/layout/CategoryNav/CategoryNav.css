@@ -82,7 +82,7 @@
   scroll-snap-type: none;
 }
 
-.cat-nav[data-orientation='horizontal'][data-scrollable='false'] .cat-nav__item {
+.cat-nav[data-orientation='horizontal'][data-scrollable='false'] :is(.cat-nav__item, .cat-nav__user) {
   flex: 1 1 0;
   min-width: 0;
 }
