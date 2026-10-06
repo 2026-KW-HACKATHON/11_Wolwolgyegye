@@ -134,6 +134,29 @@
   text-align: left;
 }
 
+.lp-store-results legend small {
+  margin-left: 6px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.lp-store-results button {
+  user-select: none; /* 두 번 누를 때 글자가 블록 선택되지 않게 */
+}
+
+.lp-store-change {
+  align-self: flex-start;
+  min-height: 36px;
+  margin-top: 4px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .lp-store-results button.is-selected {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 18%, transparent);
