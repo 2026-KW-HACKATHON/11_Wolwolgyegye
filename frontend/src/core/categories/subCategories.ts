@@ -68,3 +68,35 @@ export function subCategoryOfIndustry(industry: SbizIndustry): SubCategory | und
 export function subCategoryById(typeId: string | null): SubCategory | undefined {
   return typeId ? SUB_CATEGORIES.find((c) => c.id === typeId) : undefined;
 }
+
+/**
+ * 지도 위쪽 한 줄에 실제로 보여 주는 필터. 위 SUB_CATEGORIES(= DB 대표 유형) 여러 개를 하나로 묶는다.
+ * 가게 데이터(type_id)는 그대로 두고 화면에서만 묶으므로, 묶음을 바꿔도 DB 를 다시 넣을 필요가 없다.
+ * 가게 상세 등 다른 곳에는 계속 SUB_CATEGORIES 의 세부 이름(치킨, 주점 …)이 보인다.
+ */
+export interface MapFilter {
+  id: string;
+  label: string;
+  /** 한 줄 목록의 구분선에 쓴다 */
+  group: SubCategory['group'];
+  /** 이 필터에 드는 대표 유형 id (SUB_CATEGORIES 의 id) */
+  typeIds: string[];
+}
+
+const single = (id: string): MapFilter => {
+  const sub = SUB_CATEGORIES.find((c) => c.id === id)!;
+  return { id, label: sub.label, group: sub.group, typeIds: [id] };
+};
+
+/** 표시 순서 = 번호 순서 */
+export const MAP_FILTERS: MapFilter[] = [
+  single('korean'),
+  single('chinese'),
+  single('japanese'),
+  single('western'),
+  single('snack'),
+  { id: 'chicken-burger', label: '치킨·버거', group: 'restaurant', typeIds: ['chicken', 'fast-food'] },
+  { id: 'cafe-dessert', label: '카페·디저트', group: 'cafe', typeIds: ['cafe', 'bakery'] },
+  { id: 'food-etc', label: '기타 음식점', group: 'restaurant', typeIds: ['food-etc', 'pub', 'convenience'] },
+  { id: 'etc', label: '기타', group: 'etc', typeIds: SUB_CATEGORIES.filter((c) => c.group === 'etc').map((c) => c.id) },
+];

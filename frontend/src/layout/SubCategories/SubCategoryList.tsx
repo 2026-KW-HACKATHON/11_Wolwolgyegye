@@ -1,8 +1,8 @@
-import { SUB_CATEGORIES, type SubCategory } from '../../core/categories/subCategories';
+import { MAP_FILTERS, type MapFilter } from '../../core/categories/subCategories';
 import './SubCategoryList.css';
 
 interface SubCategoryListProps {
-  items: SubCategory[];
+  items: MapFilter[];
   selectedId: string | null;
   /** 업종별 가게 수 (고른 항목에 붙인다) */
   counts: Record<string, number>;
@@ -23,7 +23,7 @@ export default function SubCategoryList({ items, selectedId, counts, onToggle }:
         return (
           <li key={item.id} className={newGroup ? 'sub-cats__group-start' : undefined}>
             <button type="button" className="sub-cats__item" aria-pressed={isSelected} onClick={() => onToggle(item.id)}>
-              <span className="sub-cats__num">{SUB_CATEGORIES.indexOf(item) + 1}</span>
+              <span className="sub-cats__num">{MAP_FILTERS.indexOf(item) + 1}</span>
               <span className="sub-cats__label">{item.label}</span>
               {isSelected && <span className="sub-cats__count">{counts[item.id] ?? 0}곳</span>}
             </button>
