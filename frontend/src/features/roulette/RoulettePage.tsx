@@ -141,12 +141,13 @@ export default function RoulettePage() {
   }, [result, storesRetry]);
 
   // 지도에는 룰렛으로 나온 추천 가게만 보여준다 (아직 안 돌렸거나 찾는 중이면 핀 없음)
-  const mapIds = (stores ?? []).map((view) => view.storeId).join(',');
+  // 카테고리 가게 목록에 없는 가게(메뉴판 없는 전문점 등)도 찍히도록 가게 정보를 같이 넘긴다
   useEffect(() => {
     if (!active) return;
-    setMapStoreIds(mapIds ? mapIds.split(',') : []);
+    const list = (stores ?? []).map((view) => view.store);
+    setMapStoreIds(list.map((store) => store.id), list);
     return () => setMapStoreIds(null);
-  }, [active, mapIds, setMapStoreIds]);
+  }, [active, stores, setMapStoreIds]);
 
   // 룰렛이 멈춰 결과가 나오면, 원판 아래 결과 창이 화면에 들어오도록 내려준다 (이미 보이면 그대로)
   useEffect(() => {
