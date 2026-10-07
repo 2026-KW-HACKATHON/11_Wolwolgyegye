@@ -96,6 +96,7 @@
 .lp-account-section p { margin: 4px 0 0; }
 .lp-account-section h3 { margin: 0; font-size: 1rem; }
 .lp-account-section.lp-name-form { display: flex; }
+.lp-account-section .lp-field-help { display: block; }
 
 .lp-search-note,
 .lp-field-help {
