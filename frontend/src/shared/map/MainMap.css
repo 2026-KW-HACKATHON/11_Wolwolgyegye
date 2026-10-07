@@ -447,3 +447,33 @@
   font-size: 9px;
   font-weight: 800;
 }
+
+/*
+ * 터치로 지도를 움직이는 동안에는 핀마다 별도 합성 레이어를 만드는 그림자·필터를 잠시 끈다.
+ * 위치와 모양은 그대로 유지되고 손을 떼면 즉시 복원되므로, 저사양 스마트폰에서도 드래그가 끊기지 않는다.
+ */
+.mm-canvas.is-interacting .mm-pin,
+.mm-canvas.is-interacting .pl-cluster,
+.mm-canvas.is-interacting .st-box {
+  box-shadow: none;
+}
+
+.mm-canvas.is-interacting .pl-pin,
+.mm-canvas.is-interacting .pl-pin.is-selected {
+  filter: none;
+}
+
+.mm-canvas.is-interacting .mm-pin,
+.mm-canvas.is-interacting .pl-pin {
+  transition: none;
+}
+
+@media (pointer: coarse) {
+  /* 긴 터치에서도 브라우저 선택 메뉴가 뜨지 않아 지도 조작이 끊기지 않게 한다. */
+  .mm-canvas,
+  .mm-canvas .leaflet-marker-icon {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+}

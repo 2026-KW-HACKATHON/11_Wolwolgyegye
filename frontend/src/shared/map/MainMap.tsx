@@ -168,6 +168,7 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
     const container = containerRef.current;
     if (!container) return;
     let cancelled = false;
+    const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
 
     const map = L.map(container, {
       preferCanvas: true, // 건물이 수천 개라 SVG 대신 Canvas 로 그려 성능 확보
@@ -179,6 +180,13 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
       maxBoundsViscosity: 1, // 범위 끝에서 더 끌리지 않고 멈춘다 (튕김 없음)
       bounceAtZoomLimits: false,
       attributionControl: false, // 출처는 .mm-source 라벨로 직접 표시 (아래쪽에 작게)
+      inertia: true,
+      inertiaDeceleration: 3200,
+      inertiaMaxSpeed: 1400,
+      easeLinearity: 0.25,
+      // 모바일에서는 수백 개 DOM 마커를 줌 애니메이션마다 확대하지 않는다.
+      // 배경 지도 확대 애니메이션은 유지해 손가락 조작감은 그대로 둔다.
+      markerZoomAnimation: !coarsePointer,
     });
     map.setMinZoom(minZoomFor(map, portraitRef.current));
     map.setView([MAP_CENTER.lat, MAP_CENTER.lng], map.getMinZoom());
@@ -195,12 +203,34 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
 
     const read = getComputedStyle(container);
     cssRef.current = (name) => read.getPropertyValue(name).trim();
+    const featureRenderer = L.canvas({ padding: coarsePointer ? 0.12 : 0.2, tolerance: coarsePointer ? 5 : 3 });
     const ctx: DrawContext = {
       map,
-      featureRenderer: L.canvas(),
-      boundaryRenderer: L.canvas({ pane: 'boundary' }),
+      featureRenderer,
+      boundaryRenderer: L.canvas({ pane: 'boundary', padding: 0.12, tolerance: 5 }),
       styles: createStyles((name) => read.getPropertyValue(name).trim()),
     };
+
+    // 드래그·핀치 중에는 CSS 그림자와 필터를 잠시 빼 GPU 합성 비용을 줄인다.
+    // 조작이 끝나면 같은 프레임에서 원래 표시로 되돌린다.
+    let interactionDepth = 0;
+    let interactionFrame: number | null = null;
+    const interactionStart = () => {
+      interactionDepth += 1;
+      if (interactionFrame !== null) cancelAnimationFrame(interactionFrame);
+      interactionFrame = null;
+      container.classList.add('is-interacting');
+    };
+    const interactionEnd = () => {
+      interactionDepth = Math.max(0, interactionDepth - 1);
+      if (interactionDepth > 0) return;
+      interactionFrame = requestAnimationFrame(() => {
+        interactionFrame = null;
+        container.classList.remove('is-interacting');
+      });
+    };
+    map.on('movestart zoomstart', interactionStart);
+    map.on('moveend zoomend', interactionEnd);
 
     void loadData().then((data) => {
       if (cancelled) return;
@@ -238,17 +268,33 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
     });
 
     // 화면 회전·창 크기·탭 배치가 바뀌면 다시 맞추고, 가장 많이 축소할 수 있는 줌도 다시 계산한다
-    const observer = new ResizeObserver(() => {
-      map.invalidateSize();
-      const minZoom = minZoomFor(map, portraitRef.current);
-      map.setMinZoom(minZoom);
-      if (map.getZoom() < minZoom) map.setZoom(minZoom);
+    let resizeFrame: number | null = null;
+    let lastWidth = 0;
+    let lastHeight = 0;
+    const observer = new ResizeObserver(([entry]) => {
+      const width = Math.round(entry.contentRect.width);
+      const height = Math.round(entry.contentRect.height);
+      if (width <= 0 || height <= 0 || (width === lastWidth && height === lastHeight)) return;
+      lastWidth = width;
+      lastHeight = height;
+      if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(() => {
+        resizeFrame = null;
+        map.invalidateSize({ pan: false, debounceMoveend: true });
+        const minZoom = minZoomFor(map, portraitRef.current);
+        map.setMinZoom(minZoom);
+        if (map.getZoom() < minZoom) map.setZoom(minZoom, { animate: false });
+      });
     });
     observer.observe(container);
 
     return () => {
       cancelled = true;
       observer.disconnect();
+      if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
+      if (interactionFrame !== null) cancelAnimationFrame(interactionFrame);
+      map.off('movestart zoomstart', interactionStart);
+      map.off('moveend zoomend', interactionEnd);
       map.remove();
       mapRef.current = null;
       pinLayerRef.current = null;
@@ -293,9 +339,20 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
     const map = mapRef.current;
     const layer = placeLayerRef.current;
     if (!map || !layer) return;
+    let renderFrame: number | null = null;
+    let renderedCoverage: L.LatLngBounds | null = null;
     const render = () => {
+      renderFrame = null;
       layer.clearLayers();
-      for (const cluster of clusterGroups(map, buildingGroups)) {
+      // 이동 중에는 기존 핀을 그대로 움직이고, 손을 뗀 뒤 현재 화면 주변만 다시 만든다.
+      // 여유 영역을 넉넉히 둬 빠르게 드래그해도 가장자리에 빈 구간이 보이지 않게 한다.
+      const visibleBounds = map.getBounds().pad(0.45);
+      renderedCoverage = visibleBounds;
+      const visibleGroups = buildingGroups.filter((group) => (
+        visibleBounds.contains([group.lat, group.lng])
+        || (selectedPlaceId !== null && group.places.some((place) => place.id === selectedPlaceId))
+      ));
+      for (const cluster of clusterGroups(map, visibleGroups)) {
         const selected = selectedPlaceId !== null && cluster.groups.some((g) => g.places.some((p) => p.id === selectedPlaceId));
         const marker = L.marker([cluster.lat, cluster.lng], { icon: clusterIcon(cluster, selected), zIndexOffset: selected ? 500 : 0, keyboard: true });
         const [group] = cluster.groups;
@@ -329,24 +386,57 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
         marker.addTo(layer);
       }
     };
-    render();
-    map.on('zoomend', render);
-    return () => { map.off('zoomend', render); };
+    const scheduleRender = (force = false) => {
+      if (!force && renderedCoverage?.contains(map.getBounds())) return;
+      if (renderFrame !== null) cancelAnimationFrame(renderFrame);
+      renderFrame = requestAnimationFrame(render);
+    };
+    const renderAfterMove = () => scheduleRender(false);
+    const renderAfterZoom = () => scheduleRender(true);
+    scheduleRender(true);
+    map.on('moveend', renderAfterMove);
+    map.on('zoomend', renderAfterZoom);
+    return () => {
+      map.off('moveend', renderAfterMove);
+      map.off('zoomend', renderAfterZoom);
+      if (renderFrame !== null) cancelAnimationFrame(renderFrame);
+    };
   }, [buildingGroups, selectedPlaceId, status]);
 
   // 3) 가게 핀 — 월계1동 안의 가게만
   useEffect(() => {
+    const map = mapRef.current;
     const layer = pinLayerRef.current;
-    if (!layer) return;
-    layer.clearLayers();
-    for (const store of stores) {
-      const { lat, lng } = store.location;
-      if (!allowOutsideWolgye && !isInWolgye1(lat, lng, adminDongRef.current)) continue;
-      const selected = store.id === selectedId;
-      L.marker([lat, lng], { icon: storeIcon(store, selected), title: store.name, zIndexOffset: selected ? 1000 : 0 })
-        .on('click', () => onSelectRef.current(store.id))
-        .addTo(layer);
-    }
+    if (!map || !layer) return;
+    let renderFrame: number | null = null;
+    let renderedCoverage: L.LatLngBounds | null = null;
+    const render = () => {
+      renderFrame = null;
+      layer.clearLayers();
+      const visibleBounds = map.getBounds().pad(0.45);
+      renderedCoverage = visibleBounds;
+      for (const store of stores) {
+        const { lat, lng } = store.location;
+        if (!allowOutsideWolgye && !isInWolgye1(lat, lng, adminDongRef.current)) continue;
+        const selected = store.id === selectedId;
+        if (!selected && !visibleBounds.contains([lat, lng])) continue;
+        L.marker([lat, lng], { icon: storeIcon(store, selected), title: store.name, zIndexOffset: selected ? 1000 : 0 })
+          .on('click', () => onSelectRef.current(store.id))
+          .addTo(layer);
+      }
+    };
+    const scheduleRender = () => {
+      if (renderedCoverage?.contains(map.getBounds())) return;
+      if (renderFrame !== null) cancelAnimationFrame(renderFrame);
+      renderFrame = requestAnimationFrame(render);
+    };
+    renderedCoverage = null;
+    scheduleRender();
+    map.on('moveend zoomend', scheduleRender);
+    return () => {
+      map.off('moveend zoomend', scheduleRender);
+      if (renderFrame !== null) cancelAnimationFrame(renderFrame);
+    };
   }, [stores, selectedId, status, allowOutsideWolgye]);
 
   // 선택한 가게를 가운데로 옮기는 건 AppShell 이 한다 (가게 창 크기가 정해진 뒤에, centerOn)
