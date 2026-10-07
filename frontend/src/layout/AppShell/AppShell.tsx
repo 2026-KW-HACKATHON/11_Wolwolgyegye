@@ -513,6 +513,7 @@ export default function AppShell() {
             showZoomControl={mode === 'wide' && !window.matchMedia(TOUCH_PRIMARY_QUERY).matches}
             portrait={mode === 'portrait'}
             allowOutsideWolgye={activeId === 'partner-stores' || activeId === 'roulette'}
+            smallPins={activeId === 'recommend'}
           />
 
           {/* 그 외 카테고리: 모든 화면에서 지도 위쪽에 얇은 한 줄로 늘어놓는다 (넘치면 옆으로 밀기) */}

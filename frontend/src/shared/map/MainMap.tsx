@@ -50,6 +50,8 @@ interface MainMapProps {
   placesMonth: string | null;
   /** 제휴 가게처럼 월계1동 경계 밖의 인접 가게도 표시할 때 true */
   allowOutsideWolgye?: boolean;
+  /** 동네 소식처럼 가게가 많이 보이는 화면에서는 상가정보 핀과 어울리는 작은 주황 핀으로 그린다 */
+  smallPins?: boolean;
 }
 
 type Status = 'loading' | 'ready' | 'missing';
@@ -109,7 +111,15 @@ const myLocationStyle = (css: (name: string) => string): L.CircleMarkerOptions =
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 
 /** 가게 핀. 원데이클래스는 자주(동네 소식·원데이클래스 색), 그 밖은 초록(공간대여 색) */
-function storeIcon(store: Store, selected: boolean): L.DivIcon {
+function storeIcon(store: Store, selected: boolean, small: boolean): L.DivIcon {
+  if (small) {
+    return L.divIcon({
+      className: 'mm-pin-wrap',
+      html: `<span class="pl-pin pl-pin--single${selected ? ' is-selected' : ''}"><span class="pl-pin__shape"></span><span class="pl-pin__label"></span></span>${selected ? `<strong class="mm-pin-name">${escapeHtml(store.name)}</strong>` : ''}`,
+      iconSize: [22, 28],
+      iconAnchor: [11, 28],
+    });
+  }
   const kind = store.supports['oneday-class'] ? 'class' : store.supports['space-rental'] ? 'space' : 'store';
   const glyph = ICONS[kind === 'class' ? 'palette' : kind === 'space' ? 'house' : 'storefront'];
   return L.divIcon({
@@ -127,7 +137,7 @@ function storeIcon(store: Store, selected: boolean): L.DivIcon {
  *
  * 그리는 순서 (아래 → 위): 영역(학교 → 아파트 단지 → 강·하천 → 산) → 도로 → 건물 → 학교 건물 → 월계1동 경계 점선 → 가게 핀
  */
-const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ stores, selectedId, onSelect, getInsets, showZoomControl, portrait, places, selectedPlaceId, onPlaceSelect, placesMonth, allowOutsideWolgye = false }, ref) {
+const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ stores, selectedId, onSelect, getInsets, showZoomControl, portrait, places, selectedPlaceId, onPlaceSelect, placesMonth, allowOutsideWolgye = false, smallPins = false }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const pinLayerRef = useRef<L.LayerGroup | null>(null);
@@ -420,7 +430,7 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
         if (!allowOutsideWolgye && !isInWolgye1(lat, lng, adminDongRef.current)) continue;
         const selected = store.id === selectedId;
         if (!selected && !visibleBounds.contains([lat, lng])) continue;
-        L.marker([lat, lng], { icon: storeIcon(store, selected), title: store.name, zIndexOffset: selected ? 1000 : 0 })
+        L.marker([lat, lng], { icon: storeIcon(store, selected, smallPins), title: store.name, zIndexOffset: selected ? 1000 : 0 })
           .on('click', () => onSelectRef.current(store.id))
           .addTo(layer);
       }
@@ -437,7 +447,7 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
       map.off('moveend zoomend', scheduleRender);
       if (renderFrame !== null) cancelAnimationFrame(renderFrame);
     };
-  }, [stores, selectedId, status, allowOutsideWolgye]);
+  }, [stores, selectedId, status, allowOutsideWolgye, smallPins]);
 
   // 선택한 가게를 가운데로 옮기는 건 AppShell 이 한다 (가게 창 크기가 정해진 뒤에, centerOn)
 
