@@ -343,8 +343,10 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
     return () => { control.remove(); };
   }, [showZoomControl]);
 
-  // 상가정보 가게 핀 — 건물 단위로 묶고(가게 수 숫자), 줌을 줄이면 가까운 건물끼리 다시 묶는다
-  const buildingGroups = useMemo(() => groupByBuilding(places), [places]);
+  // 상가정보 가게 핀 — 월계1동 안의 가게만, 건물 단위로 묶고(가게 수 숫자), 줌을 줄이면 가까운 건물끼리 다시 묶는다
+  // 경계는 지도 데이터를 읽은 뒤(status 'ready') 알 수 있어서 status 가 바뀌면 다시 거른다
+  const buildingGroups = useMemo(() => groupByBuilding(allowOutsideWolgye ? places
+    : places.filter((place) => isInWolgye1(place.lat, place.lng, adminDongRef.current))), [places, allowOutsideWolgye, status]);
 
   // 핀이 있는 건물은 테두리를 그 핀 색으로 칠한다 (그 외 카테고리를 고르면 그 업종 건물만)
   useEffect(() => {
