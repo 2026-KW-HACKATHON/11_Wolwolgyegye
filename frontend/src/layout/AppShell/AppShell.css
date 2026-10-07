@@ -126,6 +126,44 @@
   50% { opacity: 0.35; }
 }
 
+/* 모바일 (세로 / 가로): 지도를 덜 가리게 버튼을 작게 */
+.app-shell[data-layout='portrait'] .map-fabs,
+.app-shell[data-layout='mobile-landscape'] .map-fabs {
+  right: calc(var(--inset-right) + 10px);
+  bottom: calc(var(--inset-bottom) + 10px);
+  gap: 8px;
+}
+
+.app-shell[data-layout='portrait'] .map-fab,
+.app-shell[data-layout='mobile-landscape'] .map-fab {
+  width: 38px;
+  height: 38px;
+  font-size: 19px;
+}
+
+.app-shell[data-layout='portrait'] .map-fab--text,
+.app-shell[data-layout='mobile-landscape'] .map-fab--text {
+  width: auto;
+  min-width: 38px;
+  padding: 0 11px;
+  font-size: 12px;
+}
+
+.app-shell[data-layout='portrait'] .map-location-fab,
+.app-shell[data-layout='mobile-landscape'] .map-location-fab {
+  width: auto;
+  min-width: 0;
+  padding: 0 12px;
+  gap: 5px;
+  border-radius: 19px;
+  font-size: 13px;
+}
+
+.app-shell[data-layout='portrait'] .map-location-fab .icon,
+.app-shell[data-layout='mobile-landscape'] .map-location-fab .icon {
+  font-size: 16px;
+}
+
 /* ---- 전체 메뉴 버튼 (세로 화면): 그 외 카테고리 줄 바로 아래 왼쪽 ---- */
 .map-menu-button {
   position: absolute;
