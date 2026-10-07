@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import Icon from '../../shared/Icon';
 import ExtraIcon from '../../shared/ExtraIcon';
 import { useFavoriteStores } from '../../shared/favorites/useFavoriteStores';
@@ -17,14 +17,20 @@ interface Props {
   sort: StampSort;
   onSort: (value: StampSort) => void;
   onOpen: (storeId: string) => void;
+  /** '전체' 목록에서 고른 가게 (적립 전이어도 '모으는 중'에 보인다) */
+  picked: string[];
+  /** 방금 고른 가게: 그 카드로 스크롤하고 강조한다 */
+  focusId: string | null;
+  onPick: (view: StampView) => void;
 }
 
-export default function StampList({ stamps, error, onRetry, missingId, query, onQuery, filter, onFilter, sort, onSort, onOpen }: Props) {
+export default function StampList({ stamps, error, onRetry, missingId, query, onQuery, filter, onFilter, sort, onSort, onOpen, picked, focusId, onPick }: Props) {
   const { isFavorite, toggle } = useFavoriteStores();
   const all = useMemo(() => stamps ?? [], [stamps]);
 
   const ready = all.filter(isReady);
-  const collecting = all.filter((v) => v.count > 0 && !isReady(v));
+  const isCollecting = (v: StampView) => (v.count > 0 || picked.includes(v.storeId)) && !isReady(v);
+  const collecting = all.filter(isCollecting);
   const totalRewards = all.reduce((sum, v) => sum + rewardsOf(v), 0);
   const counts: Record<StampFilter, number> = {
     all: all.length,
@@ -37,7 +43,7 @@ export default function StampList({ stamps, error, onRetry, missingId, query, on
     const q = query.trim().toLocaleLowerCase();
     const list = all.filter((v) => {
       if (filter === 'ready' && !isReady(v)) return false;
-      if (filter === 'collecting' && (v.count === 0 || isReady(v))) return false;
+      if (filter === 'collecting' && !isCollecting(v)) return false;
       if (filter === 'saved' && !isFavorite(v.storeId)) return false;
       return `${v.store.name} ${v.store.cuisineType ?? ''} ${v.reward}`.toLocaleLowerCase().includes(q);
     });
@@ -48,7 +54,14 @@ export default function StampList({ stamps, error, onRetry, missingId, query, on
     // 선물 가까운순: 받을 수 있는 선물 → 남은 개수 적은 순 → 아직 시작 안 한 가게
     const rank = (v: StampView) => isReady(v) ? 0 : v.count > 0 ? 1 : 2;
     return list.sort((a, b) => rank(a) - rank(b) || remainingOf(a) - remainingOf(b) || byName(a, b));
-  }, [all, filter, query, sort, isFavorite]); // isFavorite 는 찜 목록이 바뀌면 새 함수가 된다
+  }, [all, filter, query, sort, isFavorite, picked]); // isFavorite 는 찜 목록이 바뀌면 새 함수가 된다
+
+  // '전체'에서 고른 가게의 카드가 화면 가운데 오게 한다
+  useEffect(() => {
+    if (!focusId || filter === 'all') return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.getElementById(`st-item-${focusId}`)?.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
+  }, [focusId, filter]);
 
   return (
     <>
@@ -108,13 +121,32 @@ export default function StampList({ stamps, error, onRetry, missingId, query, on
           </div>
         )}
 
-        {visible.length > 0 && (
+        {/* 전체: 스탬프를 운영하는 가게를 이름·선물·필요 개수만 한 줄씩. 누르면 모으는 중/사용 가능의 카드로 */}
+        {filter === 'all' && visible.length > 0 && (
+          <ul className="st-rows">
+            {visible.map((v) => (
+              <li key={v.storeId}>
+                <button type="button" className="st-row" onClick={() => onPick(v)}
+                  aria-label={`${v.store.name}, 선물 ${v.reward}, 스탬프 ${v.requiredStamps}개. ${isReady(v) ? '사용 가능' : '모으는 중'}에서 보기`}>
+                  <span className="st-row-text">
+                    <strong>{v.store.name}</strong>
+                    <span><Icon name="gift" />{v.reward}</span>
+                  </span>
+                  <span className="st-row-need"><b>{v.requiredStamps}</b>개</span>
+                  <Icon name="chevronRight" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {filter !== 'all' && visible.length > 0 && (
           <ul className="st-grid">
             {visible.map((v) => {
               const done = isReady(v);
               const fav = isFavorite(v.storeId);
               return (
-                <li key={v.storeId} className={`st-item${done ? ' is-ready' : ''}${v.count === 0 ? ' is-new' : ''}`}>
+                <li key={v.storeId} id={`st-item-${v.storeId}`} className={`st-item${done ? ' is-ready' : ''}${v.count === 0 ? ' is-new' : ''}${v.storeId === focusId ? ' is-focus' : ''}`}>
                   <button type="button" className="st-item-main" onClick={() => onOpen(v.storeId)}
                     aria-label={`${v.store.name} 적립판 열기. ${v.requiredStamps}개 중 ${v.count}개 적립, ${statusText(v)}`}>
                     <span className="st-item-head">
