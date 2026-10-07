@@ -29,6 +29,8 @@ import './AppShell.css';
 
 /** 이 카테고리를 열면 지도에는 그 카테고리와 관련된 가게 핀만 보여준다 (상가정보 핀은 숨김) */
 const FEATURE_PANEL_IDS = new Set(['space-rental', 'oneday-class', 'closing-sale', 'partner-stores', 'roulette', 'coupon']);
+/** 이 탭에서는 모든 가게를 동네 소식처럼 작은 주황 핀(상가정보 핀과 같이 묶음)으로 보여준다 */
+const PLACE_PIN_PANEL_IDS = new Set(['recommend', 'user']);
 
 /** 지도에 표시할 가게: 가게가 지원하는 카테고리면 그 가게만, 아니면(동네 소식·유저) 전체 */
 function storesForPanel(stores: Store[], panelId: string): Store[] {
@@ -312,8 +314,8 @@ export default function AppShell() {
     }
     // 룰렛은 돌려서 나온 가게만: 필터가 아직 없을(null) 때도 핀을 보여주지 않는다
     if (activeId === 'roulette') return [];
-    // 동네 소식은 등록 가게도 상가정보 핀과 같이 묶어 숫자 핀으로 보여준다 (places 로 넘어간다)
-    if (activeId === 'recommend') return [];
+    // 동네 소식·유저 탭은 등록 가게도 상가정보 핀과 같이 묶어 숫자 핀으로 보여준다 (places 로 넘어간다)
+    if (activeId && PLACE_PIN_PANEL_IDS.has(activeId)) return [];
     return storesForPanel(categoryStores, activeId ?? '').filter((store) => matchesSearch(storeSearchText(store), storeTerm));
   }, [focusedId, subCategory, activeId, selectedStore, categoryStores, mapStoreIds, mapExtraStores, storeTerm]);
   // 지도 가게: 그 외 카테고리를 고르면 그 유형만, 아니면 전부. 카테고리 핀으로 이미 나온 가게는 두 번 그리지 않는다
@@ -520,7 +522,7 @@ export default function AppShell() {
             showZoomControl={mode === 'wide' && !window.matchMedia(TOUCH_PRIMARY_QUERY).matches}
             portrait={mode === 'portrait'}
             allowOutsideWolgye={activeId === 'partner-stores' || activeId === 'roulette'}
-            smallPins={activeId === 'recommend'}
+            smallPins={!!activeId && PLACE_PIN_PANEL_IDS.has(activeId)}
           />
 
           {/* 그 외 카테고리: 모든 화면에서 지도 위쪽에 얇은 한 줄로 늘어놓는다 (넘치면 옆으로 밀기) */}

@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useShell } from '../../layout/AppShell/ShellContext';
 import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
 import Icon from '../../shared/Icon';
-import { useFavoriteStores } from '../../shared/favorites/useFavoriteStores';
 import { COLLEGES } from './colleges';
 import { AUDIENCE_EVENT, readAudience, saveAudience } from './PartnerSection';
 import { collegeOf, distanceLabel, industryOf } from './presentation';
@@ -27,14 +26,12 @@ export default function PartnerStoresPage() {
   const { openStore, setMapStoreIds } = useShell();
   const location = useLocation();
   const navigate = useNavigate();
-  const { isFavorite, toggle } = useFavoriteStores();
   const [stores, setStores] = useState<PartnerStoreView[] | null>(null);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [audience, setAudience] = useState<PartnerAudience>(readAudience);
   const [query, setQuery] = useState('');
   const [industry, setIndustry] = useState<PartnerIndustry>('전체');
-  const [savedOnly, setSavedOnly] = useState(false);
   const [sort, setSort] = useState<SortKey>('near');
   const [focusId, setFocusId] = useState<string | null>(null);
   const [collegesOpen, setCollegesOpen] = useState(false);
@@ -77,7 +74,6 @@ export default function PartnerStoresPage() {
   const changeFilters = (change: () => void) => { setFocusId(null); change(); };
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const matches = (view: PartnerStoreView) => (!college || view.colleges.includes(college))
-    && (!savedOnly || isFavorite(view.storeId))
     && (industry === '전체' || industryOf(view) === industry)
     && `${view.store.name} ${view.store.cuisineType ?? ''} ${view.menus.map((menu) => menu.name).join(' ')}`
       .toLocaleLowerCase().includes(normalizedQuery);
@@ -120,8 +116,8 @@ export default function PartnerStoresPage() {
     </button>;
   };
 
-  const hasFilters = !!query || industry !== '전체' || savedOnly;
-  const resetFilters = () => changeFilters(() => { setQuery(''); setIndustry('전체'); setSavedOnly(false); });
+  const hasFilters = !!query || industry !== '전체';
+  const resetFilters = () => changeFilters(() => { setQuery(''); setIndustry('전체'); });
   const listTitle = current ? `${current.label} 제휴 가게` : '단과대별 제휴 가게';
 
   return <div className="ps-page">
@@ -144,7 +140,6 @@ export default function PartnerStoresPage() {
 
     <div className="ps-tools">
       <label className="ps-search"><Icon name="search" /><input type="search" aria-label="가게 또는 메뉴 검색" placeholder="가게·메뉴 검색" value={query} onChange={(event) => changeFilters(() => setQuery(event.target.value))} /></label>
-      <button className={`ps-saved${savedOnly ? ' is-on' : ''}`} type="button" aria-pressed={savedOnly} onClick={() => changeFilters(() => setSavedOnly(!savedOnly))}><Icon name="heart" /><span>찜</span></button>
     </div>
     <div className="ps-filters" role="group" aria-label="업종 선택">{INDUSTRIES.map((item) => <button type="button" key={item} aria-pressed={industry === item} className={industry === item ? 'is-on' : ''} onClick={() => changeFilters(() => setIndustry(item))}>{item}</button>)}</div>
 
@@ -158,13 +153,11 @@ export default function PartnerStoresPage() {
       {stores && !list.length && <div className="ps-empty"><Icon name="storefront" /><h3>조건에 맞는 제휴 가게가 없어요.</h3><p>다른 단과대나 검색 조건을 선택해 보세요.</p><button className="ps-secondary" type="button" onClick={resetFilters}>검색·필터 초기화</button></div>}
       {!!list.length && <ul className="ps-list">{list.map((view) => {
         const colleges = COLLEGES.filter((item) => view.colleges.includes(item.key));
-        const favorite = isFavorite(view.storeId);
         const cafe = industryOf(view) === '카페·베이커리';
         return <li className={`ps-card${view.storeId === focusId ? ' is-focus' : ''}`} key={view.storeId} id={`ps-store-${view.storeId}`}>
           <div className="ps-card-top">
             <span className={`ps-store-icon${cafe ? ' is-cafe' : ''}`} aria-hidden="true"><Icon name={cafe ? 'coffee' : 'storefront'} /></span>
             <div className="ps-card-title"><p>{view.store.cuisineType ?? '생활·문화'} · {distanceLabel(view.referenceDistanceMeters)}</p><h3>{view.store.name}</h3></div>
-            <button className={`ps-heart${favorite ? ' is-on' : ''}`} type="button" aria-label={`${view.store.name} 찜 ${favorite ? '해제' : '하기'}`} aria-pressed={favorite} onClick={() => toggle(view.storeId)}><Icon name="heart" /></button>
           </div>
           <div className="ps-tags" aria-label="제휴 단과대">{colleges.map((item) => <span className={college === item.key ? 'is-on' : ''} key={item.key}>{item.label}</span>)}</div>
           <div className="ps-card-foot"><button type="button" className="ps-more" onClick={() => openStore(view.storeId, { category: 'partner-stores' })}>지도에서 보기 <Icon name="chevronRight" /></button></div>
