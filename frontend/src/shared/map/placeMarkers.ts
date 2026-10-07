@@ -39,11 +39,21 @@ interface PlaceCluster {
   count: number;
 }
 
-/** 같은 건물(건물관리번호, 없으면 같은 좌표)의 가게를 하나로 묶는다 */
+/**
+ * 같은 건물의 가게를 하나로 묶는다. 건물관리번호로 묶고, 번호가 없는 가게(따로 추가한 가게)는
+ * 같은 주소에 번호가 있는 가게의 건물로, 그것도 없으면 같은 주소끼리, 주소도 없으면 같은 좌표끼리 묶는다.
+ * (번호 없는 가게가 따로 묶이면 같은 건물 위에 핀이 두 개 겹쳐 보인다)
+ */
 export function groupByBuilding(places: MapStore[]): BuildingGroup[] {
+  const buildingByAddress = new Map<string, string>();
+  for (const place of places) {
+    if (place.buildingId && place.address && !buildingByAddress.has(place.address)) buildingByAddress.set(place.address, place.buildingId);
+  }
   const byKey = new Map<string, MapStore[]>();
   for (const place of places) {
-    const key = place.buildingId || `${place.lat.toFixed(6)},${place.lng.toFixed(6)}`;
+    const key = place.buildingId
+      || (place.address && (buildingByAddress.get(place.address) ?? `addr:${place.address}`))
+      || `${place.lat.toFixed(6)},${place.lng.toFixed(6)}`;
     const list = byKey.get(key);
     if (list) list.push(place);
     else byKey.set(key, [place]);
