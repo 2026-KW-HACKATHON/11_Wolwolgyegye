@@ -13,7 +13,8 @@ import { distanceMeters } from '../../core/utils/geo';
 import { useActivePath } from '../../core/router/useActivePath';
 import type { CategorySupport, GeoPoint, Store } from '../../core/types/place';
 import Icon from '../../shared/Icon';
-import MainMap, { type MainMapHandle, type MapInsets } from '../../shared/map/MainMap';
+import HybridMap from '../../shared/map/HybridMap';
+import type { MainMapHandle, MapInsets } from '../../shared/map/MainMap';
 import { usePalette } from '../../core/theme/palette';
 import { MAP_CENTER } from '../../shared/map/vworld/mapExtent';
 import { useToast } from '../../shared/toast/ToastContext';
@@ -527,7 +528,7 @@ export default function AppShell() {
           ref={stageRef}
           data-panel-state={activeState}
         >
-          <MainMap
+          <HybridMap
             key={palette /* 지도는 만들 때 색을 한 번 읽으므로 팔레트가 바뀌면 다시 만든다 */}
             ref={mapRef}
             stores={mapStores}

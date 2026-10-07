@@ -30,7 +30,7 @@ export interface MainMapHandle {
   showMyLocation(point: GeoPoint): void;
 }
 
-interface MainMapProps {
+export interface MainMapProps {
   stores: Store[];
   selectedId: string | null;
   onSelect: (id: string) => void;

@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "fetch:vworld": "node --env-file-if-exists=.env.local scripts/fetch-vworld.js",
     "fetch:osm": "node scripts/fetch-osm.js",
+    "build:3d-map": "node scripts/build-3d-map-data.mjs",
     "fetch:sbiz": "node --env-file-if-exists=.env.local scripts/fetch-sbiz.js",
     "db:check": "node scripts/check-supabase.mjs",
     "test:supabase-config": "node --test scripts/supabase-config.test.mjs",
@@ -19,6 +20,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
     "leaflet": "1.9.4",
+    "maplibre-gl": "6.13.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0"

@@ -13,6 +13,100 @@
   background: var(--map-bg);
 }
 
+.mm-hybrid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--map-bg);
+}
+
+/* 검색창과 우측 현재 위치 버튼을 가리지 않는 2D/3D 전환 버튼 */
+.mm-mode-toggle {
+  position: absolute;
+  z-index: 1002;
+  left: calc(var(--inset-left) + 12px);
+  bottom: calc(var(--inset-bottom) + 50px);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 7px 11px 7px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+  color: var(--color-text);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(8px);
+  transition: left 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), bottom 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.16s ease;
+}
+
+.mm-mode-toggle:active {
+  transform: scale(0.96);
+}
+
+.mm-mode-toggle strong {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 28px;
+  border-radius: 9px;
+  background: var(--color-brand);
+  color: var(--color-on-dark);
+  font-size: 13px;
+}
+
+.mm-mode-toggle span {
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.mm-maplibre.maplibregl-map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--map-bg);
+  font-family: inherit;
+}
+
+.mm-root--3d .maplibregl-ctrl-top-right {
+  top: 56px;
+  right: calc(var(--inset-right) + 10px);
+  transition: right 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.mm-root--3d .maplibregl-ctrl-group {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.mm-root--3d .maplibregl-ctrl button {
+  background-color: var(--color-surface);
+}
+
+.mm-root--3d .maplibregl-ctrl button + button {
+  border-top-color: var(--color-border);
+}
+
+@media (max-width: 720px) {
+  .mm-mode-toggle {
+    left: calc(var(--inset-left) + 10px);
+    bottom: calc(var(--inset-bottom) + 48px);
+    min-height: 40px;
+    padding-right: 9px;
+  }
+
+  .mm-mode-toggle span {
+    display: none;
+  }
+}
+
 .mm-canvas {
   position: absolute;
   inset: 0;
