@@ -21,6 +21,17 @@ export interface PartnerStoreMenuItem {
   description: string | null;
 }
 
+export interface PartnerBenefit {
+  id: string;
+  storeId: string;
+  colleges: CollegeKey[];
+  /** 엑셀에 적힌 실제 할인·증정·이용 조건 원문 */
+  offer: string;
+  condition: string;
+  discountAmount: number | null;
+  discountRate: number | null;
+}
+
 /** 실제 엑셀의 단과대-가게 관계와 해당 가게의 전체 메뉴를 합친 화면 모델. */
 export interface PartnerStoreView {
   storeId: string;
@@ -28,4 +39,5 @@ export interface PartnerStoreView {
   store: Store;
   referenceDistanceMeters: number;
   menus: PartnerStoreMenuItem[];
+  benefits: PartnerBenefit[];
 }

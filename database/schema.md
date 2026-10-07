@@ -77,7 +77,9 @@ stores                             가게
 ├─ partner_benefits                제휴 혜택
 │  ├─ discount_amount              할인 금액 (원)
 │  ├─ discount_rate                할인율
+│  ├─ offer                        실제 할인·증정 혜택 원문
 │  ├─ condition                    조건
+│  ├─ data_source / source_ref     원본 자료 / 원본 행 식별자
 │  └─ benefit_partners             혜택 ↔ 제휴사 연결
 │     └─ partner_id → partners     제휴사
 ├─ store_partners                  단과대 제휴 가게 연결

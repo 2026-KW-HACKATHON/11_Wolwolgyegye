@@ -3,11 +3,21 @@ import { fetchStoresByIds, getUserLocation } from '../../core/source/storeSource
 import { getSupabaseClient } from '../../core/supabase/client';
 import { distanceMeters } from '../../core/utils/geo';
 import { COLLEGES } from './colleges';
-import type { CollegeKey, PartnerStoreMenuItem, PartnerStoreView } from './types';
+import type { CollegeKey, PartnerBenefit, PartnerStoreMenuItem, PartnerStoreView } from './types';
 
 interface PartnershipRow {
   store_id: string;
   partners: { name: string } | { name: string }[] | null;
+}
+
+interface BenefitRow {
+  id: string;
+  store_id: string;
+  offer: string;
+  condition: string;
+  discount_amount: number | null;
+  discount_rate: number | string | null;
+  benefit_partners: { partners: { name: string } | { name: string }[] | null }[] | null;
 }
 
 const collegeByName = new Map(COLLEGES.map((college) => [college.name, college.key]));
@@ -59,16 +69,48 @@ async function fetchMenuRows(storeIds: string[]): Promise<PartnerStoreMenuItem[]
   return rows;
 }
 
+async function fetchBenefits(storeIds: string[]): Promise<PartnerBenefit[]> {
+  if (!storeIds.length) return [];
+  const benefits: PartnerBenefit[] = [];
+  for (let index = 0; index < storeIds.length; index += 100) {
+    const { data, error } = await getSupabaseClient()
+      .from('partner_benefits')
+      .select('id, store_id, offer, condition, discount_amount, discount_rate, benefit_partners(partners(name))')
+      .in('store_id', storeIds.slice(index, index + 100))
+      .order('created_at');
+    if (error) throw error;
+    for (const row of (data ?? []) as unknown as BenefitRow[]) {
+      const colleges = (row.benefit_partners ?? []).flatMap((link) => {
+        const college = collegeByName.get(partnerName(link.partners));
+        return college ? [college] : [];
+      });
+      benefits.push({
+        id: row.id,
+        storeId: row.store_id,
+        colleges,
+        offer: row.offer,
+        condition: row.condition,
+        discountAmount: row.discount_amount,
+        discountRate: row.discount_rate === null ? null : Number(row.discount_rate),
+      });
+    }
+  }
+  return benefits;
+}
+
 export async function fetchPartnerStores(): Promise<PartnerStoreView[]> {
   const partnerships = await fetchPartnerships();
   const ids = [...partnerships.keys()];
-  const [menus, stores, here] = await Promise.all([
+  const [menus, benefits, stores, here] = await Promise.all([
     fetchMenuRows(ids),
+    fetchBenefits(ids),
     fetchStoresByIds(ids),
     getUserLocation(),
   ]);
   const menusByStore = new Map<string, PartnerStoreMenuItem[]>();
   for (const menu of menus) menusByStore.set(menu.storeId, [...(menusByStore.get(menu.storeId) ?? []), menu]);
+  const benefitsByStore = new Map<string, PartnerBenefit[]>();
+  for (const benefit of benefits) benefitsByStore.set(benefit.storeId, [...(benefitsByStore.get(benefit.storeId) ?? []), benefit]);
 
   return ids.flatMap((storeId) => {
     const store = stores.get(storeId);
@@ -79,6 +121,7 @@ export async function fetchPartnerStores(): Promise<PartnerStoreView[]> {
       store,
       referenceDistanceMeters: distanceMeters(here, store.location),
       menus: menusByStore.get(storeId) ?? [],
+      benefits: benefitsByStore.get(storeId) ?? [],
     }];
   });
 }
