@@ -642,3 +642,55 @@
   color: var(--color-text);
   font-weight: 700;
 }
+
+/* 좁은 화면: 추천 가게 카드를 작게 줄여 두 개씩 나란히 보여준다 */
+@container (max-width: 600px) {
+  .rl-store-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .rl-store-card {
+    border-radius: 14px;
+  }
+
+  .rl-store-thumb {
+    height: 72px;
+    font-size: 1.8rem;
+  }
+
+  .rl-store-body {
+    gap: 4px;
+    padding: 10px;
+  }
+
+  .rl-store-tag {
+    padding: 2px 7px;
+    font-size: 0.62rem;
+  }
+
+  .rl-store-name,
+  .rl-store-desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+
+  .rl-store-name {
+    font-size: 0.88rem;
+    line-height: 1.35;
+  }
+
+  .rl-store-desc {
+    font-size: 0.72rem;
+    line-height: 1.45;
+  }
+
+  .rl-store-foot {
+    margin-top: 2px;
+    padding-top: 6px;
+    font-size: 0.7rem;
+  }
+}

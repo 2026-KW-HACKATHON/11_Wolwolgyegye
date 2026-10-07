@@ -536,3 +536,53 @@
   color: var(--color-text-muted);
   font-size: 0.78rem;
 }
+
+/* 좁은 화면: 세일 카드를 작게 줄여 두 개씩 나란히 보여준다 (2차 탭의 세일 묶음은 그대로) */
+@container (max-width: 600px) {
+  .cs-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .cs-card {
+    flex-direction: column;
+    border-radius: 14px;
+  }
+
+  .cs-card .cs-card-top {
+    flex: none;
+    gap: 4px;
+    padding: 10px 8px;
+  }
+
+  .cs-card .cs-discount {
+    font-size: 1.25rem;
+  }
+
+  .cs-card .cs-card-body {
+    padding: 8px 10px 10px;
+  }
+
+  .cs-card .cs-card-name {
+    font-size: 0.88rem;
+    overflow-wrap: anywhere;
+  }
+
+  .cs-card .cs-card-meta {
+    font-size: 0.64rem;
+  }
+
+  .cs-card .cs-card-desc {
+    font-size: 0.7rem;
+  }
+
+  .cs-card .cs-card-foot {
+    flex-wrap: wrap;
+    gap: 2px 6px;
+    font-size: 0.66rem;
+  }
+
+  .cs-card .cs-like {
+    font-size: 0.66rem;
+  }
+}

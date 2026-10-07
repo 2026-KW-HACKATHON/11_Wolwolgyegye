@@ -626,6 +626,28 @@
   .st-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
+/* 좁은 화면: 적립판 카드를 작게 줄여 두 개씩 나란히 보여준다 */
+@container (max-width: 639px) {
+  .st-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .st-item { border-radius: 14px; }
+  .st-item-main { gap: 8px; padding: 10px; }
+  .st-item-head { gap: 6px; padding-right: 24px; }
+  .st-item .st-avatar { width: 30px; height: 30px; border-width: 1.5px; font-size: 0.8rem; }
+  .st-item-meta { overflow: hidden; font-size: 0.62rem; text-overflow: ellipsis; white-space: nowrap; }
+  .st-item-title strong { font-size: 0.88rem; }
+  .st-meter { gap: 3px; }
+  .st-meter i { border-width: 1px; font-size: 0.5rem; }
+  .st-item-row { flex-wrap: wrap; gap: 4px; }
+  .st-item-count { font-size: 0.7rem; }
+  .st-item-count b { font-size: 1.1rem; }
+  .st-item .st-badge { padding: 2px 6px; font-size: 0.62rem; }
+  .st-item-reward { gap: 5px; padding-top: 8px; font-size: 0.8rem; }
+  .st-item-reward b { font-size: 0.74rem; }
+  .st-item-reward small { font-size: 0.62rem; }
+  .st-heart { top: 4px; right: 2px; width: 34px; height: 34px; font-size: 0.9rem; }
+  .st-skeleton { height: 170px; border-radius: 14px; }
+}
+
 /* 가로로 눕힌 휴대폰처럼 세로가 짧은 화면: 상단 요약을 낮게 */
 @media (max-height: 520px) and (orientation: landscape) {
   .st-wallet { gap: 14px; padding: 16px 20px; }
