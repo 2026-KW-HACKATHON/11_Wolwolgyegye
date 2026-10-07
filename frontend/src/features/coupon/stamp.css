@@ -573,6 +573,22 @@
 .st-voucher-code { margin-top: 6px; padding: 6px 12px; border-radius: 999px; background: var(--st-paper); color: var(--st-muted); font-size: 0.8rem; }
 .st-voucher-code b { color: var(--st-ink); font-variant-numeric: tabular-nums; letter-spacing: 0.06em; }
 
+/* 좁은 화면(모바일): 필터 4개가 줄바꿈·가로 스크롤 없이 한 줄에 들어오게 폭에 맞춰 줄인다 */
+@container (max-width: 719px) {
+  .st-filters { gap: 4px; margin-right: 0; margin-left: 0; padding: 2px 0; overflow: visible; }
+  .st-filters button {
+    flex: 1 1 auto;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 clamp(6px, 2cqi, 14px);
+    font-size: clamp(0.7rem, 3.3cqi, 0.88rem);
+    letter-spacing: -0.02em;
+  }
+  .st-filters button span { min-width: 18px; padding: 1px 5px; font-size: 0.68rem; }
+}
+
 /* ==========================================================================
    넓은 화면
    ========================================================================== */
