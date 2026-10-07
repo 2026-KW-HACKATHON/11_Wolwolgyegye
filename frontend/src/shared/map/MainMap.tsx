@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { FeatureCollection } from 'geojson';
 import type { GeoPoint, Store } from '../../core/types/place';
+import { ICONS } from '../icons';
 import { buildingListElement, clusterGroups, clusterIcon, CLUSTER_MAX_ZOOM, groupByBuilding, pinGroup, PIN_POPUP_OFFSET } from './placeMarkers';
 import type { MapStore } from '../../core/supabase/stores';
 import { ADMIN_DONG_LABEL, AREA_LAYERS, createStyles } from './vworld/config';
@@ -107,13 +108,15 @@ const myLocationStyle = (css: (name: string) => string): L.CircleMarkerOptions =
 
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 
-/** 가게 핀. 상가정보 핀(placeMarkers.ts)과 같은 주황 물방울 모양. 선택하면 가게 이름이 아래에 뜬다 */
+/** 가게 핀. 원데이클래스는 자주(동네 소식·원데이클래스 색), 그 밖은 초록(공간대여 색) */
 function storeIcon(store: Store, selected: boolean): L.DivIcon {
+  const kind = store.supports['oneday-class'] ? 'class' : store.supports['space-rental'] ? 'space' : 'store';
+  const glyph = ICONS[kind === 'class' ? 'palette' : kind === 'space' ? 'house' : 'storefront'];
   return L.divIcon({
     className: 'mm-pin-wrap',
-    html: `<span class="pl-pin${selected ? ' is-selected' : ''}"><span class="pl-pin__shape"></span><span class="pl-pin__label"></span></span>${selected ? `<strong class="mm-pin-name">${escapeHtml(store.name)}</strong>` : ''}`,
-    iconSize: [30, 38],
-    iconAnchor: [15, 38],
+    html: `<span class="mm-pin mm-pin--${kind}${selected ? ' is-selected' : ''}">${glyph}</span>${selected ? `<strong class="mm-pin-name">${escapeHtml(store.name)}</strong>` : ''}`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
   });
 }
 
