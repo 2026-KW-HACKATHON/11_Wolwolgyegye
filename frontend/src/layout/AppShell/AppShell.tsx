@@ -299,7 +299,8 @@ export default function AppShell() {
     if (focusedId) return selectedStore ? [selectedStore] : [];
     // 그 외 카테고리를 고른 동안에는 카테고리 가게 핀을 숨기고 지도 가게만 보여준다
     const panelStores = storesForPanel(categoryStores, activeId ?? '');
-    const allowed = mapStoreIds ? new Set(mapStoreIds) : null;
+    // 룰렛은 돌려서 나온 가게만: 필터가 아직 없을(null) 때도 핀을 보여주지 않는다
+    const allowed = mapStoreIds ? new Set(mapStoreIds) : activeId === 'roulette' ? new Set<string>() : null;
     return subCategory ? [] : panelStores.filter((store) => (!allowed || allowed.has(store.id)) && matchesSearch(storeSearchText(store), storeTerm));
   }, [focusedId, subCategory, activeId, selectedStore, categoryStores, mapStoreIds, storeTerm]);
   // 지도 가게: 그 외 카테고리를 고르면 그 유형만, 아니면 전부. 카테고리 핀으로 이미 나온 가게는 두 번 그리지 않는다
