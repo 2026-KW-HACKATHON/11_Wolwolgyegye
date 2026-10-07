@@ -13,7 +13,8 @@
     "db:check": "node scripts/check-supabase.mjs",
     "test:supabase-config": "node --test scripts/supabase-config.test.mjs",
     "import:stores": "node --env-file-if-exists=.env.local scripts/import-stores.js",
-    "import:menus": "node --env-file-if-exists=.env.local scripts/import-menus.js"
+    "import:menus": "node --env-file-if-exists=.env.local scripts/import-menus.js",
+    "import:partner-benefits": "node --env-file-if-exists=.env.local scripts/import-partner-benefits.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",

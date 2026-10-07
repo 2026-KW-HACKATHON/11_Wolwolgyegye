@@ -104,7 +104,7 @@
 .ps-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: 'top' 'tags' 'map' 'foot';
+  grid-template-areas: 'top' 'benefit' 'tags' 'map' 'foot';
   gap: 12px;
   padding: 16px 16px 6px;
   border: 1px solid var(--ps-line);
@@ -115,6 +115,7 @@
 }
 .ps-card.is-focus { border-color: color-mix(in srgb, var(--ps-accent) 55%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ps-accent) 14%, transparent), var(--ps-shadow); }
 .ps-card-top { grid-area: top; display: flex; align-items: center; gap: 12px; }
+.ps-benefit-preview { grid-area: benefit; }
 .ps-tags { grid-area: tags; }
 .ps-map-panel { grid-area: map; }
 .ps-card-foot { grid-area: foot; }
@@ -173,6 +174,9 @@
 .ps-condition { margin: 0; font-size: 0.86rem; line-height: 1.65; }
 .ps-status { flex-shrink: 0; padding: 2px 7px; border: 1px solid color-mix(in srgb, var(--ps-accent) 28%, transparent); border-radius: 6px; background: var(--ps-paper); color: var(--ps-muted); font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
 
+.ps-benefit-preview { display: grid; gap: 5px; padding: 12px 14px; border-radius: 14px; background: var(--ps-accent-pale); }
+.ps-benefit-preview span { color: var(--ps-accent); font-size: 0.72rem; font-weight: 850; }
+.ps-benefit-preview strong { display: -webkit-box; overflow: hidden; color: var(--ps-ink); font-size: 0.88rem; line-height: 1.6; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .ps-menu-list del { margin-right: 7px; color: var(--ps-muted); font-size: 0.8rem; }
 .ps-menu-list b { color: var(--ps-accent); }
 .ps-tags { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -219,6 +223,11 @@
 .ps-detail-offer > strong { display: block; margin: 8px 0 6px; color: var(--ps-accent); font-size: 1.6rem; font-weight: 900; line-height: 1.35; }
 .ps-detail-offer > b { font-size: 0.9rem; line-height: 1.7; }
 .ps-detail-offer > p { margin: 6px 0; color: var(--ps-muted); font-size: 0.82rem; }
+.ps-benefit-details { display: grid; gap: 10px; margin: 14px 0 0; padding: 0; list-style: none; }
+.ps-benefit-details li { display: grid; gap: 5px; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--ps-accent) 18%, transparent); border-radius: 12px; background: var(--ps-paper); }
+.ps-benefit-details li > span { color: var(--ps-accent); font-size: 0.72rem; font-weight: 850; }
+.ps-benefit-details li > strong { font-size: 0.9rem; line-height: 1.65; }
+.ps-benefit-details li > small { color: var(--ps-muted); font-size: 0.76rem; line-height: 1.55; }
 .ps-benefit-list { margin: 10px 0 0; padding: 0; list-style: none; }
 .ps-benefit-list li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px dashed color-mix(in srgb, var(--ps-accent) 22%, transparent); color: var(--ps-muted); font-size: 0.84rem; line-height: 1.5; }
 .ps-benefit-list li.is-on { color: var(--ps-accent); font-weight: 700; }
@@ -266,7 +275,7 @@
   .ps-colleges { flex-wrap: wrap; margin: 0; padding: 0; overflow: visible; }
   .ps-college-panel { width: fit-content; max-width: 100%; }
   .ps-card {
-    grid-template-areas: 'top' 'tags' 'foot' 'map';
+    grid-template-areas: 'top' 'benefit' 'tags' 'foot' 'map';
     padding: 20px 22px;
   }
   .ps-card-foot { justify-content: flex-start; min-height: 44px; border-top: 0; }

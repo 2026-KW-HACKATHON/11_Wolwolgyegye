@@ -106,9 +106,12 @@ test('제휴: 운영자만 등록하고, 혜택 하나를 여러 제휴사에 �
   const [p1, p2] = (await rows('service_role', null, "insert into public.partners(name) values ('경영대'),('공과대') returning id")).map((r) => r.id);
   const benefit = (await rows('service_role', null, "insert into public.partner_benefits(store_id,discount_amount,condition) values ($1,1000,'학생증 제시') returning id", [shopA]))[0].id;
   await as('service_role', null, 'insert into public.benefit_partners(benefit_id,partner_id) values ($1,$2),($1,$3)', [benefit, p1, p2]);
+  const gift = (await rows('service_role', null, "insert into public.partner_benefits(store_id,offer,data_source,source_ref) values ($1,'메뉴 주문 시 음료 1개 제공','제휴매장.xlsx','summary-2-1') returning id", [shopA]))[0].id;
+  await as('service_role', null, 'insert into public.benefit_partners(benefit_id,partner_id) values ($1,$2)', [gift, p1]);
   await rejectsCode(as('service_role', null, 'insert into public.benefit_partners(benefit_id,partner_id) values ($1,$2)', [benefit, p1]), '23505');
   await rejectsCode(as('service_role', null, 'insert into public.partner_benefits(store_id) values ($1)', [shopA]), '23514');
-  assert.equal((await rows('anon', null, 'select id from public.benefit_partners')).length, 2);
+  assert.equal((await rows('anon', null, 'select id from public.benefit_partners')).length, 3);
+  assert.equal(await scalar("select offer from public.partner_benefits where source_ref='summary-2-1'"), '메뉴 주문 시 음료 1개 제공');
 });
 
 test('단과대 제휴 가게: 운영자만 연결하고 공개 가게 관계만 읽는다', async () => {
