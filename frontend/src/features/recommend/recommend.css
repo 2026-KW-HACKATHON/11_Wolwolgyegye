@@ -97,6 +97,31 @@
   .rp-home { max-width: 760px; margin: auto; }
   .rp-feed-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 }
+/* 좁은 화면: 소식 카드를 작게 줄여 두 개씩 나란히 보여준다 (다른 카테고리 카드와 같은 크기) */
+@container (max-width: 639px) {
+  .rp-feed-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .rp-post { border-radius: 14px; }
+  .rp-post-owner { gap: 6px; padding: 8px 8px 6px 10px; }
+  .rp-post-avatar { width: 24px; height: 24px; border-radius: 8px; font-size: 14px; }
+  .rp-post-owner strong { font-size: 11px; }
+  .rp-post-owner div > span { font-size: 9px; }
+  .rp-save { width: 30px; height: 30px; font-size: 14px; }
+  .rp-post h3 { display: -webkit-box; overflow: hidden; padding: 0 10px 8px; font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .rp-post-cover { aspect-ratio: 16 / 10; }
+  .rp-post-type { top: 6px; left: 6px; padding: 2px 6px; border-radius: 5px; font-size: 9.5px; }
+  .rp-post-body { padding: 8px 10px 10px; }
+  .rp-post-category { flex-wrap: wrap; gap: 2px 6px; font-size: 10px; }
+  .rp-post-description { margin-top: 4px; font-size: 11px; line-height: 1.45; }
+  .rp-post-schedule { align-items: flex-start; gap: 4px; margin-top: 6px; font-size: 10px; line-height: 1.4; }
+  .rp-post-schedule > .icon { flex: none; font-size: 12px; }
+  .rp-post-price { margin-top: 6px; }
+  .rp-post-price strong { font-size: 13px; }
+  .rp-post-price > span { display: none; }
+  .rp-post-location { gap: 3px; min-height: 36px; padding: 6px 10px; font-size: 11px; }
+  .rp-post-location > .icon { font-size: 13px; }
+  .rp-post-location > span { display: none; }
+  .rp-post-location strong { flex: 1; font-size: 11px; }
+}
 @container (max-width: 359px) {
   .rp-home { padding-right: 14px; padding-left: 14px; }
   .rp-welcome-flower { display: none; }
