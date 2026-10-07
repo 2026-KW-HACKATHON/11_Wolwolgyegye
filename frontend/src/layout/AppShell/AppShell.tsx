@@ -162,6 +162,12 @@ export default function AppShell() {
   /** 가게 목록 두 가지를 다 받아 봤는지 (실패해도 true). 주소로 들어온 가게는 이 뒤에 찾아서 연다 */
   const [storesLoaded, setStoresLoaded] = useState({ category: false, map: false });
   const [mapStoreIds, setMapStoreIds] = useState<string[] | null>(null);
+  /** 화면이 mapStoreIds 와 함께 넘긴 가게 정보 (카테고리 가게 목록에 없는 가게도 핀을 찍는다) */
+  const [mapExtraStores, setMapExtraStores] = useState<Store[]>([]);
+  const limitMapStores = useCallback((storeIds: string[] | null, stores: Store[] = []) => {
+    setMapStoreIds(storeIds);
+    setMapExtraStores(stores);
+  }, []);
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   /** 2차 탭에 연 지도 가게 (카테고리 가게와 동시에 열리지 않는다) */
   const [selectedPlace, setSelectedPlace] = useState<MapStore | null>(null);
@@ -192,7 +198,7 @@ export default function AppShell() {
   }, [axis]);
 
   // 2차 탭이 좌측에 열리면 그만큼을 왼쪽 가림으로 기록한다
-  const selectedStore = categoryStores.find((store) => store.id === selectedStoreId) ?? null;
+  const selectedStore = categoryStores.find((store) => store.id === selectedStoreId) ?? mapExtraStores.find((store) => store.id === selectedStoreId) ?? null;
   const secondaryPlace = useMemo(() => {
     if (selectedPlace) return placeToSecondary(selectedPlace);
     if (selectedStore) return storeToSecondary(selectedStore);
@@ -210,9 +216,9 @@ export default function AppShell() {
   // 다른 카테고리로 오면, 닫혀 있던 탭은 반쯤 열어서 내용을 보여준다
   useEffect(() => {
     if (!activeId) return;
-    setMapStoreIds(null);
+    limitMapStores(null);
     setPanelStates((prev) => (prev[activeId] === 'closed' ? { ...prev, [activeId]: 'half' } : prev));
-  }, [activeId]);
+  }, [activeId, limitMapStores]);
 
   const reportVisible = useCallback((size: number) => {
     stageRef.current?.style.setProperty(axis === 'y' ? '--inset-bottom' : '--inset-right', `${size}px`);
@@ -298,11 +304,16 @@ export default function AppShell() {
   const mapStores = useMemo(() => {
     if (focusedId) return selectedStore ? [selectedStore] : [];
     // 그 외 카테고리를 고른 동안에는 카테고리 가게 핀을 숨기고 지도 가게만 보여준다
-    const panelStores = storesForPanel(categoryStores, activeId ?? '');
+    if (subCategory) return [];
+    // 화면이 가게를 정해 주면 그 가게들을 그대로 (카테고리 가게 목록에 없으면 함께 넘긴 가게 정보로)
+    if (mapStoreIds) {
+      const byId = new Map([...mapExtraStores, ...categoryStores].map((store) => [store.id, store]));
+      return mapStoreIds.flatMap((id) => byId.get(id) ?? []).filter((store) => matchesSearch(storeSearchText(store), storeTerm));
+    }
     // 룰렛은 돌려서 나온 가게만: 필터가 아직 없을(null) 때도 핀을 보여주지 않는다
-    const allowed = mapStoreIds ? new Set(mapStoreIds) : activeId === 'roulette' ? new Set<string>() : null;
-    return subCategory ? [] : panelStores.filter((store) => (!allowed || allowed.has(store.id)) && matchesSearch(storeSearchText(store), storeTerm));
-  }, [focusedId, subCategory, activeId, selectedStore, categoryStores, mapStoreIds, storeTerm]);
+    if (activeId === 'roulette') return [];
+    return storesForPanel(categoryStores, activeId ?? '').filter((store) => matchesSearch(storeSearchText(store), storeTerm));
+  }, [focusedId, subCategory, activeId, selectedStore, categoryStores, mapStoreIds, mapExtraStores, storeTerm]);
   // 지도 가게: 그 외 카테고리를 고르면 그 유형만, 아니면 전부. 카테고리 핀으로 이미 나온 가게는 두 번 그리지 않는다
   const places = useMemo(() => {
     if (!mapData) return [];
@@ -461,11 +472,11 @@ export default function AppShell() {
 
   const api = useMemo<ShellApi>(() => ({
     openStore,
-    setMapStoreIds,
+    setMapStoreIds: limitMapStores,
     setActivePanelState(state) {
       if (activeId) setPanelState(activeId, state);
     },
-  }), [activeId, setPanelState, openStore]);
+  }), [activeId, setPanelState, openStore, limitMapStores]);
 
   if (!active) {
     return <Navigate to={DEFAULT_LANDING_PATH} replace />;
@@ -501,7 +512,7 @@ export default function AppShell() {
             getInsets={getInsets}
             showZoomControl={mode === 'wide' && !window.matchMedia(TOUCH_PRIMARY_QUERY).matches}
             portrait={mode === 'portrait'}
-            allowOutsideWolgye={activeId === 'partner-stores'}
+            allowOutsideWolgye={activeId === 'partner-stores' || activeId === 'roulette'}
           />
 
           {/* 그 외 카테고리: 모든 화면에서 지도 위쪽에 얇은 한 줄로 늘어놓는다 (넘치면 옆으로 밀기) */}
