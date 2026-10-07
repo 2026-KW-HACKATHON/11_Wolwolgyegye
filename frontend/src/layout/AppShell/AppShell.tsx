@@ -27,10 +27,14 @@ import UserButton from '../UserButton/UserButton';
 import { ShellContext, type SecondaryFocus, type ShellApi } from './ShellContext';
 import './AppShell.css';
 
+/** 이 카테고리를 열면 지도에는 그 카테고리와 관련된 가게 핀만 보여준다 (상가정보 핀은 숨김) */
+const FEATURE_PANEL_IDS = new Set(['space-rental', 'oneday-class', 'closing-sale', 'partner-stores']);
+
 /** 지도에 표시할 가게: 가게가 지원하는 카테고리면 그 가게만, 아니면(동네 소식·유저) 전체 */
 function storesForPanel(stores: Store[], panelId: string): Store[] {
   const key = panelId as keyof CategorySupport;
   const matched = stores.filter((store) => store.supports[key]);
+  if (FEATURE_PANEL_IDS.has(panelId)) return matched;
   return matched.length > 0 ? matched : stores;
 }
 
@@ -303,8 +307,9 @@ export default function AppShell() {
     if (!mapData) return [];
     const shown = new Set(mapStores.map((s) => s.id));
     if (focusedId) return mapData.stores.filter((p) => p.id === focusedId && !shown.has(p.id));
+    if (FEATURE_PANEL_IDS.has(activeId ?? '')) return [];
     return mapData.stores.filter((p) => !shown.has(p.id) && matchesSearch(placeSearchText(p), storeTerm) && (!subCategory || (p.typeId !== null && subCategory.typeIds.includes(p.typeId))));
-  }, [mapData, subCategory, mapStores, focusedId, storeTerm]);
+  }, [mapData, subCategory, mapStores, focusedId, storeTerm, activeId]);
 
   // ---- 2차 탭: 카테고리 가게 또는 지도 가게 하나만 연다 ----
   const selectStore = useCallback((id: string) => { setSelectedPlace(null); setSelectedStoreId(id); }, []);
