@@ -250,6 +250,21 @@
 .ps-presentation b { display: block; font-size: 0.86rem; line-height: 1.8; }
 .ps-presentation ~ .ps-secondary { margin-top: 20px; }
 
+/* 좁은 화면(모바일): 업종 버튼이 줄바꿈 없이 한 줄에 들어오게 폭에 맞춰 줄인다 */
+@container (max-width: 719px) {
+  .ps-filters { flex-wrap: nowrap; gap: 4px; }
+  .ps-filters button {
+    flex: 1 1 auto;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 clamp(6px, 2cqi, 14px);
+    font-size: clamp(0.7rem, 3.3cqi, 0.84rem);
+    letter-spacing: -0.02em;
+  }
+}
+
 @container (min-width: 720px) {
   .ps-colleges { flex-wrap: wrap; margin: 0; padding: 0; overflow: visible; }
   .ps-college-panel { width: fit-content; max-width: 100%; }
