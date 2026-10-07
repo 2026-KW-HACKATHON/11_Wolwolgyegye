@@ -28,7 +28,7 @@ import { ShellContext, type SecondaryFocus, type ShellApi } from './ShellContext
 import './AppShell.css';
 
 /** 이 카테고리를 열면 지도에는 그 카테고리와 관련된 가게 핀만 보여준다 (상가정보 핀은 숨김) */
-const FEATURE_PANEL_IDS = new Set(['space-rental', 'oneday-class', 'closing-sale', 'partner-stores']);
+const FEATURE_PANEL_IDS = new Set(['space-rental', 'oneday-class', 'closing-sale', 'partner-stores', 'roulette', 'coupon']);
 
 /** 지도에 표시할 가게: 가게가 지원하는 카테고리면 그 가게만, 아니면(동네 소식·유저) 전체 */
 function storesForPanel(stores: Store[], panelId: string): Store[] {

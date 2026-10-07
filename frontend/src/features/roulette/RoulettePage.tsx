@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShell } from '../../layout/AppShell/ShellContext';
+import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
 import { CUISINES, DEFAULT_PRESET, MENUS, MENU_PRESETS, menusForPreset } from './constants';
 import { fetchStoresByMenu } from './source';
 import type { Cuisine, RouletteStoreView, WheelMenu } from './types';
@@ -80,7 +81,8 @@ function menuSetKey(menus: WheelMenu[]) {
 }
 
 export default function RoulettePage() {
-  const { openStore } = useShell();
+  const { openStore, setMapStoreIds } = useShell();
+  const active = usePageActive();
   const [menus, setMenus] = useState<WheelMenu[]>(loadMenus);
   const [editing, setEditing] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -137,6 +139,14 @@ export default function RoulettePage() {
       cancelled = true;
     };
   }, [result, storesRetry]);
+
+  // 지도에는 룰렛으로 나온 추천 가게만 보여준다 (아직 안 돌렸거나 찾는 중이면 핀 없음)
+  const mapIds = (stores ?? []).map((view) => view.storeId).join(',');
+  useEffect(() => {
+    if (!active) return;
+    setMapStoreIds(mapIds ? mapIds.split(',') : []);
+    return () => setMapStoreIds(null);
+  }, [active, mapIds, setMapStoreIds]);
 
   // 룰렛이 멈춰 결과가 나오면, 원판 아래 결과 창이 화면에 들어오도록 내려준다 (이미 보이면 그대로)
   useEffect(() => {
