@@ -312,6 +312,8 @@ export default function AppShell() {
     }
     // 룰렛은 돌려서 나온 가게만: 필터가 아직 없을(null) 때도 핀을 보여주지 않는다
     if (activeId === 'roulette') return [];
+    // 동네 소식은 등록 가게도 상가정보 핀과 같이 묶어 숫자 핀으로 보여준다 (places 로 넘어간다)
+    if (activeId === 'recommend') return [];
     return storesForPanel(categoryStores, activeId ?? '').filter((store) => matchesSearch(storeSearchText(store), storeTerm));
   }, [focusedId, subCategory, activeId, selectedStore, categoryStores, mapStoreIds, mapExtraStores, storeTerm]);
   // 지도 가게: 그 외 카테고리를 고르면 그 유형만, 아니면 전부. 카테고리 핀으로 이미 나온 가게는 두 번 그리지 않는다
@@ -345,6 +347,11 @@ export default function AppShell() {
     if (place) selectPlace(place);
     else selectStore(storeId);
   }, [selectPlace, selectStore]);
+  // 지도 핀에서 고른 가게가 카테고리 가게면 카테고리 가게로 연다 (동네 소식에서는 같은 핀으로 묶여 있다)
+  const pickMapPlace = useCallback((place: MapStore) => {
+    if (lookupRef.current.categoryStores.some((s) => s.id === place.id)) pickStoreOnMap(place.id);
+    else pickPlaceOnMap(place);
+  }, [pickStoreOnMap, pickPlaceOnMap]);
 
   // ---- 열린 가게 창 ↔ 주소(?place=ID) 맞추기: 뒤로가기로 닫고, 주소를 공유·새로고침해도 같은 가게가 열린다 ----
   // 주소가 바뀌었으면(뒤로·앞으로가기, 공유 링크) 창을 주소에 맞추고, 창이 바뀌었으면(가게 열기·닫기) 주소를 창에 맞춘다
@@ -505,7 +512,7 @@ export default function AppShell() {
             stores={mapStores}
             places={places}
             selectedPlaceId={selectedPlace?.id ?? null}
-            onPlaceSelect={pickPlaceOnMap}
+            onPlaceSelect={pickMapPlace}
             placesMonth={mapData?.sbizMonth || null}
             selectedId={selectedStoreId}
             onSelect={pickStoreOnMap}

@@ -366,7 +366,20 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
         const selected = selectedPlaceId !== null && cluster.groups.some((g) => g.places.some((p) => p.id === selectedPlaceId));
         const marker = L.marker([cluster.lat, cluster.lng], { icon: clusterIcon(cluster, selected), zIndexOffset: selected ? 500 : 0, keyboard: true });
         const [group] = cluster.groups;
-        if (cluster.groups.length > 1) {
+        if (cluster.groups.length > 1 && map.getZoom() >= CLUSTER_MAX_ZOOM) {
+          // 확대해도 겹치는 건물 묶음: 묶인 가게 전체를 층별 목록으로 띄운다
+          marker.on('click', () => {
+            const merged = { key: 'overlap', lat: cluster.lat, lng: cluster.lng, name: '이 근처 가게', places: cluster.groups.flatMap((g) => g.places) };
+            const list = buildingListElement(merged, (place) => {
+              map.closePopup();
+              onPlaceSelectRef.current(place);
+            });
+            L.popup({ className: 'pl-popup', maxWidth: 280, minWidth: 220, autoPanPadding: [24, 24], offset: [0, -18] })
+              .setLatLng([cluster.lat, cluster.lng])
+              .setContent(list)
+              .openOn(map);
+          });
+        } else if (cluster.groups.length > 1) {
           // 여러 건물 묶음: 그 건물들이 보이게 확대 (탭에 가려지지 않은 영역 기준)
           marker.on('click', () => {
             const insets = getInsetsRef.current();
