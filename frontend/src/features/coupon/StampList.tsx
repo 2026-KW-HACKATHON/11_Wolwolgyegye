@@ -55,9 +55,9 @@ export default function StampList({ stamps, error, onRetry, missingId, query, on
       <section className="st-reward-summary" aria-labelledby="st-wallet-title">
         <Icon name="gift" />
         <h1 id="st-wallet-title" aria-live="polite">
-          {error ? '받을 수 있는 선물 수를 확인하지 못했어요' : stamps
-            ? <>받을 수 있는 선물 <em>{totalRewards}개</em></>
-            : '받을 수 있는 선물 확인 중…'}
+          {error ? '사용 가능한 스탬프 수를 확인하지 못했어요' : stamps
+            ? <>사용 가능한 스탬프 <em>{totalRewards}개</em></>
+            : '사용 가능한 스탬프 확인 중…'}
         </h1>
       </section>
 
@@ -102,7 +102,7 @@ export default function StampList({ stamps, error, onRetry, missingId, query, on
 
         {stamps !== null && visible.length === 0 && !error && (
           <div className="st-empty">
-            <strong>{filter === 'ready' ? '아직 받을 수 있는 선물이 없어요' : filter === 'saved' ? '찜한 스탬프 가게가 없어요' : '조건에 맞는 가게가 없어요'}</strong>
+            <strong>{filter === 'ready' ? '아직 사용 가능한 스탬프가 없어요' : filter === 'saved' ? '찜한 스탬프 가게가 없어요' : '조건에 맞는 가게가 없어요'}</strong>
             <p>{filter === 'ready' ? '조금만 더 모으면 돼요. 선물까지 가까운 가게부터 볼까요?' : '다른 조건으로 찾아보세요.'}</p>
             <button type="button" className="st-btn st-btn--line" onClick={() => { onFilter('all'); onQuery(''); onSort('closest-reward'); }}>전체 가게 보기</button>
           </div>

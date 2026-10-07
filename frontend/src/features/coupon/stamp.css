@@ -587,6 +587,12 @@
     letter-spacing: -0.02em;
   }
   .st-filters button span { min-width: 18px; padding: 1px 5px; font-size: 0.68rem; }
+  /* 검색 안내 문구(가게·선물 이름으로 찾기)가 잘리지 않게 검색칸·정렬칸 여백과 글자를 줄인다 */
+  .st-toolbar { gap: 6px; }
+  .st-search { gap: 5px; padding: 0 10px; }
+  .st-search > .icon { flex: none; width: 16px; height: 16px; }
+  .st-search input::placeholder { font-size: clamp(0.7rem, 3.5cqi, 0.9rem); letter-spacing: -0.03em; }
+  .st-sort select { padding: 0 24px 0 10px; background-position: right 8px center; background-size: 14px; font-size: 0.8rem; }
 }
 
 /* ==========================================================================
