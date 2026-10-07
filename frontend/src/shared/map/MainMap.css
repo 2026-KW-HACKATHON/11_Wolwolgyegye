@@ -210,6 +210,51 @@
 }
 
 
+/* 사장님 본인 가게: 다른 핀보다 크고 진한 색, 아래에 '내 가게' 표시 */
+.mm-pin--mine {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  border-width: 3px;
+  border-radius: 18px 18px 18px 5px;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 22%, transparent), 0 4px 14px rgb(var(--shadow-color) / 0.35);
+  font-size: 22px;
+}
+
+.mm-pin--mine::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border: 2px solid var(--color-primary);
+  border-radius: inherit;
+  animation: mm-mine-pulse 1.8s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes mm-mine-pulse {
+  from { opacity: 0.7; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.45); }
+}
+
+.mm-mine-tag {
+  margin-top: 4px;
+  padding: 2px 8px;
+  border: 2px solid var(--color-surface);
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: 0 2px 6px rgb(var(--shadow-color) / 0.25);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mm-pin--mine::after { animation: none; opacity: 0; }
+}
+
 /* ---------- 상가정보 가게 핀 (건물 단위 묶기 + 줌에 따른 묶기) ---------- */
 .pl-wrap {
   display: grid;
