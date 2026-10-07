@@ -330,7 +330,7 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
     if (!outlines) return;
     const colors = new Map<string, string>();
     for (const group of buildingGroups) {
-      const buildingId = group.places[0]?.buildingId;
+      const buildingId = group.places.find((p) => p.buildingId)?.buildingId;
       if (buildingId) colors.set(buildingId, cssRef.current(`--place-${pinGroup(group.places)}`));
     }
     outlines.set(colors);
