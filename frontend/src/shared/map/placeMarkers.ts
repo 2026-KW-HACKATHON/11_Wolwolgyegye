@@ -17,10 +17,11 @@ const PIN_BUILDING: [number, number] = [30, 38];
 /** 핀 위에 띄우는 층별 목록이 핀을 가리지 않도록 올리는 높이 (px) */
 export const PIN_POPUP_OFFSET = PIN_BUILDING[1] - 4;
 
-/** 이 줌부터는 건물끼리 묶지 않고 건물 핀을 그대로 보여준다 */
+/** 이 줌부터는 핀이 겹칠 만큼 가까운 건물만 묶는다. 묶음을 눌러도 이보다 더 확대하지 않는다 */
 export const CLUSTER_MAX_ZOOM = 18;
-/** 화면 묶기 격자 한 칸 크기 (px). 같은 칸에 들어온 건물끼리 묶인다 */
+/** 이 거리(px) 안에 들어온 건물끼리 묶는다. CLUSTER_MAX_ZOOM 이상에서는 핀이 겹칠 만큼 가까운 것만 */
 const CLUSTER_CELL_PX = 56;
+const OVERLAP_PX = 30;
 
 interface BuildingGroup {
   key: string;
@@ -67,20 +68,21 @@ export function groupByBuilding(places: MapStore[]): BuildingGroup[] {
   }));
 }
 
-/** 현재 줌에서 화면 격자 칸이 같은 건물끼리 묶는다. CLUSTER_MAX_ZOOM 이상이면 묶지 않는다 */
+/**
+ * 현재 줌에서 화면상 가까운 건물끼리 묶는다. 겹친 핀이 따로 보이지 않도록 최대 줌에서도
+ * 핀 크기(OVERLAP_PX) 안에 들어온 건물은 하나의 숫자 핀으로 합친다
+ */
 export function clusterGroups(map: L.Map, groups: BuildingGroup[]): PlaceCluster[] {
   const zoom = map.getZoom();
-  const single = (g: BuildingGroup): PlaceCluster => ({ lat: g.lat, lng: g.lng, groups: [g], count: g.places.length });
-  if (zoom >= CLUSTER_MAX_ZOOM) return groups.map(single);
-  const cells = new Map<string, BuildingGroup[]>();
+  const radius = zoom >= CLUSTER_MAX_ZOOM ? OVERLAP_PX : CLUSTER_CELL_PX;
+  const buckets: { x: number; y: number; groups: BuildingGroup[] }[] = [];
   for (const g of groups) {
     const p = map.project([g.lat, g.lng], zoom);
-    const key = `${Math.floor(p.x / CLUSTER_CELL_PX)}:${Math.floor(p.y / CLUSTER_CELL_PX)}`;
-    const list = cells.get(key);
-    if (list) list.push(g);
-    else cells.set(key, [g]);
+    const near = buckets.find((b) => Math.abs(b.x - p.x) < radius && Math.abs(b.y - p.y) < radius);
+    if (near) near.groups.push(g);
+    else buckets.push({ x: p.x, y: p.y, groups: [g] });
   }
-  return [...cells.values()].map((list) => (list.length === 1 ? single(list[0]) : {
+  return buckets.map(({ groups: list }) => ({
     lat: list.reduce((sum, g) => sum + g.lat, 0) / list.length,
     lng: list.reduce((sum, g) => sum + g.lng, 0) / list.length,
     groups: list,
