@@ -163,7 +163,7 @@ export default function PartnerStoresPage() {
         return <li className={`ps-card${view.storeId === focusId ? ' is-focus' : ''}`} key={view.storeId} id={`ps-store-${view.storeId}`}>
           <div className="ps-card-top">
             <span className={`ps-store-icon${cafe ? ' is-cafe' : ''}`} aria-hidden="true"><Icon name={cafe ? 'coffee' : 'storefront'} /></span>
-            <div className="ps-card-title"><p>{view.store.cuisineType ?? '생활·문화'} · 기준점 {distanceLabel(view.referenceDistanceMeters)}</p><h3>{view.store.name}</h3></div>
+            <div className="ps-card-title"><p>{view.store.cuisineType ?? '생활·문화'} · {distanceLabel(view.referenceDistanceMeters)}</p><h3>{view.store.name}</h3></div>
             <button className={`ps-heart${favorite ? ' is-on' : ''}`} type="button" aria-label={`${view.store.name} 찜 ${favorite ? '해제' : '하기'}`} aria-pressed={favorite} onClick={() => toggle(view.storeId)}><Icon name="heart" /></button>
           </div>
           <div className="ps-tags" aria-label="제휴 단과대">{colleges.map((item) => <span className={college === item.key ? 'is-on' : ''} key={item.key}>{item.label}</span>)}</div>
