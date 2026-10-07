@@ -6,7 +6,7 @@ import Icon from '../../shared/Icon';
 import { useFavoriteStores } from '../../shared/favorites/useFavoriteStores';
 import { COLLEGES } from './colleges';
 import { AUDIENCE_EVENT, readAudience, saveAudience } from './PartnerSection';
-import { collegeOf, distanceLabel, industryOf, money } from './presentation';
+import { collegeOf, distanceLabel, industryOf } from './presentation';
 import { useMyCollege } from './myCollege';
 import { fetchPartnerStores } from './source';
 import type { PartnerAudience, PartnerIndustry, PartnerStoreView } from './types';
@@ -158,7 +158,6 @@ export default function PartnerStoresPage() {
       {stores && !list.length && <div className="ps-empty"><Icon name="storefront" /><h3>조건에 맞는 제휴 가게가 없어요.</h3><p>다른 단과대나 검색 조건을 선택해 보세요.</p><button className="ps-secondary" type="button" onClick={resetFilters}>검색·필터 초기화</button></div>}
       {!!list.length && <ul className="ps-list">{list.map((view) => {
         const colleges = COLLEGES.filter((item) => view.colleges.includes(item.key));
-        const menu = view.menus[0];
         const favorite = isFavorite(view.storeId);
         const cafe = industryOf(view) === '카페·베이커리';
         return <li className={`ps-card${view.storeId === focusId ? ' is-focus' : ''}`} key={view.storeId} id={`ps-store-${view.storeId}`}>
@@ -167,9 +166,8 @@ export default function PartnerStoresPage() {
             <div className="ps-card-title"><p>{view.store.cuisineType ?? '생활·문화'} · 기준점 {distanceLabel(view.referenceDistanceMeters)}</p><h3>{view.store.name}</h3></div>
             <button className={`ps-heart${favorite ? ' is-on' : ''}`} type="button" aria-label={`${view.store.name} 찜 ${favorite ? '해제' : '하기'}`} aria-pressed={favorite} onClick={() => toggle(view.storeId)}><Icon name="heart" /></button>
           </div>
-          {menu && <div className="ps-price"><span>{menu.name}</span><b>{money(menu.price)}</b></div>}
           <div className="ps-tags" aria-label="제휴 단과대">{colleges.map((item) => <span className={college === item.key ? 'is-on' : ''} key={item.key}>{item.label}</span>)}</div>
-          <div className="ps-card-foot"><span>{view.store.address}</span><button type="button" className="ps-more" onClick={() => openStore(view.storeId, { category: 'partner-stores' })}>지도에서 메뉴 보기 <Icon name="chevronRight" /></button></div>
+          <div className="ps-card-foot"><button type="button" className="ps-more" onClick={() => openStore(view.storeId, { category: 'partner-stores' })}>지도에서 보기 <Icon name="chevronRight" /></button></div>
         </li>;
       })}</ul>}
     </section>
