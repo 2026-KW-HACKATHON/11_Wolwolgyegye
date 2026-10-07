@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getUserLocation } from '../../core/source/storeSource';
-import type { GeoPoint } from '../../core/types/place';
 import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
 import ExtraIcon from '../../shared/ExtraIcon';
 import Icon from '../../shared/Icon';
 import { useFavoriteStores } from '../../shared/favorites/useFavoriteStores';
-import StoreMap, { directionText } from '../../shared/map/StoreMap';
 import Sheet from '../../shared/sheet/Sheet';
-import { HISTORY_PREVIEW, currentCycleDates, initialOf, isReady, kindOf, longDate, remainingOf, shortDate, tiltOf, withRo, rewardsOf, progressOf, MAX_STAMP_SLOTS } from './constants';
+import { HISTORY_PREVIEW, currentCycleDates, initialOf, isReady, kindOf, longDate, remainingOf, shortDate, tiltOf, rewardsOf, progressOf, MAX_STAMP_SLOTS } from './constants';
 import { STAMP_CODE_TTL_SECONDS, issueStampCode } from './source';
 import StampSeal from './StampSeal';
 import type { StampView } from './types';
@@ -23,17 +20,11 @@ export default function StampDetail({ view: v, onBack }: Props) {
   const { isFavorite, toggle } = useFavoriteStores();
   const [sheet, setSheet] = useState<'code' | 'reward' | null>(null);
   const [showAll, setShowAll] = useState(false);
-  const [origin, setOrigin] = useState<GeoPoint | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => { if (!active) setSheet(null); }, [active]);
   useEffect(() => { setSheet(null); }, [v.requiredStamps, v.reward, v.unit, v.condition]);
   useEffect(() => { heading.current?.focus({ preventScroll: true }); }, []);
-  useEffect(() => {
-    let cancelled = false;
-    getUserLocation().then((here) => { if (!cancelled) setOrigin(here); });
-    return () => { cancelled = true; };
-  }, []);
 
   const done = isReady(v);
   const remaining = remainingOf(v);
@@ -156,26 +147,6 @@ export default function StampDetail({ view: v, onBack }: Props) {
           )}
         </section>
 
-        {/* 가게 정보 + 지도 */}
-        <section className="st-section st-info" aria-labelledby="st-info-title">
-          <div className="st-section-head"><h2 id="st-info-title"><Icon name="storefront" />가게 정보</h2></div>
-          <dl className="st-facts">
-            <div><dt><Icon name="pin" /><span className="st-sr">주소</span></dt><dd>{v.store.address}</dd></div>
-            <div><dt><ExtraIcon name="clock" /><span className="st-sr">영업시간</span></dt><dd>{v.store.businessHours}</dd></div>
-            <div><dt><ExtraIcon name="phone" /><span className="st-sr">전화</span></dt><dd>{v.store.phone}</dd></div>
-            {origin && <div><dt><Icon name="compass" /><span className="st-sr">방향</span></dt><dd>기준점에서 {directionText(origin, v.store.location)}</dd></div>}
-          </dl>
-          {origin && <StoreMap key={v.storeId} store={v.store} origin={origin} />}
-          <details className="st-terms">
-            <summary>적립·교환 안내</summary>
-            <ul>
-              <li>{v.condition}</li>
-              <li>{v.requiredStamps}개를 모으면 {withRo(v.reward)} 교환할 수 있어요.</li>
-              <li>적립과 교환은 직원이 확인한 뒤 완료돼요.</li>
-              <li>다른 가게의 스탬프와 합칠 수 없어요.</li>
-            </ul>
-          </details>
-        </section>
       </div>
 
       <Sheet open={sheet === 'code' && active} title="적립 코드" onClose={() => setSheet(null)}>
