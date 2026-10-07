@@ -278,6 +278,22 @@
 .st-skeleton { height: 214px; border-radius: 20px; background: linear-gradient(100deg, var(--st-cream-2) 30%, var(--st-cream) 50%, var(--st-cream-2) 70%) 0 0 / 200% 100%; animation: st-loading 1.4s infinite; }
 @keyframes st-loading { to { background-position: -200% 0; } }
 
+/* '전체' 목록: 가게 이름·선물·필요 개수만 한 줄씩 */
+.st-rows { display: grid; margin: 0; padding: 0; border: 1px solid var(--st-line); border-radius: 16px; background: var(--st-paper); list-style: none; overflow: hidden; }
+.st-rows li + li { border-top: 1px solid var(--st-line); }
+.st-row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 10px 12px 10px 16px; border: 0; background: transparent; color: inherit; text-align: left; }
+.st-row-text { display: grid; flex: 1; gap: 2px; min-width: 0; }
+.st-row-text strong { overflow: hidden; font-size: 0.95rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.st-row-text > span { display: flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; color: var(--st-muted); font-size: 0.8rem; text-overflow: ellipsis; white-space: nowrap; }
+.st-row-text > span .icon { flex: none; color: var(--st-gold); }
+.st-row-need { flex: none; color: var(--st-muted); font-size: 0.8rem; font-weight: 700; }
+.st-row-need b { color: var(--st-brand); font-size: 1.05rem; font-weight: 900; }
+.st-row > .icon { flex: none; color: var(--st-muted); }
+
+/* '전체'에서 골라 넘어온 카드 */
+.st-item { scroll-margin: 16px; }
+.st-item.is-focus { border-color: var(--st-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--st-brand) 18%, transparent), var(--st-shadow); }
+
 .st-empty {
   display: grid;
   justify-items: center;
@@ -326,14 +342,13 @@
 .st-detail {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: 'card' 'actions' 'history' 'info';
+  grid-template-areas: 'card' 'actions' 'history';
   gap: 16px;
   align-items: start;
 }
 .st-paper { grid-area: card; }
 .st-actions { grid-area: actions; }
 .st-history { grid-area: history; }
-.st-info { grid-area: info; }
 
 /* 종이 적립판 */
 .st-paper {
@@ -501,16 +516,6 @@
 .st-tl-amount span { color: var(--st-muted); font-size: 0.74rem; white-space: nowrap; }
 .st-more { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; min-height: 44px; margin-top: 6px; border: 0; border-radius: 12px; background: var(--st-cream); color: var(--st-ink); font-size: 0.86rem; font-weight: 750; }
 
-/* 가게 정보 */
-.st-facts { display: grid; gap: 8px; margin: 0 0 14px; }
-.st-facts > div { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; font-size: 0.88rem; line-height: 1.5; }
-.st-facts dt { color: var(--st-muted); padding-top: 1px; }
-.st-facts dd { margin: 0; }
-.st-facts small { color: var(--st-muted); font-size: 0.74rem; }
-.st-terms { margin-top: 14px; padding: 14px 16px; border-radius: 14px; background: var(--st-cream); font-size: 0.86rem; }
-.st-terms summary { min-height: 24px; font-weight: 800; cursor: pointer; }
-.st-terms ul { margin: 10px 0 0; padding-left: 18px; color: var(--st-muted); line-height: 1.75; }
-
 /* ==========================================================================
    안내 창 (적립 코드 / 선물 교환권)
    ========================================================================== */
@@ -612,8 +617,8 @@
   .st-wallet-title { font-size: 1.9rem; }
   .st-detail {
     grid-template-columns: minmax(0, 1.25fr) minmax(300px, 1fr);
-    grid-template-areas: 'card actions' 'card info' 'history info';
-    grid-template-rows: auto auto 1fr;
+    grid-template-areas: 'card actions' 'history actions';
+    grid-template-rows: auto 1fr;
     gap: 20px;
   }
   .st-paper { padding: 26px 26px 20px; }
@@ -655,6 +660,7 @@
 }
 
 @media (hover: hover) {
+  .st-row:hover { background: var(--st-cream); }
   .st-item:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
 }
 

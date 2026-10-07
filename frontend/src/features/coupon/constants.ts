@@ -33,15 +33,6 @@ export function initialOf(name: string): string {
   return Array.from(name.trim())[0] ?? '◈';
 }
 
-/** 받침 있으면 '으로', 없거나 ㄹ 받침이면 '로' (예: 1잔으로, 1개로) */
-export function withRo(word: string): string {
-  const last = word.trim().slice(-1);
-  const code = last.charCodeAt(0) - 0xac00;
-  if (code < 0 || code > 11171) return `${word}(으)로`;
-  const jong = code % 28;
-  return `${word}${jong === 0 || jong === 8 ? '로' : '으로'}`;
-}
-
 /** 큰 목표도 수백 개의 SVG를 만들지 않고 진행 막대로 표시한다. */
 export const MAX_STAMP_SLOTS = 30;
 export const rewardsOf = (v: StampView) => isStampPolicy(v) ? Math.floor(validBalance(v.count) / v.requiredStamps) : 0;

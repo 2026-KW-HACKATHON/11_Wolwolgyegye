@@ -4,6 +4,7 @@ import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
 import { fetchStamps } from './source';
 import StampDetail from './StampDetail';
 import StampList from './StampList';
+import { isReady } from './constants';
 import type { StampFilter, StampSort, StampView } from './types';
 import './stamp.css';
 
@@ -24,6 +25,9 @@ export default function CouponPage() {
   const [filter, setFilter] = useState<StampFilter>('all');
   const [sort, setSort] = useState<StampSort>('closest-reward');
   const listScroll = useRef(0);
+  // '전체' 목록에서 고른 가게: 아직 적립 전이어도 '모으는 중'에 카드로 보여주고, 그 카드로 스크롤한다
+  const [picked, setPicked] = useState<string[]>([]);
+  const [focusId, setFocusId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!active) return;
@@ -63,6 +67,13 @@ export default function CouponPage() {
     navigate(`/coupon?store=${encodeURIComponent(storeId)}`);
   }, [navigate]);
 
+  const changeFilter = useCallback((value: StampFilter) => { setFocusId(null); setFilter(value); }, []);
+  const pick = useCallback((view: StampView) => {
+    if (!isReady(view) && view.count === 0) setPicked((prev) => (prev.includes(view.storeId) ? prev : [...prev, view.storeId]));
+    setFilter(isReady(view) ? 'ready' : 'collecting');
+    setFocusId(view.storeId);
+  }, []);
+
   if (selected) {
     return (
       <div className="st-page">
@@ -85,10 +96,13 @@ export default function CouponPage() {
         query={query}
         onQuery={setQuery}
         filter={filter}
-        onFilter={setFilter}
+        onFilter={changeFilter}
         sort={sort}
         onSort={setSort}
         onOpen={open}
+        picked={picked}
+        focusId={focusId}
+        onPick={pick}
       />
     </div>
   );
