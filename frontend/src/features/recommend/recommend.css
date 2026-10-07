@@ -79,10 +79,14 @@
 .rp-preview-notice > span { display: inline-block; width: 5px; height: 5px; margin-right: 5px; border-radius: 50%; background: var(--rp-brand); }
 .rp-preview-pins { pointer-events: none; }
 .rp-preview-pin { position: absolute; z-index: 1; display: flex; align-items: center; flex-direction: column; transform: translate(-50%, -50%); pointer-events: auto; }
-.rp-preview-pin > span { display: grid; place-items: center; width: 44px; height: 44px; border: 3px solid var(--rp-paper); border-radius: 18px 18px 18px 4px; background: var(--rp-green); color: var(--rp-paper); box-shadow: 0 3px 12px #253d3326; font-size: 21px; }
+.rp-preview-pin > span { display: block; width: 36px; height: 46px; filter: drop-shadow(0 3px 4px #253d3340); transform-origin: 50% 100%; }
+.rp-preview-pin > span svg { display: block; width: 100%; height: 100%; }
+.rp-preview-pin > span path { fill: #f0561f; stroke: var(--rp-paper); stroke-width: 1.5; }
+.rp-preview-pin > span circle { fill: var(--rp-paper); }
 .rp-preview-pin strong { max-width: 125px; margin-top: 5px; padding: 3px 8px; overflow: hidden; border: 1px solid var(--rp-line); border-radius: 6px; background: var(--rp-paper); font-size: 11px; white-space: nowrap; text-overflow: ellipsis; }
 .rp-preview-pin.is-selected { z-index: 3; }
-.rp-preview-pin.is-selected > span { background: var(--rp-brand); transform: scale(1.13); }
+.rp-preview-pin.is-selected > span { transform: scale(1.13); }
+.rp-preview-pin.is-selected > span path { fill: var(--rp-brand); }
 .rp-preview-pin.is-selected strong { color: var(--rp-brand); }
 
 /* 손잡이는 고정, 피드는 독립 스크롤. 드래그 중에는 손가락을 따라간다. */

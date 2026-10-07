@@ -1,5 +1,4 @@
 import type { Store } from '../../core/types/place';
-import Icon from '../../shared/Icon';
 
 const PREVIEW_POINTS = [[25, 33], [72, 36], [48, 46], [22, 56], [77, 58], [48, 68]];
 
@@ -34,7 +33,7 @@ export default function MapPreview({ stores, selectedId, onSelect }: {
       {previewStores.map((store, index) => {
         const [left, top] = PREVIEW_POINTS[index];
         return <button key={store.id} type="button" className={'rp-preview-pin' + (selectedId === store.id ? ' is-selected' : '')} style={{ left: left + '%', top: top + '%' }} onClick={() => onSelect(store.id)} aria-label={store.name + ' 위치 선택'} aria-pressed={selectedId === store.id}>
-          <span><Icon name={store.supports['space-rental'] ? 'house' : store.supports['oneday-class'] ? 'palette' : 'storefront'} /></span>
+          <span><svg viewBox="0 0 36 46" aria-hidden="true"><path d="M18 45C11 35 3 28 3 17a15 15 0 0 1 30 0c0 11-8 18-15 28Z" /><circle cx="18" cy="17" r="5.5" /></svg></span>
           {(selectedId === store.id || index === 0 || index === 2) && <strong>{store.name}</strong>}
         </button>;
       })}
