@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { MENUS, MENU_PRESETS, menusForPreset } from './constants';
+import { useShell } from '../../layout/AppShell/ShellContext';
+import { CUISINES, DEFAULT_PRESET, MENUS, MENU_PRESETS, menusForPreset } from './constants';
 import { fetchStoresByMenu } from './source';
-import type { RouletteStoreView, WheelMenu } from './types';
+import type { Cuisine, RouletteStoreView, WheelMenu } from './types';
 import './roulette.css';
 
 const SPIN_MS = 4200;
@@ -11,20 +11,35 @@ const STORAGE_KEY = 'wol-roulette-menus';
 function loadMenus(): WheelMenu[] {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return menusForPreset('all');
+    if (!raw) return menusForPreset(DEFAULT_PRESET);
     const saved = JSON.parse(raw) as WheelMenu[];
-    return Array.isArray(saved) ? saved : menusForPreset('all');
+    // 저장해 둔 건 id 만 믿고 지금 기본 메뉴로 바꾼다 (가게 찾는 기준이 바뀌어도 따라가도록).
+    // 파는 가게가 없어 목록에서 뺀 메뉴(예: 예전 쌀국수)는 버린다
+    return Array.isArray(saved)
+      ? saved.flatMap((m) => MENUS.find((d) => d.id === m.id) ?? [])
+      : menusForPreset(DEFAULT_PRESET);
   } catch {
-    return menusForPreset('all');
+    return menusForPreset(DEFAULT_PRESET);
   }
 }
 
 function saveMenus(menus: WheelMenu[]) {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(menus));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(menus.map(({ id, name }) => ({ id, name }))));
   } catch {
     /* 저장 실패해도 이번 세션 동작에는 지장 없음 */
   }
+}
+
+const WHEEL_COLOR_COUNT = 8;
+
+/**
+ * 원판 위 index 번째 칸 색 (theme.css 의 --wheel-N). 밝은 색이라 글자는 항상 짙은 색으로 올린다.
+ * 자리로 정해야 어떤 메뉴를 골라도 옆 칸끼리 색이 겹치지 않는다. 마지막 칸이 첫 칸과 같은 색이 되면 다른 색으로 바꾼다.
+ */
+function wheelColor(index: number, count: number) {
+  const n = count > 1 && index === count - 1 && index % WHEEL_COLOR_COUNT === 0 ? 3 : index % WHEEL_COLOR_COUNT;
+  return `var(--wheel-${n + 1})`;
 }
 
 /** 룰렛 칸 이름을 원판 위 제자리에 놓기 위한 위치(%) */
@@ -51,6 +66,12 @@ function objectParticle(word: string) {
   return hasFinalConsonant ? '을' : '를';
 }
 
+/** "밥도둑 제육볶음 어때요?" → ['밥도둑', '제육볶음', '어때요?']. 결과 창에서 세 줄로 나눠 보여준다 (모양이 다르면 통째로 한 줄) */
+function headlineLines(headline: string): string[] {
+  const match = headline.match(/^(.*\S)\s+(\S+)\s+(어때요\?)$/);
+  return match ? [match[1], match[2], match[3]] : [headline];
+}
+
 function menuSetKey(menus: WheelMenu[]) {
   return menus
     .map((m) => m.id)
@@ -59,24 +80,32 @@ function menuSetKey(menus: WheelMenu[]) {
 }
 
 export default function RoulettePage() {
-  const navigate = useNavigate();
+  const { openStore } = useShell();
   const [menus, setMenus] = useState<WheelMenu[]>(loadMenus);
   const [editing, setEditing] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
-  const [result, setResult] = useState<WheelMenu | null>(null);
+  const [resultIndex, setResultIndex] = useState<number | null>(null);
   const [stores, setStores] = useState<RouletteStoreView[] | null>(null);
+  /** 가게를 못 찾아왔으면 true ("가게 없음" 과 구분해서 다시 시도를 보여준다) / 다시 시도 횟수 */
+  const [storesFailed, setStoresFailed] = useState(false);
+  const [storesRetry, setStoresRetry] = useState(0);
+  const [cuisine, setCuisine] = useState<Cuisine>(CUISINES[0].key);
   const wheelZoneRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+  const storesRef = useRef<HTMLElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
 
+  const result = resultIndex === null ? null : menus[resultIndex] ?? null;
+  const resultColor = resultIndex === null ? '' : wheelColor(resultIndex, menus.length);
   const isEmpty = menus.length === 0;
   const segmentAngle = isEmpty ? 360 : 360 / menus.length;
   const wheelBackground = useMemo(
     () =>
       menus.length === 0
-        ? 'var(--color-surface-alt, #f3ece3)'
+        ? 'var(--color-surface-alt)'
         : `conic-gradient(${menus
-            .map((m, i) => `${m.color} ${i * segmentAngle}deg ${(i + 1) * segmentAngle}deg`)
+            .map((_, i) => `${wheelColor(i, menus.length)} ${i * segmentAngle}deg ${(i + 1) * segmentAngle}deg`)
             .join(', ')})`,
     [menus, segmentAngle],
   );
@@ -87,6 +116,7 @@ export default function RoulettePage() {
   }, [menus]);
 
   const addableMenus = MENUS.filter((m) => !menus.some((picked) => picked.id === m.id));
+  const addableInCuisine = addableMenus.filter((m) => m.cuisine === cuisine);
 
   useEffect(() => {
     if (!result) {
@@ -96,14 +126,24 @@ export default function RoulettePage() {
 
     let cancelled = false;
     setStores(null);
-    fetchStoresByMenu(result.name).then((list) => {
+    setStoresFailed(false);
+    fetchStoresByMenu(result).then((list) => {
       if (!cancelled) setStores(list);
+    }).catch(() => {
+      if (!cancelled) setStoresFailed(true);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [result]);
+  }, [result, storesRetry]);
+
+  // 룰렛이 멈춰 결과가 나오면, 원판 아래 결과 창이 화면에 들어오도록 내려준다 (이미 보이면 그대로)
+  useEffect(() => {
+    if (resultIndex === null) return;
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    resultRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'nearest' });
+  }, [resultIndex]);
 
   // 편집기를 열면 원판 아래에 펼쳐진 편집 영역이 화면에 들어오도록 내려준다
   useEffect(() => {
@@ -118,7 +158,7 @@ export default function RoulettePage() {
   function applyMenus(next: WheelMenu[]) {
     setMenus(next);
     saveMenus(next);
-    setResult(null);
+    setResultIndex(null);
   }
 
   function handleSpin() {
@@ -132,33 +172,23 @@ export default function RoulettePage() {
     const delta = (((desiredMod - (rotation % 360)) % 360) + 360) % 360;
 
     setSpinning(true);
-    setResult(null);
+    setResultIndex(null);
     setRotation(rotation + extraSpins + delta);
 
     window.setTimeout(() => {
       setSpinning(false);
-      setResult(menus[idx]);
+      setResultIndex(idx);
     }, SPIN_MS);
   }
 
   return (
     <div className="rl-page">
-      <header className="rl-hero">
-        <div>
-          <p className="rl-eyebrow">오늘의 점심 메이트</p>
-          <h1 className="rl-heading">
-            고민은 줄이고, <em>맛있는 한 끼</em>를 고르세요.
-          </h1>
-        </div>
-      </header>
-
       <section className="rl-card">
         <div className="rl-intro">
-          <span className="rl-badge">✦ 30초면 결정 끝</span>
           <h2 className="rl-card-title">오늘 뭐 먹지?</h2>
           <p className="rl-card-desc">
-            룰렛에 올릴 메뉴는 직접 고를 수 있어요. 돌리고 나면 그 메뉴를 파는 동네 가게를 함께
-            추천해 드려요.
+            룰렛에 올릴 메뉴는 직접 고를 수 있어요.
+            <br />그 메뉴를 파는 동네 가게를 추천해드려요.
           </p>
         </div>
 
@@ -200,16 +230,22 @@ export default function RoulettePage() {
 
           {/* 결과는 원판을 가리지 않도록 원판 아래에 띄운다 */}
           {result && (
-            <div className="rl-result" role="status">
+            <div className="rl-result" role="status" ref={resultRef}>
               <span className="rl-result-emoji">{result.emoji}</span>
               <div className="rl-result-text">
                 <p className="rl-result-label">오늘의 추천 메뉴</p>
                 <p className="rl-result-headline">
-                  {result.headline ?? `오늘은 ${result.name} 어때요?`}
+                  {headlineLines(result.headline ?? `오늘은 ${result.name} 어때요?`).map((line) => (
+                    <span key={line}>{line}</span>
+                  ))}
                 </p>
               </div>
-              <button type="button" className="rl-respin" onClick={handleSpin} disabled={spinning}>
-                다시 돌리기
+              <button
+                type="button"
+                className="rl-see-stores"
+                onClick={() => storesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              >
+                추천 가게 보기
               </button>
             </div>
           )}
@@ -250,10 +286,10 @@ export default function RoulettePage() {
                 <p className="rl-editor-none">아직 올린 메뉴가 없어요.</p>
               ) : (
                 <ul className="rl-menu-chips">
-                  {menus.map((menu) => (
+                  {menus.map((menu, i) => (
                     <li key={menu.id}>
                       <span className="rl-menu-chip">
-                        <i className="rl-menu-dot" style={{ background: menu.color }} />
+                        <i className="rl-menu-dot" style={{ background: wheelColor(i, menus.length) }} />
                         {menu.name}
                         <button
                           type="button"
@@ -272,15 +308,36 @@ export default function RoulettePage() {
               {addableMenus.length > 0 && (
                 <>
                   <p className="rl-editor-label">추천 메뉴 더하기</p>
-                  <ul className="rl-menu-chips">
-                    {addableMenus.map((menu) => (
+                  <div className="rl-cuisine-tabs" role="tablist" aria-label="메뉴 분류">
+                    {CUISINES.map((c) => {
+                      const left = addableMenus.filter((m) => m.cuisine === c.key).length;
+                      return (
+                        <button
+                          key={c.key}
+                          type="button"
+                          role="tab"
+                          className={`rl-cuisine-tab${cuisine === c.key ? ' is-on' : ''}`}
+                          aria-selected={cuisine === c.key}
+                          onClick={() => setCuisine(c.key)}
+                        >
+                          {c.label}
+                          <span className="rl-cuisine-count">{left}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {addableInCuisine.length === 0 && (
+                    <p className="rl-editor-none">이 분류의 메뉴는 모두 룰렛에 올렸어요.</p>
+                  )}
+                  <ul className="rl-menu-chips" role="tabpanel">
+                    {addableInCuisine.map((menu) => (
                       <li key={menu.id}>
                         <button
                           type="button"
                           className="rl-add-chip"
                           onClick={() => applyMenus([...menus, menu])}
                         >
-                          + {menu.name}
+                          + {menu.emoji} {menu.name}
                         </button>
                       </li>
                     ))}
@@ -307,21 +364,24 @@ export default function RoulettePage() {
       </section>
 
       {result && (
-        <section className="rl-stores">
+        <section className="rl-stores" ref={storesRef}>
           <div className="rl-stores-head">
-            <div>
-              <h2 className="rl-stores-title">
-                {result.name}
-                {objectParticle(result.name)} 파는 가까운 가게
-              </h2>
-              <p className="rl-stores-sub">선택한 메뉴와 비슷한 메뉴를 즐길 수 있는 곳이에요.</p>
-            </div>
-            <button type="button" className="rl-map-link" onClick={() => navigate('/recommend')}>
-              지도에서 보기 →
-            </button>
+            <h2 className="rl-stores-title">
+              {result.name}
+              {objectParticle(result.name)} 파는 가까운 가게
+            </h2>
+            <p className="rl-stores-sub">전문점을 먼저, 그다음 메뉴판에 있는 가게를 가까운 순으로 보여드려요. 누르면 지도에서 보여드려요.</p>
           </div>
 
-          {stores === null && <p className="rl-stores-empty">가게를 찾는 중이에요…</p>}
+          {storesFailed && (
+            <div className="rl-stores-empty rl-stores-error" role="alert">
+              <strong>가게를 불러오지 못했어요</strong>
+              <p>인터넷 연결을 확인한 뒤 다시 시도해 주세요.</p>
+              <button type="button" onClick={() => setStoresRetry((n) => n + 1)}>다시 시도</button>
+            </div>
+          )}
+
+          {!storesFailed && stores === null && <p className="rl-stores-empty">가게를 찾는 중이에요…</p>}
 
           {stores !== null && stores.length === 0 && (
             <p className="rl-stores-empty">
@@ -333,39 +393,31 @@ export default function RoulettePage() {
           {stores !== null && stores.length > 0 && (
             <ul className="rl-store-grid">
               {stores.map((store) => (
-                <li key={store.id} className="rl-store-card">
+                <li key={store.id}>
+                  <button type="button" className="rl-store-card" onClick={() => openStore(store.storeId)}>
                   <div
                     className="rl-store-thumb"
                     style={{
-                      background: `linear-gradient(160deg, ${result.color} 0%, ${result.color}55 100%)`,
+                      background: `linear-gradient(160deg, ${resultColor} 0%, color-mix(in srgb, ${resultColor} 33%, transparent) 100%)`,
                     }}
                   >
-                    {store.emoji}
+                    {result.emoji}
                   </div>
                   <div className="rl-store-body">
                     <span className="rl-store-tag">{store.tagLabel}</span>
                     <h3 className="rl-store-name">{store.store.name}</h3>
                     <p className="rl-store-desc">{store.desc}</p>
                     <div className="rl-store-foot">
-                      {store.store.rating !== undefined && (
-                        <span className="rl-store-rating">★ {store.store.rating}</span>
-                      )}
-                      {store.store.reviewCount !== undefined && (
-                        <span className="rl-store-meta">리뷰 {store.store.reviewCount}</span>
-                      )}
                       <span className="rl-store-meta">도보 {store.walkMinutes}분</span>
                     </div>
                   </div>
+                  </button>
                 </li>
               ))}
             </ul>
           )}
         </section>
       )}
-
-      <p className="rl-tip">
-        <b>💡 친구와 함께라면?</b> 룰렛을 한 번 더 돌려 메뉴 후보를 2개로 좁혀보세요.
-      </p>
     </div>
   );
 }

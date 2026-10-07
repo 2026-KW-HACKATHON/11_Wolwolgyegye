@@ -1,0 +1,479 @@
+/* =====================================================================
+   배경 지도. 색상은 모두 아래 CSS 변수에서 관리한다. (V_World/style.css 와 같은 변수 이름)
+   MainMap.tsx 가 지도를 만들 때 이 변수들을 .mm-root 에서 읽어 지도 스타일에 사용한다.
+   변수 값은 shared/theme.css 의 "지도" 묶음에서 관리한다.
+   ===================================================================== */
+.mm-root {
+  /* 지도 색(--map-bg, --building-*, --road-*, --place-* …)은 shared/theme.css 에 있다 */
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  isolation: isolate; /* Leaflet 내부 z-index 가 앱의 탭·버튼 위로 올라오지 않게 가둔다 */
+  overflow: hidden;
+  background: var(--map-bg);
+}
+
+.mm-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* Leaflet 기본 배경(밝은 회색)을 지도 바탕색으로 덮어쓴다 */
+.mm-canvas.leaflet-container {
+  background: var(--map-bg);
+  font-family: inherit;
+}
+
+/* 데이터 출처: 라이선스 표시는 유지하되 지도보다 눈에 띄지 않게 둔다 */
+.mm-source {
+  position: absolute;
+  z-index: 1000;
+  right: var(--inset-right);
+  bottom: calc(var(--inset-bottom) + 2px);
+  left: var(--inset-left);
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 8px;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 0 2px var(--map-bg), 0 0 2px var(--map-bg);
+  opacity: 0.58;
+  pointer-events: none; /* 지도 조작을 막지 않도록 */
+  transition: right 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), bottom 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), left 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.mm-source a {
+  color: inherit;
+  pointer-events: auto;
+  text-decoration: none;
+}
+
+/* 불러오는 중 / 데이터 없음 안내: 화면 가운데 */
+.mm-state {
+  position: absolute;
+  z-index: 1001;
+  top: 30%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-card);
+  font-size: 14px;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+.mm-state span {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.mm-state code {
+  color: var(--color-brand);
+}
+
+/* ---------- Leaflet 기본 컨트롤 ---------- */
+.mm-root .leaflet-control-zoom {
+  margin: 0 0 12px calc(var(--inset-left) + 12px);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  transition: margin-left 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.mm-root .leaflet-bar a,
+.mm-root .leaflet-bar a:hover {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-bottom-color: var(--color-border);
+}
+
+.mm-root .leaflet-control-scale {
+  margin-left: calc(var(--inset-left) + 12px);
+}
+
+.mm-root .leaflet-control-scale-line {
+  background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+  color: var(--color-text-muted);
+  border-color: var(--color-text-muted);
+}
+
+/* 팝업 */
+.mm-root .leaflet-popup-content-wrapper,
+.mm-root .leaflet-popup-tip {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-float);
+}
+
+.mm-root .popup-kind {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.mm-root .popup-title {
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.mm-root .popup-table td:first-child {
+  padding-right: 8px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* 경계 라벨 (Leaflet tooltip 을 라벨처럼 사용) */
+.mm-root .boundary-label.leaflet-tooltip {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--admin-dong);
+  font-weight: 700;
+  font-size: 13px;
+  text-shadow: 0 0 3px var(--map-bg), 0 0 3px var(--map-bg), 0 0 3px var(--map-bg);
+}
+
+.mm-root .boundary-label.leaflet-tooltip::before {
+  display: none; /* 말풍선 꼬리 제거 */
+}
+
+/* 광운대 건물 이름 (vworld/campusLabels.ts): 건물 위 글자만, 바탕색 테두리로 선·건물 위에서도 읽히게 */
+.mm-root .campus-label.leaflet-tooltip {
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  text-shadow: 0 0 3px var(--map-bg), 0 0 3px var(--map-bg), 0 0 3px var(--map-bg);
+}
+
+.mm-root .campus-label.leaflet-tooltip::before {
+  display: none;
+}
+
+/* ---------- 가게 핀 ---------- */
+.mm-pin-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: visible;
+}
+
+.mm-pin {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-surface);
+  border-radius: 16px 16px 16px 4px;
+  background: var(--color-neighborhood);
+  color: var(--color-surface);
+  box-shadow: 0 3px 12px rgb(var(--shadow-color) / 0.25);
+  font-size: 19px;
+  transition: transform 0.15s;
+}
+
+.mm-pin .icon {
+  display: block;
+}
+
+.mm-pin--class {
+  background: var(--color-brand);
+}
+
+.mm-pin.is-selected {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px var(--color-brand-soft), 0 4px 14px rgb(var(--shadow-color) / 0.3);
+}
+
+.mm-pin-name {
+  margin-top: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+
+/* ---------- 상가정보 가게 핀 (건물 단위 묶기 + 줌에 따른 묶기) ---------- */
+.pl-wrap {
+  display: grid;
+  place-items: center;
+}
+
+.pl--restaurant { --pl-color: var(--place-restaurant); }
+.pl--cafe { --pl-color: var(--place-cafe); }
+.pl--convenience { --pl-color: var(--place-convenience); }
+.pl--etc { --pl-color: var(--place-etc); }
+
+/*
+ * 가게 핀: 위가 둥글고 아래가 뾰족한 물방울 (아래 끝 = 가게 위치), 빨강→주황→노랑 그라데이션, 가운데 흰 구멍.
+ * 크기는 placeMarkers.ts 의 PIN_SINGLE / PIN_BUILDING (가로:세로 = 24:30)
+ */
+.mm-root {
+  --pin-top: #f2361a;
+  --pin-mid: #f2762a;
+  --pin-bottom: #f4b847;
+  --pin-gradient: linear-gradient(180deg, var(--pin-top) 0%, var(--pin-mid) 55%, var(--pin-bottom) 100%);
+  /* 모양: 지름 24 원 + 아래 끝(12,30). 끝은 살짝 둥글게 */
+  --pin-shape: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 30'%3E%3Cpath d='M12 0A12 12 0 0 0 3.06 20L10.66 28.5Q12 30 13.34 28.5L20.94 20A12 12 0 0 0 12 0Z'/%3E%3C/svg%3E");
+}
+
+.pl-pin {
+  position: relative;
+  display: block;
+  width: 30px;
+  height: 38px;
+  filter: drop-shadow(0 2px 3px rgb(var(--shadow-color) / 0.35));
+  transform-origin: 50% 100%;
+  transition: transform 0.15s ease;
+}
+
+.pl-pin__shape {
+  position: absolute;
+  inset: 0;
+  background: var(--pin-gradient);
+  -webkit-mask: var(--pin-shape) center / 100% 100% no-repeat;
+  mask: var(--pin-shape) center / 100% 100% no-repeat;
+}
+
+/* 가운데 흰 구멍: 가게 수 (1곳이면 빈 구멍). 구멍 중심 = 원의 중심 (위에서 40%) */
+.pl-pin__label {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--white);
+  color: var(--pin-top);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+}
+
+.pl-pin--single {
+  width: 22px;
+  height: 28px;
+}
+
+.pl-pin--single .pl-pin__label {
+  width: 8px;
+  height: 8px;
+}
+
+.pl-pin.is-selected {
+  z-index: 1;
+  filter: drop-shadow(0 0 0 var(--white)) drop-shadow(0 3px 6px rgb(var(--shadow-color) / 0.5));
+  transform: scale(1.3);
+}
+
+/* 여러 건물 묶음 (줌을 줄였을 때): 누르면 확대. 색은 건물 핀과 같은 우선순위 묶음 색 */
+.pl-cluster {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--white);
+  border-radius: 50%;
+  background: var(--pin-gradient);
+  color: var(--color-on-dark);
+  box-shadow: var(--shadow-pin);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pl-cluster.is-selected {
+  outline: 3px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* 층별 가게 목록 팝업 */
+.mm-root .pl-popup .leaflet-popup-content {
+  margin: 10px 12px;
+}
+
+.pl-list__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pl-list__head strong {
+  font-size: 14px;
+}
+
+.pl-list__head span {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.pl-list__body {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.pl-list__body h4 {
+  margin: 8px 0 2px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.pl-list__item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 6px 6px 16px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  text-align: left;
+  font-size: 13px;
+  position: relative;
+}
+
+/* 묶음 색 점 */
+.pl-list__item::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pl-color);
+  transform: translateY(-50%);
+}
+
+.pl-list__item span {
+  font-weight: 700;
+}
+
+.pl-list__item small {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.pl-list__item:hover,
+.pl-list__item:focus-visible {
+  background: var(--color-surface-alt);
+  outline: none;
+}
+
+/* ---------- 지하철역 (osm/drawTransit.ts) ---------- */
+/* 이름표·출구는 크기 0 인 자리 가운데에 놓는다 */
+.st-wrap {
+  overflow: visible;
+}
+
+.st-box,
+.st-exit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+
+/* 역: 직사각형 이름표 [1][6] 석계역 */
+.st-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px 2px 3px;
+  border: 1.5px solid var(--station-border);
+  border-radius: 4px;
+  background: var(--station-bg);
+  box-shadow: 0 1px 3px rgb(var(--shadow-color) / 0.25);
+  color: var(--station-border);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.st-box b {
+  margin-left: 2px;
+  font-weight: 800;
+}
+
+/* 노선 칩: 노선 색 동그라미 + 번호 */
+.st-box i {
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--line);
+  color: var(--color-on-dark);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+/* 출구: 번호 네모 */
+.st-exit {
+  display: grid;
+  place-items: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 2px;
+  border-radius: 3px;
+  background: var(--station-exit);
+  color: var(--color-on-dark);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+/*
+ * 터치로 지도를 움직이는 동안에는 핀마다 별도 합성 레이어를 만드는 그림자·필터를 잠시 끈다.
+ * 위치와 모양은 그대로 유지되고 손을 떼면 즉시 복원되므로, 저사양 스마트폰에서도 드래그가 끊기지 않는다.
+ */
+.mm-canvas.is-interacting .mm-pin,
+.mm-canvas.is-interacting .pl-cluster,
+.mm-canvas.is-interacting .st-box {
+  box-shadow: none;
+}
+
+.mm-canvas.is-interacting .pl-pin,
+.mm-canvas.is-interacting .pl-pin.is-selected {
+  filter: none;
+}
+
+.mm-canvas.is-interacting .mm-pin,
+.mm-canvas.is-interacting .pl-pin {
+  transition: none;
+}
+
+@media (pointer: coarse) {
+  /* 긴 터치에서도 브라우저 선택 메뉴가 뜨지 않아 지도 조작이 끊기지 않게 한다. */
+  .mm-canvas,
+  .mm-canvas .leaflet-marker-icon {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+}

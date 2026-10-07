@@ -17,17 +17,15 @@ interface Props {
   sort: StampSort;
   onSort: (value: StampSort) => void;
   onOpen: (storeId: string) => void;
-  onResetDemo: () => void;
 }
 
-export default function StampList({ stamps, error, onRetry, missingId, query, onQuery, filter, onFilter, sort, onSort, onOpen, onResetDemo }: Props) {
+export default function StampList({ stamps, error, onRetry, missingId, query, onQuery, filter, onFilter, sort, onSort, onOpen }: Props) {
   const { isFavorite, toggle } = useFavoriteStores();
   const all = useMemo(() => stamps ?? [], [stamps]);
 
   const ready = all.filter(isReady);
   const collecting = all.filter((v) => v.count > 0 && !isReady(v));
   const totalRewards = all.reduce((sum, v) => sum + rewardsOf(v), 0);
-  const hasDemo = all.some((v) => v.history.some((t) => t.origin === 'demo'));
   const counts: Record<StampFilter, number> = {
     all: all.length,
     ready: ready.length,
@@ -57,9 +55,9 @@ export default function StampList({ stamps, error, onRetry, missingId, query, on
       <section className="st-reward-summary" aria-labelledby="st-wallet-title">
         <Icon name="gift" />
         <h1 id="st-wallet-title" aria-live="polite">
-          {error ? '받을 수 있는 선물 수를 확인하지 못했어요' : stamps
-            ? <>받을 수 있는 선물 <em>{totalRewards}개</em></>
-            : '받을 수 있는 선물 확인 중…'}
+          {error ? '사용 가능한 스탬프 수를 확인하지 못했어요' : stamps
+            ? <>사용 가능한 스탬프 <em>{totalRewards}개</em></>
+            : '사용 가능한 스탬프 확인 중…'}
         </h1>
       </section>
 
@@ -78,8 +76,8 @@ export default function StampList({ stamps, error, onRetry, missingId, query, on
 
       <div className="st-filters" role="group" aria-label="적립 상태">
         {STAMP_FILTERS.map((f) => (
-          <button key={f.key} type="button" className={filter === f.key ? 'is-on' : ''} aria-pressed={filter === f.key} onClick={() => onFilter(f.key)}>
-            {f.label}<span>{counts[f.key]}</span>
+          <button key={f.key} type="button" className={filter === f.key ? 'is-on' : ''} aria-pressed={filter === f.key} aria-label={`${f.label} (${counts[f.key]}곳)`} onClick={() => onFilter(f.key)}>
+            {f.label}{filter === f.key && <span>{counts[f.key]}</span>}
           </button>
         ))}
       </div>
@@ -104,7 +102,7 @@ export default function StampList({ stamps, error, onRetry, missingId, query, on
 
         {stamps !== null && visible.length === 0 && !error && (
           <div className="st-empty">
-            <strong>{filter === 'ready' ? '아직 받을 수 있는 선물이 없어요' : filter === 'saved' ? '찜한 스탬프 가게가 없어요' : '조건에 맞는 가게가 없어요'}</strong>
+            <strong>{filter === 'ready' ? '아직 사용 가능한 스탬프가 없어요' : filter === 'saved' ? '찜한 스탬프 가게가 없어요' : '조건에 맞는 가게가 없어요'}</strong>
             <p>{filter === 'ready' ? '조금만 더 모으면 돼요. 선물까지 가까운 가게부터 볼까요?' : '다른 조건으로 찾아보세요.'}</p>
             <button type="button" className="st-btn st-btn--line" onClick={() => { onFilter('all'); onQuery(''); onSort('closest-reward'); }}>전체 가게 보기</button>
           </div>
@@ -165,10 +163,7 @@ export default function StampList({ stamps, error, onRetry, missingId, query, on
         </ol>
       </section>
 
-      <p className="st-demo-note">
-        가게·적립 현황은 예시예요. 시연으로 찍은 도장은 이 브라우저에만 저장돼요.
-        {hasDemo && <button type="button" onClick={onResetDemo}>시연 기록 지우기</button>}
-      </p>
+      <p className="st-demo-note">스탬프 적립과 교환은 직원 확인 후 서버에서만 처리돼요.</p>
     </>
   );
 }

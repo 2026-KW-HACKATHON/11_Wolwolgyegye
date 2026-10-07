@@ -10,25 +10,23 @@ import type { Store } from '../../core/types/place';
 export interface ClosingSale {
   id: string;
   storeId: string;
-  /** 어떤 상품을 얼마나 깎아 주는지 한 줄 설명 */
+  /** 할인 유형: amount = 금액 할인 / rate = 퍼센트 할인 / free = 무료 제공 */
+  discountType: 'amount' | 'rate' | 'free';
+  /** amount 일 때 깎아 주는 금액 (원). 다른 유형은 null */
+  discountAmount: number | null;
+  /** rate 일 때 0 ~ 1 사이 소수 (0.3 = 30%). 다른 유형은 null */
+  discountRate: number | null;
+  /** 제공 내용 (free 일 때 필수. 예: 빵 2개 사면 1개 무료) */
+  offer: string;
+  /** 조건 (예: 오후 8시 이후 포장) */
+  condition: string;
+  /** 화면용 한 줄 설명 (제공 내용 · 조건) */
   desc: string;
-  /** 0 ~ 1 사이 소수. 예: 0.3 = 30% 할인 (ClosingSaleItem 과 같은 규칙) */
-  discountRate: number;
-  /** 세일이 끝나는 시각 (ISO 문자열) */
+  /** 세일 시작·끝 시각 (ISO 문자열) */
+  startsAt: string;
   closeAt: string;
-  /** 관심 등록한 사람 수. 로그인 연동 후에는 사용자별 관심 테이블에서 세어 온다 */
+  /** 관심 등록한 사람 수 (sale_likes 를 get_sale_like_counts 로 센 값) */
   likeCount: number;
-}
-
-/** 마감세일 중인 상품 하나. 할인가는 저장하지 않고 discount.ts 의 함수로 계산해서 쓴다 */
-export interface ClosingSaleItem {
-  id: string;
-  storeId: string;
-  name: string;
-  /** 원 단위 정수 */
-  originalPrice: number;
-  /** 0 ~ 1 사이 소수. 예: 0.3 = 30% 할인 */
-  discountRate: number;
 }
 
 /** 화면이 받는 모양: 세일 + 가게 공통 정보 + 사용자 위치 기준 도보 시간 (source.ts 가 조합) */

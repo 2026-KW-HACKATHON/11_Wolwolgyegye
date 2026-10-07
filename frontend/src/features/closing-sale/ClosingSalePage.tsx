@@ -1,76 +1,59 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '../../core/auth/AuthContext';
+import { getSupabaseClient } from '../../core/supabase/client';
+import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
+import { useShell } from '../../layout/AppShell/ShellContext';
 import { SALE_SORTS, toneForStore, type SaleSortKey } from './constants';
-import { formatDiscountRate } from './discount';
+import { discountSortValue, formatSaleDiscount } from './discount';
 import { fetchClosingSales } from './source';
+import { TICK_MS, URGENT_MINUTES, formatLeft, hhmm, minutesLeft } from './time';
 import type { ClosingSaleView } from './types';
 import './closing-sale.css';
 
-/** 남은 시간 표시를 1분마다 새로 계산한다 */
-const TICK_MS = 30_000;
-const LIKE_STORAGE_KEY = 'wol-closing-sale-likes';
-/** 이 시간보다 적게 남으면 "곧 마감" 으로 강조한다 */
-const URGENT_MINUTES = 60;
-
-function loadLikes(): string[] {
-  try {
-    const raw = window.localStorage.getItem(LIKE_STORAGE_KEY);
-    const saved = raw ? (JSON.parse(raw) as string[]) : [];
-    return Array.isArray(saved) ? saved : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveLikes(ids: string[]) {
-  try {
-    window.localStorage.setItem(LIKE_STORAGE_KEY, JSON.stringify(ids));
-  } catch {
-    /* 저장 실패해도 이번 세션 동작에는 지장 없음 */
-  }
-}
-
-function minutesLeft(sale: ClosingSaleView, now: number) {
-  return Math.floor((new Date(sale.closeAt).getTime() - now) / 60_000);
-}
-
-/** 42 -> "42분", 78 -> "1시간 18분" */
-function formatLeft(minutes: number) {
-  if (minutes < 60) return `${minutes}분`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m === 0 ? `${h}시간` : `${h}시간 ${String(m).padStart(2, '0')}분`;
-}
-
-/** 마감 시각을 "18:30" 으로 */
-function formatCloseTime(sale: ClosingSaleView) {
-  const at = new Date(sale.closeAt);
-  return `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`;
-}
-
 function sortSales(sales: ClosingSaleView[], key: SaleSortKey) {
   const sorted = [...sales];
-  if (key === 'discount') return sorted.sort((a, b) => b.discountRate - a.discountRate);
+  if (key === 'discount') return sorted.sort((a, b) => discountSortValue(b) - discountSortValue(a));
   if (key === 'near') return sorted.sort((a, b) => a.walkMinutes - b.walkMinutes);
   return sorted.sort((a, b) => a.closeAt.localeCompare(b.closeAt));
 }
 
+/**
+ * 마감세일 화면 (/closing-sale). 세일 카드를 누르면 그 가게의 2차 탭이 열리고, 2차 탭의 마감세일(누른 세일)이 맨 위에 오도록 스크롤된다.
+ * /closing-sale?sale=ID 로 들어오면 그 세일을 바로 연다. (홈 화면의 세일 카드에서 연결)
+ */
 export default function ClosingSalePage() {
-  const navigate = useNavigate();
+  const active = usePageActive();
+  const [params, setParams] = useSearchParams();
+  const { userId } = useAuth();
+  const { openStore } = useShell();
+  const openSale = useCallback((sale: ClosingSaleView) => openStore(sale.storeId, { category: 'closing-sale', target: `sale-${sale.id}` }), [openStore]);
   const [sales, setSales] = useState<ClosingSaleView[] | null>(null);
+  /** 세일을 못 읽었으면 true ("세일 없음" 과 구분해서 다시 시도를 보여준다) */
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [version, setVersion] = useState(0);
   const [sort, setSort] = useState<SaleSortKey>('closing');
-  const [likedIds, setLikedIds] = useState<string[]>(loadLikes);
+  const [likedIds, setLikedIds] = useState<string[]>([]);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     let cancelled = false;
-    fetchClosingSales().then((list) => {
-      if (!cancelled) setSales(list);
+    setLoadFailed(false);
+    Promise.all([
+      fetchClosingSales(),
+      userId ? getSupabaseClient().from('sale_likes').select('sale_id').eq('user_id', userId) : Promise.resolve({ data: [], error: null }),
+    ]).then(([list, likes]) => {
+      if (!cancelled) {
+        setSales(list);
+        if (!likes.error) setLikedIds((likes.data ?? []).map((row) => row.sale_id));
+      }
+    }).catch(() => {
+      if (!cancelled) setLoadFailed(true);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [userId, version]);
 
   // 남은 시간이 멈춰 보이지 않도록 주기적으로 현재 시각을 새로 읽는다
   useEffect(() => {
@@ -87,13 +70,27 @@ export default function ClosingSalePage() {
     );
   }, [sales, sort, now]);
 
-  /** 배너에 보여줄 진행 중인 세일 가게 수 (한 가게가 여러 세일을 올려도 한 곳으로 센다) */
-  const activeStoreCount = useMemo(() => new Set(visible.map((sale) => sale.storeId)).size, [visible]);
+  // ?sale=ID 로 들어오면 그 세일을 연다
+  useEffect(() => {
+    const saleId = params.get('sale');
+    if (!active || !saleId || sales === null) return;
+    const sale = sales.find((item) => item.id === saleId);
+    if (sale) openSale(sale);
+    const next = new URLSearchParams(params); next.delete('sale'); setParams(next, { replace: true });
+  }, [active, params, sales, setParams, openSale]);
 
-  function toggleLike(id: string) {
-    const next = likedIds.includes(id) ? likedIds.filter((v) => v !== id) : [...likedIds, id];
-    setLikedIds(next);
-    saveLikes(next);
+  /** 배너에 보여줄 진행 중인 세일 가게 수 (한 가게가 여러 세일을 올려도 한 곳으로 센다) */
+
+  async function toggleLike(id: string) {
+    if (!userId) return;
+    const exists = likedIds.includes(id);
+    setLikedIds((current) => exists ? current.filter((value) => value !== id) : [...current, id]);
+    const client = getSupabaseClient();
+    const result = exists
+      ? await client.from('sale_likes').delete().eq('user_id', userId).eq('sale_id', id)
+      : await client.from('sale_likes').insert({ user_id: userId, sale_id: id });
+    if (result.error) setLikedIds((current) => exists ? [...current, id] : current.filter((value) => value !== id));
+    else setSales(await fetchClosingSales().catch(() => sales)); // 관심 수만 새로 읽는 것이라, 못 읽으면 보던 목록을 둔다
   }
 
   return (
@@ -104,17 +101,6 @@ export default function ClosingSalePage() {
           지금, 동네 가게의 <em>마감세일</em>을 만나보세요
         </h1>
         <p className="cs-hero-sub">남은 시간 안에만 받을 수 있는 신선한 할인 혜택이에요.</p>
-        {sales !== null && (
-          <p className="cs-hero-count" role="status">
-            {activeStoreCount > 0 ? (
-              <>
-                지금 <b>{activeStoreCount}곳</b>에서 마감세일 진행 중
-              </>
-            ) : (
-              '현재는 진행중인 세일이 없어요'
-            )}
-          </p>
-        )}
         <span className="cs-hero-mark" aria-hidden="true">
           %
         </span>
@@ -125,7 +111,9 @@ export default function ClosingSalePage() {
           <div>
             <h2 className="cs-list-title">오늘 마감 임박 매장</h2>
             <p className="cs-list-sub">
-              {sales === null ? (
+              {loadFailed ? (
+                '세일 정보를 확인하지 못했어요'
+              ) : sales === null ? (
                 '세일을 불러오는 중이에요…'
               ) : (
                 <>
@@ -150,14 +138,22 @@ export default function ClosingSalePage() {
           </label>
         </div>
 
-        {sales !== null && visible.length === 0 && (
+        {loadFailed && (
+          <div className="cs-empty cs-load-error" role="alert">
+            <strong>마감세일을 불러오지 못했어요</strong>
+            <p>인터넷 연결을 확인한 뒤 다시 시도해 주세요.</p>
+            <button type="button" onClick={() => setVersion((n) => n + 1)}>다시 시도</button>
+          </div>
+        )}
+
+        {!loadFailed && sales !== null && visible.length === 0 && (
           <p className="cs-empty">
             지금은 진행 중인 마감세일이 없어요. 가게 사장님이 세일을 등록하면 이곳에 바로
             올라옵니다.
           </p>
         )}
 
-        {visible.length > 0 && (
+        {!loadFailed && visible.length > 0 && (
           <ul className="cs-grid">
             {visible.map((sale) => {
               const left = minutesLeft(sale, now);
@@ -172,8 +168,8 @@ export default function ClosingSalePage() {
                       {formatLeft(left)}
                     </span>
                     <strong className="cs-discount">
-                      {formatDiscountRate(sale.discountRate)}
-                      <span className="cs-discount-off"> OFF</span>
+                      {formatSaleDiscount(sale)}
+                      <span className="cs-discount-off">{sale.discountType === 'free' ? ' 제공' : ' OFF'}</span>
                     </strong>
                   </div>
 
@@ -181,7 +177,10 @@ export default function ClosingSalePage() {
                     <p className="cs-card-meta">
                       {sale.store.cuisineType ?? '동네 가게'} · 도보 {sale.walkMinutes}분
                     </p>
-                    <h3 className="cs-card-name">{sale.store.name}</h3>
+                    <h3 className="cs-card-name">
+                      {/* 카드 전체가 눌리도록 버튼을 카드 위로 늘린다 (관심 버튼은 그 위에 있다) */}
+                      <button type="button" className="cs-card-open" aria-label={`${sale.store.name} 세일 자세히`} onClick={() => openSale(sale)}>{sale.store.name}</button>
+                    </h3>
                     <p className="cs-card-desc">{sale.desc}</p>
 
                     <div className="cs-card-foot">
@@ -190,11 +189,12 @@ export default function ClosingSalePage() {
                         className={`cs-like${liked ? ' is-on' : ''}`}
                         aria-pressed={liked}
                         aria-label={`${sale.store.name} 관심 ${liked ? '취소' : '등록'}`}
-                        onClick={() => toggleLike(sale.id)}
+                        disabled={!userId}
+                        onClick={() => void toggleLike(sale.id)}
                       >
-                        {liked ? '♥' : '♡'} {sale.likeCount + (liked ? 1 : 0)}명이 관심
+                        {liked ? '♥' : '♡'} {sale.likeCount}명이 관심
                       </button>
-                      <span className="cs-close-time">{formatCloseTime(sale)} 마감</span>
+                      <span className="cs-close-time">{hhmm(sale.closeAt)} 마감</span>
                     </div>
                   </div>
                 </li>
@@ -203,15 +203,6 @@ export default function ClosingSalePage() {
           </ul>
         )}
       </section>
-
-      <p className="cs-tip">
-        <b>💡 헛걸음 방지</b> 마감 시간이 가까우면 재고가 빨리 떨어질 수 있어요. 출발 전에 가게에
-        한 번 확인해 보세요.
-      </p>
-
-      <button type="button" className="cs-map-link" onClick={() => navigate('/recommend')}>
-        지도에서 세일 매장 보기 →
-      </button>
     </div>
   );
 }

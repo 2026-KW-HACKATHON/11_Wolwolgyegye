@@ -46,6 +46,12 @@
     ├─ package.json
     ├─ tsconfig.json
     ├─ vite.config.ts
+    ├─ scripts/fetch-vworld.js   (브이월드 → public/data/vworld/*.geojson 건물·경계·영역 수집. 실행: npm run fetch:vworld, 키는 .env.local)
+    ├─ scripts/fetch-osm.js      (OpenStreetMap → public/data/osm/ 도로·철도·지하철 노선·역·출구 수집. 실행: npm run fetch:osm, 키 없음)
+    ├─ scripts/fetch-sbiz.js     (소상공인 상가정보 → scripts/.data/sbiz-stores.geojson, 월계1동 가게만. 실행: npm run fetch:sbiz)
+    ├─ scripts/import-stores.js  (그 파일 → DB stores·store_types. 실행: npm run import:stores, 관리자 키는 .env.local)
+    ├─ public/data/vworld/, public/data/osm/  (지도 배경 수집 결과. git 에 올린다. 화면은 이 파일만 읽고 키를 쓰지 않는다)
+    ├─ scripts/.data/            (가게 수집 작업 파일. git 에 올리지 않는다. 가게 데이터는 DB 에만 둔다)
     └─ src/
         ├─ main.tsx
         ├─ global.css
@@ -60,29 +66,33 @@
         │  ├─ device/      layoutMode.ts, useLayoutModeDetector.ts, LayoutModeContext.ts
         │  ├─ auth/        authTypes.ts, AuthContext.ts, useAuthStatus.ts
         │  ├─ router/      useActivePath.ts
-        │  ├─ categories/  categoryTypes.ts, categories.ts, enabledCategories.ts, useVisibleCategories.ts
+        │  ├─ categories/  categoryTypes.ts, categories.ts, subCategories.ts, enabledCategories.ts, useVisibleCategories.ts
         │  ├─ types/       place.ts            (가게 공통 규격 Store — 필드는 추가만)
-        │  ├─ mock/        stores.ts           (모든 카테고리가 공유하는 예시 가게 + 기준 위치)
         │  ├─ source/      storeSource.ts      (storeId -> Store 조회, 사용자 위치)
+        │  ├─ supabase/    client.ts, config.ts, stores.ts (지도 가게 = DB 공개 가게 읽기)
         │  └─ utils/       geo.ts              (거리 / 도보 시간 계산)
         ├─ layout/
-        │  ├─ AppShell/          AppShell.tsx, AppShell.css
-        │  ├─ Splash/            Splash.tsx, Splash.css
-        │  ├─ PageHeader/        PageHeader.tsx, PageHeader.css
-        │  ├─ HelpPopup/         HelpPopup.tsx, HelpPopup.css
+        │  ├─ AppShell/          AppShell.tsx/.css, ShellContext.ts   (지도 + 1차 탭 + 바 배치)
+        │  ├─ CategoryNav/       CategoryNav.tsx/.css                 (카테고리 바: 하단 가로 / 우측 세로)
+        │  ├─ SwipePanel/        SwipePanel.tsx/.css                  (1차 탭: 닫힘 / 반 / 전체)
         │  ├─ KeepAlivePages/    KeepAlivePages.tsx, PageActiveContext.ts
-        │  └─ navigation/
-        │     ├─ Navigation.tsx
-        │     ├─ handlers/           navHandlers.ts, desktopHandlers.ts, touchHandlers.ts, useNavHandlers.ts
-        │     ├─ shared/             NavItem.tsx/.css, SwipeStrip.tsx/.css, navTypes.ts, icons.ts
-        │     ├─ compact/            CompactNav.tsx/.css
-        │     ├─ compact-landscape/  CompactLandscapeNav.tsx/.css
-        │     └─ desktop/            DesktopNav.tsx/.css
+        │  ├─ SecondaryPanel/    SecondaryPanel.tsx/.css              (2차 탭 자리, 구현 예정)
+        │  ├─ SubCategories/     SubCategoryList.tsx/.css             (그 외 카테고리: 지도 위쪽 한 줄)
+        │  ├─ UserButton/        UserButton.tsx/.css                  (유저 및 설정)
+        │  └─ Splash/            Splash.tsx, Splash.css
+        ├─ shared/
+        │  └─ map/               MainMap.tsx/.css (배경 지도, Leaflet 1.9.4), StoreMap.tsx (위치 약도)
+        │     ├─ osm/            normalize.ts (도로·철도·역 속성 정규화), drawTransit.ts (지하철 노선·역 이름표·출구)
+        │     ├─ vworld/         mapExtent.ts (지도 범위 규칙), config.ts (스타일·레이어 순서), normalize.ts (속성 정규화),
+        │     │                  loadData.ts, draw.ts, geometry.ts (월계1동 안쪽 판단)
+        │     └─ placeMarkers.ts (가게 핀: 건물 묶기·줌 묶기·층별 목록)
         └─ features/
             ├─ pageRegistry.ts
             ├─ recommend / space-rental / oneday-class / roulette / closing-sale
-            │   / coupon / partner-stores / login / settings   (폴더 형식은 Code.md 4번 참고)
+            │   / coupon / partner-stores / user (login + settings)   (폴더 형식은 Code.md 4번 참고)
             └─ owner/   사장님 화면 (/owner, AppShell 밖 독립 라우트)
+- database
+    └─ supabase/migrations/  (DB 표 형태만. 설명은 database/README.md)
 - README
     └─ Base.md
 ```

@@ -1,79 +1,92 @@
-# 월월계계 데이터베이스
+# database 폴더 안내
 
-현재 프론트 기능을 위한 Supabase 초기 설계다. SQL 파일 작성만으로 실제 Supabase가 변경되거나 프론트가 연결되지는 않는다.
+우리 앱의 DB(Supabase)에 관한 파일을 모아 둔 곳입니다.
+**여기에는 DB의 "모양"만 있고, 실제 가게·메뉴 같은 데이터는 Supabase 에만 있습니다.**
+표가 서로 어떻게 이어지는지는 [schema.md](schema.md) 를 보세요.
 
-## 폴더 구조
+## 폴더와 파일
 
 ```text
 database/
-├─ README.md                 실행 방법과 연결 순서
-├─ schema.md                 테이블 관계와 프론트 연결 지점
-├─ auth.md                   일반/사장님 가입·로그인·승인 흐름
-├─ package.json              DB 검증용 개발 의존성
-├─ package-lock.json
+├─ README.md            이 안내서
+├─ schema.md            표 구조 그림 (어떤 표에 어떤 칸이 있는지)
+├─ package.json         DB 검사 도구 설정 (npm test 로 실행)
+├─ package-lock.json    위 도구의 버전 고정 (손대지 않음)
 ├─ supabase/
-│  ├─ config.toml            로컬 Supabase 설정
-│  ├─ migrations/
-│  │  ├─ 20260926000100_core.sql       사용자·가게·메뉴
-│  │  ├─ 20260926000200_feed.sql       공간대여·클래스·찜
-│  │  ├─ 20260926000300_benefits.sql   마감세일·제휴·룰렛
-│  │  ├─ 20260926000400_stamps.sql     스탬프 정책·잔액·이력
-│  │  ├─ 20260926000500_storage.sql    사진 저장소 접근 권한
-│  │  └─ 20260926000600_auth_onboarding.sql  가입 프로필·사장님 신청
-│  └─ seed.sql               개발용 예시 데이터
+│  ├─ config.toml       내 컴퓨터에서 Supabase 를 띄울 때 쓰는 설정 (지금은 안 씀)
+│  └─ migrations/       DB 모양을 만드는 SQL. 번호 순서대로 한 번씩 실행
+│     ├─ 20261004000100_schema.sql     표 21개 전체 + 접근 권한 + 함수
+│     ├─ 20261005000100_mock_flag.sql  예시 가게 표시 칸(is_mock) 추가
+│     ├─ 20261005110000_menu_details.sql  메뉴 구역·공통 분류·비고·메뉴판 칸 추가
+│     └─ 20261005120000_feed_categories.sql  공간대여·원데이클래스 분류를 6개씩으로 늘림
+├─ scripts/
+│  └─ menu_excel_to_csv.py  팀원이 판독한 메뉴 엑셀 → DB 적재용 CSV
+├─ mock/
+│  └─ seed_mock.sql     예시(가짜) 데이터 넣기
 └─ tests/
-   ├─ bootstrap.sql          테스트 전용 Auth/Storage 최소 대역
-   └─ database.test.mjs       SQL 제약·RLS·스탬프 검증
+   ├─ bootstrap.sql     검사용 가짜 Supabase 기본 틀 (실제 DB 에 실행 금지)
+   ├─ database.test.mjs DB 모양·권한 검사 12개
+   └─ mock.test.mjs     예시 데이터 넣기·지우기 검사 4개
 ```
 
-날짜는 폴더가 아니라 **변경 SQL의 파일명 앞 버전 번호**다. 이미 적용한 migration은 수정하지 않고 새 파일을 추가한다. Supabase CLI의 `migration new`가 이 번호를 자동으로 붙인다. [공식 migration 안내](https://supabase.com/docs/guides/local-development/database-migrations)
+## 파일별로 하는 일
 
-## 먼저 로컬에서 확인
+### migrations — DB 모양 만들기
+- Supabase 대시보드 → **SQL Editor** 에 파일 전체를 붙여 넣고 실행합니다.
+- **번호 순서대로, 파일마다 한 번만** 실행합니다. (2026-10-05 실제 DB 에 둘 다 실행 완료)
+- 이미 실행한 파일은 고치지 않습니다. 바꿀 게 생기면 새 번호의 파일을 추가합니다.
 
-아래 명령은 이 `database` 폴더 안에서 실행한다.
+| 파일 | 하는 일 |
+|---|---|
+| `20261004000100_schema.sql` | 가게·메뉴·영업시간·사진·제휴·마감세일·공간대여·원데이클래스·스탬프·로그인 표를 만들고, 누가 무엇을 읽고 쓸 수 있는지(권한)를 정한다 |
+| `20261005000100_mock_flag.sql` | 가게 표에 "예시 가게" 표시(`is_mock`)를 추가한다 |
+| `20261005110000_menu_details.sql` | 메뉴 표에 구역 제목·공통 분류·옵션/비고·메뉴판 등록일·메뉴판 파일 칸을 추가한다 |
+| `20261005120000_feed_categories.sql` | 공간대여·원데이클래스 분류를 3개씩에서 6개씩으로 늘린다 (화면의 분류 목록과 이름이 같아야 함) |
+
+### scripts/menu_excel_to_csv.py — 메뉴 엑셀 정리
+팀원이 메뉴판 사진을 직접 판독한 엑셀(1행 제목, A~H열)을 DB 에 넣기 좋은 CSV 로 바꿉니다.
 
 ```powershell
-npm ci
-npm test
+pip install openpyxl
+python database/scripts/menu_excel_to_csv.py "엑셀 경로.xlsx"
 ```
 
-Node.js 24에서 검증했다. 테스트는 PGlite의 메모리 PostgreSQL을 사용하므로 Docker, API 키, 외부 DB 연결이 필요 없다. 실행할 때마다 새 DB를 만들며 실제 사용자 데이터에 접근하지 않는다.
+- 엑셀 옆에 `○○.csv`(넣을 데이터)와 `○○_분류검토.csv`(가게·구역마다 공통 분류가 맞는지 보는 표)가 생깁니다.
+- 분류 이름 괄호 속 판독 메모(천원 단위 표기, 판독 불확실 …)는 지우고, 손님용 설명(곱빼기 +2000 …)은 남깁니다.
+- 공통 분류는 구역 제목과 메뉴 이름으로 자동으로 정합니다. 틀린 것이 있으면 스크립트의 규칙(`SECTION_RULES`, `MENU_RULES`)을 고칩니다.
 
-검증 범위: 15개 테이블의 RLS, 타인 데이터 변경 차단, 공개/비공개 조회, 필수값, 중복 찜, 스탬프 중복 적립·잔액 부족, 사진 경로 소유권, 가입 프로필 생성, 사장님 신청/승인. 총 21개 테스트.
-Auth/Storage HTTP 서비스는 테스트 대역이므로 **실제 로그인·파일 업로드·동시 요청은 Supabase 환경에서 추가 확인해야 한다.**
+### mock/seed_mock.sql — 예시 데이터
+화면을 확인하려고 넣는 가짜 데이터입니다. 이름 앞에 모두 `[예시]` 가 붙습니다.
 
-## 실제 Supabase 연결 순서
+| 하고 싶은 것 | SQL Editor 에서 |
+|---|---|
+| 넣기 / 새로 고치기 | `seed_mock.sql` 전체 실행 (예전 예시는 지우고 다시 넣음. 세일·수업 시간도 지금 기준으로 다시 맞춰짐) |
+| 전부 지우기 | `delete from public.stores where is_mock;` |
 
-1. Docker Desktop을 실행하고 여기서 `npx supabase start`로 로컬 Supabase를 시작한다.
-2. 로컬 Studio에서 테이블과 예시 데이터를 확인한다. 기존 로컬 DB가 있다면 `npx supabase migration up --local`로 미적용 migration을 적용한다.
-3. Auth 회원 생성 시 `profiles`가 자동 생성된다. 일반 사용자는 소셜 간편로그인, 사장님은 이메일 회원가입·인증·로그인을 기본 흐름으로 한다. 세부 설정은 `auth.md` 참고.
-4. 사장님이 `owner_applications`에 신청한다. 관리자가 가게를 준비하고 증빙을 확인한 뒤 서버 전용 `review_owner_application`으로 승인하면 `stores.owner_id`가 연결된다. 가게 공개는 별도 승인한다.
-5. 프론트 데이터 공급 함수를 Supabase 조회/저장으로 교체한다. 자세한 대응은 `schema.md` 참고.
-6. 검증 후 원격 프로젝트를 연결하고 migration만 배포한다. 기존 테이블이 있는 프로젝트라면 충돌 여부부터 확인한다.
+- 예시 가게 14곳에 **서로 이어진** 데이터가 붙습니다: 메뉴 40 · 영업시간 98 · 마감세일 12 · 제휴 혜택 12 · 공간대여 12 · 원데이클래스 12 · 스탬프 10.
+- 가게를 누르면 2차 탭에 그 가게의 메뉴·영업시간·세일·제휴·공간대여·클래스·스탬프가 아래로 이어서 나옵니다.
+  여러 가지가 한꺼번에 붙어 있는 가게: **[예시] 골목 카페**, **[예시] 아침 빵집**, **[예시] 커피 랩**.
+- 예시 표시는 가게 표 한 곳에만 있습니다. 나머지는 모두 가게에 딸려 있어서, 가게를 지우면 함께 지워집니다.
+- 제휴사(광운대 단과대학 8곳)와 공간대여·클래스 분류는 실제로 계속 쓸 목록이라 지워지지 않습니다.
+- 실제 DB 가 배포 사이트와 같은 DB 라서, 넣어 둔 동안은 배포 사이트에도 보입니다.
 
-로컬 초기화용 `seed.sql`은 실제 가게 정보가 아니다. 운영 DB에 넣지 않는다. `tests/bootstrap.sql`은 Supabase 시스템 테이블을 흉내 내는 테스트 파일이므로 실제 Supabase에서 실행하지 않는다.
-`config.toml`의 로그인 주소는 로컬용이다. 운영 로그인 Redirect URL은 Supabase 대시보드에서 별도로 설정한다.
+### tests — 내 컴퓨터에서 검사
+`database` 폴더에서 아래를 실행합니다. 내 컴퓨터 안의 가짜 DB 로 검사하므로 실제 DB 는 건드리지 않습니다.
 
-현재 실제 Supabase 서비스에서의 검증과 원격 적용은 미실시 상태다.
+```powershell
+npm ci     # 처음 한 번
+npm test   # 검사 16개 실행
+```
 
-## 보안 규칙
+## 실제 가게 데이터는 어디서 오나
 
-- 비로그인 사용자: 공개 가게·게시글·혜택만 조회.
-- 로그인 사용자: 본인 프로필·찜·스탬프 내역 조회. 찜은 직접 추가/삭제 가능.
-- 사장님: 본인 가게의 정보·게시글·메뉴·세일·스탬프 정책 관리. 소유권 이전과 가게 공개 승인은 불가.
-- 관리자/서버: 가게 등록·소유권 확인·제휴 혜택 등록·스탬프 적립/차감.
-- 스탬프는 서버에서 구매/보상 조건을 확인한 뒤 `apply_stamp_change` 호출. 같은 요청을 재시도할 때는 같은 `request_id`를 사용한다. 서버 엔드포인트 자체는 아직 구현하지 않았다.
-- `service_role` 또는 Supabase secret key는 프론트나 `VITE_*` 변수에 절대 넣지 않는다.
+| 데이터 | 넣는 방법 |
+|---|---|
+| 가게 851곳 (월계1동 상가정보) | `frontend` 폴더에서 `npm run fetch:sbiz` → `npm run import:stores` (관리자 키 `SUPABASE_SECRET_KEY` 필요) |
+| 메뉴 3,762개 (팀원이 메뉴판 사진 판독, 가게 94곳) | 엑셀 → `scripts/menu_excel_to_csv.py` → `frontend` 폴더에서 `npm run import:menus -- "CSV 경로"` (미리보기) → 같은 명령 끝에 `--apply` (관리자 키 필요). 가게 이름 연결이 안 되면 `frontend/scripts/import-menus.js` 의 `STORE_ALIASES` 에 상가업소번호를 적는다 |
+| 메뉴·세일·공간대여 등 | 사장님 화면에서 (로그인 연결 후) |
+| 제휴 혜택, 가게 공개/숨김, 사장님 승인 | 운영자가 SQL Editor 에서 |
 
-RLS와 함수별 실행 권한을 함께 제한했다. [Supabase RLS 안내](https://supabase.com/docs/guides/database/postgres/row-level-security)
-
-## 사진
-
-공개 사진 버킷은 `store-media`, 파일 경로는 `<store_id>/<임의 UUID>.webp` 형식이다. JPG/PNG/WebP, 최대 5MiB를 허용한다.
-DB에는 Storage 경로를 저장하고, 프론트에서 공개 URL로 변환한다. 실제 업로드 파일은 포함하지 않았다.
-
-공개 버킷이므로 게시글을 숨겨도 기존 사진 URL 자체는 공개된다. 사업자 증빙·신분증 등 비공개 문서는 넣지 않는다. [Storage 접근 제어 안내](https://supabase.com/docs/guides/storage/security/access-control)
-
-## 범위
-
-전화 문의 방식이라 예약·결제·채팅 테이블은 만들지 않았다. 로그인은 Supabase Auth를 사용하며 비밀번호 테이블은 따로 만들지 않는다. 가게 평점/리뷰는 실제 수집 기능이 없어 제외했다.
+## 지킬 것
+- 관리자 키(`sb_secret_…`)는 `frontend/.env.local` 에만 두고, 앞에 `VITE_` 를 붙이지 않습니다. 채팅·git 에 올리지 않습니다.
+- `tests/bootstrap.sql` 은 검사 전용입니다. 실제 DB 에 실행하지 않습니다.

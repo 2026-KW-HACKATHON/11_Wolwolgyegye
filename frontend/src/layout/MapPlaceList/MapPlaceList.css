@@ -1,0 +1,82 @@
+.mpl-filters {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin: 0 calc(-1 * var(--space-1, 4px));
+  padding: 2px var(--space-1, 4px) 6px;
+  scrollbar-width: none;
+}
+
+.mpl-filters::-webkit-scrollbar { display: none; }
+
+.mpl-filter {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mpl-filter__count {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 고른 업종: 지도 위 업종 줄의 선택 모양과 같은 색 */
+.mpl-filter[aria-pressed='true'] {
+  border-color: var(--color-primary);
+  background: var(--color-tag-partner-bg);
+  color: var(--color-primary);
+  font-weight: 800;
+}
+
+.mpl-filter[aria-pressed='true'] .mpl-filter__count { color: inherit; }
+
+.mpl-count {
+  margin: var(--space-3) 0 var(--space-2);
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.mpl-list {
+  max-height: 55dvh;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.mpl-list button {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.mpl-list strong {
+  font-size: 14px;
+}
+
+.mpl-list span {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mpl-empty {
+  margin: var(--space-3) 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}

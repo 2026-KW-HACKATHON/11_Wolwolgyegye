@@ -1,18 +1,12 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { GeoPoint, Store } from '../../core/types/place';
 import { distanceMeters } from '../../core/utils/geo';
-import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
-import ExtraIcon from '../ExtraIcon';
-import { KAKAO_MAP_KEY, kakaoMapLink, loadKakaoMaps, type KMap, type KMaps, type KMarker, type KOverlay } from './kakaoSdk';
 import './StoreMap.css';
 
 /**
- * 가게 한 곳의 위치를 보여주는 작은 지도. (스탬프·제휴 가게 상세에서 사용)
- *
- * - VITE_KAKAO_MAP_KEY 가 있으면 실제 카카오맵에 가게 마커를 찍는다.
- * - 키가 없거나 SDK 를 못 불러오면 "위치 약도"를 그린다. 약도는 기준점과 가게 좌표로
- *   방향·직선거리만 정확히 계산한 그림이며, 도로·건물은 그리지 않는다. (실제 지도로 오해하지 않도록 표시)
- * - 오른쪽 아래 버튼은 키가 없어도 카카오맵 웹으로 열린다.
+ * 가게 한 곳의 위치를 보여주는 작은 "위치 약도". (스탬프·제휴 가게 상세에서 사용)
+ * 기준점과 가게 좌표로 방향·직선거리만 정확히 계산한 그림이며, 도로·건물은 그리지 않는다. (실제 지도로 오해하지 않도록 표시)
+ * 실제 지도에서의 위치는 앱 뒤의 배경 지도에서 확인한다.
  */
 interface StoreMapProps {
   store: Store;
@@ -24,97 +18,15 @@ interface StoreMapProps {
   className?: string;
 }
 
-type Mode = 'loading' | 'kakao' | 'sketch';
-
-export default function StoreMap({ store, origin, originLabel = '기준점', demo = true, className }: StoreMapProps) {
-  const active = usePageActive();
-  const boxRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<KMap | null>(null);
-  const sdkRef = useRef<KMaps | null>(null);
-  const [mode, setMode] = useState<Mode>(KAKAO_MAP_KEY ? 'loading' : 'sketch');
-  const [failed, setFailed] = useState(false);
-  // 숨겨진 탭(KeepAlive)에서는 만들지 않고, 처음 보일 때 한 번만 만든다
-  const [armed, setArmed] = useState(active);
-  useEffect(() => { if (active) setArmed(true); }, [active]);
-  const { lat, lng } = store.location;
-  const link = kakaoMapLink(store.name, lat, lng);
-
-  // 1) 실제 카카오맵 만들기
-  useEffect(() => {
-    if (!KAKAO_MAP_KEY || !armed) return;
-    let cancelled = false;
-    let marker: KMarker | null = null;
-    let overlay: KOverlay | null = null;
-    loadKakaoMaps().then((maps) => {
-      const node = boxRef.current;
-      if (cancelled || !node) return;
-      sdkRef.current = maps;
-      node.replaceChildren(); // 같은 칸에 다른 가게 지도를 다시 그릴 때 이전 지도를 비운다
-      const center = new maps.LatLng(lat, lng);
-      const map = new maps.Map(node, { center, level: 3, scrollwheel: false });
-      marker = new maps.Marker({ position: center, title: store.name });
-      marker.setMap(map);
-      if (maps.CustomOverlay) {
-        const label = document.createElement('span');
-        label.className = 'smap-kakao-label';
-        label.textContent = store.name; // textContent 라서 가게 이름이 HTML 로 해석되지 않는다
-        overlay = new maps.CustomOverlay({ position: center, content: label, yAnchor: 2.6 });
-        overlay.setMap(map);
-      }
-      if (maps.ZoomControl && maps.ControlPosition && map.addControl) map.addControl(new maps.ZoomControl(), maps.ControlPosition.RIGHT);
-      mapRef.current = map;
-      setMode('kakao');
-    }).catch(() => {
-      if (cancelled) return;
-      setFailed(true);
-      setMode('sketch');
-    });
-    return () => {
-      cancelled = true;
-      marker?.setMap(null);
-      overlay?.setMap(null);
-      mapRef.current = null;
-    };
-  }, [armed, lat, lng, store.name]);
-
-  // 2) 펼쳐지거나 크기가 바뀌면 다시 맞추고 가게를 가운데로
-  useEffect(() => {
-    const node = boxRef.current;
-    if (mode !== 'kakao' || !node) return;
-    const recenter = () => {
-      const map = mapRef.current;
-      const maps = sdkRef.current;
-      if (!map || !maps) return;
-      map.relayout();
-      map.setCenter(new maps.LatLng(lat, lng));
-    };
-    const observer = new ResizeObserver(recenter);
-    observer.observe(node);
-    recenter();
-    return () => observer.disconnect();
-  }, [mode, lat, lng, active]);
-
+export default function StoreMap({ store, origin, originLabel = '기준점', demo = store.isMock, className }: StoreMapProps) {
   return (
-    <figure className={`smap${className ? ` ${className}` : ''}`} data-mode={mode}>
+    <figure className={`smap${className ? ` ${className}` : ''}`}>
       <div className="smap-box">
-        {KAKAO_MAP_KEY && !failed && (
-          <div ref={boxRef} className="smap-kakao" role="img" aria-label={`${store.name} 위치가 표시된 카카오 지도`} />
-        )}
-        {mode === 'loading' && <div className="smap-state" role="status"><span className="smap-spinner" aria-hidden="true" />지도를 불러오는 중…</div>}
-        {mode === 'sketch' && <Sketch store={store} origin={origin} originLabel={originLabel} />}
+        <Sketch store={store} origin={origin} originLabel={originLabel} />
       </div>
-      <div className="smap-foot">
-        <figcaption className="smap-caption">
-          {mode === 'sketch'
-            ? <>{failed ? '실제 지도를 불러오지 못해 ' : ''}<b>위치 약도</b> · 방향과 직선거리만 표시했어요</>
-            : <>{demo ? '예시 좌표에 찍은 위치예요. 실제 가게 위치가 아니에요.' : '가게 위치'}</>}
-        </figcaption>
-        {link && (
-          <a className="smap-open" href={link} target="_blank" rel="noopener noreferrer" aria-label={`${store.name} 위치를 카카오맵에서 크게 보기 (새 창)`}>
-            카카오맵에서 보기 <ExtraIcon name="external" />
-          </a>
-        )}
-      </div>
+      <figcaption className="smap-caption">
+        <b>위치 약도</b> · 방향과 직선거리만 표시했어요{demo ? ' · 예시 좌표' : ''}
+      </figcaption>
     </figure>
   );
 }

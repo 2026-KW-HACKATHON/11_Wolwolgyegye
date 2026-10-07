@@ -1,24 +1,84 @@
+import type { MenuKind } from '../../core/source/storeDetail';
 import { fetchStoresByIds, getUserLocation } from '../../core/source/storeSource';
-import { distanceMeters, walkMinutes } from '../../core/utils/geo';
-import { MOCK_PARTNER_BENEFITS, MOCK_PARTNER_STORE_MENU } from './mock';
-import type { PartnerStoreView } from './types';
+import { getSupabaseClient } from '../../core/supabase/client';
+import { distanceMeters } from '../../core/utils/geo';
+import { COLLEGES } from './colleges';
+import type { CollegeKey, PartnerStoreMenuItem, PartnerStoreView } from './types';
 
-/**
- * 제휴 정보 목록을 가져오는 지점. 화면은 이 함수만 바라본다.
- * 실제 연동 시 단과대별 DB 행을 benefits/details로 묶고 출처·기간을 검증한다.
- * 현재 좌표와 가게, 연락처, 혜택 모두 예시이며 현재 사용자 위치가 아니다.
- */
+interface PartnershipRow {
+  store_id: string;
+  partners: { name: string } | { name: string }[] | null;
+}
+
+const collegeByName = new Map(COLLEGES.map((college) => [college.name, college.key]));
+
+function partnerName(value: PartnershipRow['partners']): string {
+  if (Array.isArray(value)) return value[0]?.name ?? '';
+  return value?.name ?? '';
+}
+
+async function fetchPartnerships(): Promise<Map<string, CollegeKey[]>> {
+  const { data, error } = await getSupabaseClient()
+    .from('store_partners')
+    .select('store_id, partners(name)');
+  if (error) throw error;
+  const result = new Map<string, CollegeKey[]>();
+  for (const row of (data ?? []) as unknown as PartnershipRow[]) {
+    const college = collegeByName.get(partnerName(row.partners));
+    if (!college) continue;
+    const colleges = result.get(row.store_id) ?? [];
+    if (!colleges.includes(college)) colleges.push(college);
+    result.set(row.store_id, colleges);
+  }
+  return result;
+}
+
+async function fetchMenuRows(storeIds: string[]): Promise<PartnerStoreMenuItem[]> {
+  if (!storeIds.length) return [];
+  const rows: PartnerStoreMenuItem[] = [];
+  for (let index = 0; index < storeIds.length; index += 100) {
+    const { data, error } = await getSupabaseClient()
+      .from('store_menus')
+      .select('id, store_id, name, price, section, kind, description, sort_order')
+      .in('store_id', storeIds.slice(index, index + 100))
+      .order('sort_order');
+    if (error) throw error;
+    rows.push(...((data ?? []) as {
+      id: string; store_id: string; name: string; price: number; section: string | null;
+      kind: MenuKind | null; description: string | null;
+    }[]).map((menu) => ({
+      id: menu.id,
+      storeId: menu.store_id,
+      name: menu.name,
+      price: menu.price,
+      section: menu.section || null,
+      kind: menu.kind,
+      description: menu.description || null,
+    })));
+  }
+  return rows;
+}
+
 export async function fetchPartnerStores(): Promise<PartnerStoreView[]> {
-  const rows = MOCK_PARTNER_BENEFITS;
-  const [stores, here] = await Promise.all([fetchStoresByIds(rows.map((r) => r.storeId)), getUserLocation()]);
-  return rows.flatMap((row) => {
-    const store = stores.get(row.storeId);
-    return store ? [{
-      ...row, store, walkMinutes: walkMinutes(here, store.location),
+  const partnerships = await fetchPartnerships();
+  const ids = [...partnerships.keys()];
+  const [menus, stores, here] = await Promise.all([
+    fetchMenuRows(ids),
+    fetchStoresByIds(ids),
+    getUserLocation(),
+  ]);
+  const menusByStore = new Map<string, PartnerStoreMenuItem[]>();
+  for (const menu of menus) menusByStore.set(menu.storeId, [...(menusByStore.get(menu.storeId) ?? []), menu]);
+
+  return ids.flatMap((storeId) => {
+    const store = stores.get(storeId);
+    if (!store) return [];
+    return [{
+      storeId,
+      colleges: partnerships.get(storeId) ?? [],
+      store,
       referenceDistanceMeters: distanceMeters(here, store.location),
-      menus: MOCK_PARTNER_STORE_MENU.filter((menu) => menu.storeId === row.storeId),
-      dataMode: 'demo' as const,
-      details: Object.fromEntries(Object.keys(row.benefits).map((key) => [key, { status: 'demo' as const }])),
-    }] : [];
+      menus: menusByStore.get(storeId) ?? [],
+    }];
   });
 }

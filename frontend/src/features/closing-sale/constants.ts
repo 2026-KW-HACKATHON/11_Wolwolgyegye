@@ -2,7 +2,7 @@
 
 export type SaleSortKey = 'closing' | 'discount' | 'near';
 
-export interface SaleSort {
+interface SaleSort {
   key: SaleSortKey;
   label: string;
 }
@@ -15,8 +15,8 @@ export const SALE_SORTS: SaleSort[] = [
 ];
 
 /** 카드 상단 그라데이션 색 (closing-sale.css 의 .cs-tone-*) */
-export const SALE_TONES = ['orange', 'blue', 'purple', 'green', 'pink'] as const;
-export type SaleTone = (typeof SALE_TONES)[number];
+const SALE_TONES = ['orange', 'blue', 'purple', 'green', 'pink'] as const;
+type SaleTone = (typeof SALE_TONES)[number];
 
 /** 같은 가게는 정렬이 바뀌어도 항상 같은 색이 나오도록 storeId 로 색을 고른다 */
 export function toneForStore(storeId: string): SaleTone {

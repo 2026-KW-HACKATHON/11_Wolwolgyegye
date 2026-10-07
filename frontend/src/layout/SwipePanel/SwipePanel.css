@@ -1,0 +1,160 @@
+/* 지도 위로 끌어올리는 1차 탭 */
+.swipe-panel {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  overflow: hidden;
+  color: var(--color-text);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-float);
+  transition: height 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.swipe-panel[hidden] {
+  display: none;
+}
+
+.swipe-panel[data-dragging='true'] {
+  transition: none;
+}
+
+/* 세로 화면: 카테고리 바 바로 위에서 위로 올라온다 */
+.swipe-panel[data-axis='y'] {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  flex-direction: column;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.swipe-panel[data-axis='y'][data-state='full'] {
+  border-radius: 0;
+  padding-top: env(safe-area-inset-top);
+}
+
+/* 가로 화면: 오른쪽 카테고리 바 옆에서 왼쪽으로 펼쳐진다 */
+.swipe-panel[data-axis='x'] {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  flex-direction: row;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+
+.swipe-panel[data-axis='x'][data-state='full'] {
+  border-radius: 0;
+}
+
+/* ---- 손잡이 줄 (제목 없이 손잡이만) ---- */
+.swipe-panel__grip {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.swipe-panel[data-dragging='true'] .swipe-panel__grip {
+  cursor: grabbing;
+}
+
+/* PC·태블릿 가로: 끌지 않고 눌러서 닫기 / 열기 */
+.swipe-panel[data-toggle-only='true'] .swipe-panel__grip {
+  cursor: pointer;
+}
+
+.swipe-panel[data-axis='y'] .swipe-panel__grip {
+  height: 28px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.swipe-panel[data-axis='x'] .swipe-panel__grip {
+  width: 28px;
+  flex-direction: column;
+  border-right: 1px solid var(--color-border);
+}
+
+.swipe-panel__handle {
+  position: absolute;
+  border-radius: var(--radius-pill);
+  background: var(--color-text-faint);
+}
+
+.swipe-panel[data-axis='y'] .swipe-panel__handle {
+  top: 50%;
+  left: 50%;
+  width: 38px;
+  height: 4px;
+  transform: translate(-50%, -50%);
+}
+
+.swipe-panel[data-axis='x'] .swipe-panel__handle {
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 38px;
+  transform: translate(-50%, -50%);
+}
+
+/* 클릭형(PC·태블릿 가로) 손잡이: 막대 손잡이와 같은 두께·색의 꺾쇠 도형.
+   열려 있으면 〉(닫기), 닫혀 있으면 〈(열기) */
+.swipe-panel__chevron {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 40px;
+  overflow: visible;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.swipe-panel__chevron path {
+  fill: none;
+  stroke: var(--color-text-faint);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.15s ease;
+}
+
+.swipe-panel[data-state='closed'] .swipe-panel__chevron {
+  transform: translate(-50%, -50%) rotate(180deg);
+}
+
+.swipe-panel[data-toggle-only='true'] .swipe-panel__grip:hover .swipe-panel__chevron path {
+  stroke: var(--color-text-muted);
+}
+
+/* 손잡이 줄 전체를 덮는 투명 버튼 (누르면 접기/펼치기, 키보드 화살표로 단계 이동) */
+.swipe-panel__toggle {
+  align-self: stretch;
+  flex: 1;
+  cursor: inherit;
+}
+
+.swipe-panel__toggle:focus-visible {
+  outline: 3px solid var(--color-brand);
+  outline-offset: -3px;
+}
+
+/* ---- 내용 ---- */
+.swipe-panel__body {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swipe-panel {
+    transition: none;
+  }
+}

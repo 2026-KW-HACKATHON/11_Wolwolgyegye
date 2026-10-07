@@ -4,18 +4,18 @@
    ========================================================================== */
 
 .cs-page {
-  color: var(--color-text, #2b1f17);
+  color: var(--color-text);
 }
 
 /* --- 상단 배너 --- */
 
 .cs-hero {
   position: relative;
-  padding: var(--space-5, 24px);
-  margin-bottom: var(--space-5, 24px);
-  border-radius: var(--radius-lg, 22px);
-  background: linear-gradient(115deg, #f0762c 0%, #e2795c 55%, #d9534f 100%);
-  color: #fff;
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-sale-hero);
+  color: var(--color-on-dark);
   overflow: hidden;
 }
 
@@ -23,8 +23,8 @@
   position: relative;
   display: inline-flex;
   padding: 6px 13px;
-  border-radius: var(--radius-pill, 999px);
-  background: rgba(255, 255, 255, 0.22);
+  border-radius: var(--radius-pill);
+  background: var(--color-on-dark-soft);
   font-size: 0.75rem;
   font-weight: 700;
   z-index: 1;
@@ -32,7 +32,7 @@
 
 .cs-hero-heading {
   position: relative;
-  margin: var(--space-3, 12px) 0 var(--space-2, 8px);
+  margin: var(--space-3) 0 var(--space-2);
   max-width: 22ch;
   font-size: 1.5rem;
   line-height: 1.34;
@@ -57,22 +57,6 @@
 }
 
 /* 진행 중인 세일 가게 수 */
-.cs-hero-count {
-  position: relative;
-  display: inline-block;
-  margin: var(--space-3, 12px) 0 0;
-  padding: 5px 12px;
-  border-radius: var(--radius-pill, 999px);
-  background: rgba(255, 255, 255, 0.2);
-  font-size: 0.78rem;
-  font-weight: 600;
-  z-index: 1;
-}
-
-.cs-hero-count b {
-  font-weight: 800;
-}
-
 /* 배너 오른쪽에 크게 깔리는 % 장식 */
 .cs-hero-mark {
   position: absolute;
@@ -81,7 +65,7 @@
   font-size: 9rem;
   font-weight: 800;
   line-height: 1;
-  color: rgba(255, 255, 255, 0.16);
+  color: color-mix(in srgb, var(--color-on-dark) 16%, transparent);
   pointer-events: none;
 }
 
@@ -91,8 +75,8 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: var(--space-3, 12px);
-  margin-bottom: var(--space-4, 16px);
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 .cs-list-title {
@@ -103,32 +87,32 @@
 
 .cs-list-sub {
   margin: 4px 0 0;
-  color: var(--color-text-muted, #8a7b6e);
+  color: var(--color-text-muted);
   font-size: 0.83rem;
 }
 
 .cs-list-sub b {
-  color: var(--color-tag-discount-text, #b23b3b);
+  color: var(--color-tag-discount-text);
 }
 
 .cs-sort {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2, 8px);
+  gap: var(--space-2);
   flex-shrink: 0;
 }
 
 .cs-sort-label {
-  color: var(--color-text-muted, #8a7b6e);
+  color: var(--color-text-muted);
   font-size: 0.78rem;
   font-weight: 700;
 }
 
 .cs-sort-select {
   padding: 9px 13px;
-  border: 1px solid var(--color-border, #e7dfd4);
-  border-radius: var(--radius-pill, 999px);
-  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
   color: inherit;
   font: inherit;
   font-size: 0.82rem;
@@ -141,16 +125,16 @@
 .cs-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-3, 12px);
+  gap: var(--space-3);
   list-style: none;
 }
 
 .cs-card {
   display: flex;
   flex-direction: column;
-  background: var(--color-surface, #fff);
-  border-radius: var(--radius-lg, 22px);
-  box-shadow: var(--shadow-card, 0 2px 10px rgba(74, 50, 34, 0.08));
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
 }
 
@@ -160,49 +144,49 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-4, 16px);
+  gap: var(--space-4);
   min-height: 130px;
-  padding: var(--space-4, 16px);
+  padding: var(--space-4);
   background: linear-gradient(150deg, var(--cs-tone-a) 0%, var(--cs-tone-b) 100%);
-  color: #fff;
+  color: var(--color-on-dark);
 }
 
 .cs-tone-orange {
-  --cs-tone-a: #f4763a;
-  --cs-tone-b: #e04b4b;
+  --cs-tone-a: var(--tone-1-a);
+  --cs-tone-b: var(--tone-1-b);
 }
 
 .cs-tone-blue {
-  --cs-tone-a: #3d9bf0;
-  --cs-tone-b: #2f6fd0;
+  --cs-tone-a: var(--tone-2-a);
+  --cs-tone-b: var(--tone-2-b);
 }
 
 .cs-tone-purple {
-  --cs-tone-a: #9a6fe0;
-  --cs-tone-b: #7b4fd0;
+  --cs-tone-a: var(--tone-3-a);
+  --cs-tone-b: var(--tone-3-b);
 }
 
 .cs-tone-green {
-  --cs-tone-a: #5cb27a;
-  --cs-tone-b: #3d8a5c;
+  --cs-tone-a: var(--tone-4-a);
+  --cs-tone-b: var(--tone-4-b);
 }
 
 .cs-tone-pink {
-  --cs-tone-a: #ef7fa2;
-  --cs-tone-b: #d65078;
+  --cs-tone-a: var(--tone-5-a);
+  --cs-tone-b: var(--tone-5-b);
 }
 
 .cs-countdown {
   padding: 5px 11px;
-  border-radius: var(--radius-pill, 999px);
-  background: rgba(255, 255, 255, 0.24);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-on-dark) 24%, transparent);
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .cs-countdown.is-urgent {
-  background: #fff;
-  color: var(--color-tag-discount-text, #b23b3b);
+  background: var(--color-surface);
+  color: var(--color-tag-discount-text);
   animation: cs-blink 1.6s ease-in-out infinite;
 }
 
@@ -223,12 +207,12 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 5px;
-  padding: var(--space-4, 16px);
+  padding: var(--space-4);
 }
 
 .cs-card-meta {
   margin: 0;
-  color: var(--color-text-muted, #8a7b6e);
+  color: var(--color-text-muted);
   font-size: 0.78rem;
   font-weight: 600;
 }
@@ -241,7 +225,7 @@
 
 .cs-card-desc {
   margin: 0;
-  color: var(--color-text-muted, #8a7b6e);
+  color: var(--color-text-muted);
   font-size: 0.83rem;
 }
 
@@ -249,68 +233,67 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-2, 8px);
+  gap: var(--space-2);
   align-self: stretch;
   margin-top: 6px;
-  padding-top: var(--space-3, 12px);
-  border-top: 1px solid var(--color-border, #e7dfd4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
   font-size: 0.8rem;
 }
 
 .cs-like {
-  color: var(--color-text-muted, #8a7b6e);
+  color: var(--color-text-muted);
   font-size: 0.8rem;
   font-weight: 600;
   transition: color 0.15s ease;
 }
 
 .cs-like.is-on {
-  color: var(--color-like, #c96a6a);
+  color: var(--color-like);
   font-weight: 700;
 }
 
 .cs-close-time {
-  color: var(--color-tag-discount-text, #b23b3b);
+  color: var(--color-tag-discount-text);
   font-weight: 800;
 }
 
 .cs-empty {
   margin: 0;
-  padding: var(--space-5, 24px);
-  background: var(--color-surface-alt, #f3ece3);
-  border-radius: var(--radius-lg, 22px);
-  color: var(--color-text-muted, #8a7b6e);
+  padding: var(--space-5);
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-muted);
   font-size: 0.85rem;
 }
 
-/* --- 아래 안내 --- */
-
-.cs-tip {
-  margin: var(--space-5, 24px) 0 0;
-  padding: var(--space-4, 16px) var(--space-5, 24px);
-  background: var(--color-tag-coupon-bg, #fbe7c6);
-  color: var(--color-tag-coupon-text, #9c6b12);
-  border-radius: var(--radius-md, 14px);
-  font-size: 0.83rem;
+/* 불러오기 실패: "세일 없음" 과 구분되게 제목과 다시 시도 버튼을 둔다 */
+.cs-load-error strong {
+  display: block;
+  color: var(--color-text);
+  font-size: 0.95rem;
 }
 
-.cs-map-link {
-  display: block;
-  margin: var(--space-4, 16px) auto 0;
-  padding: 10px 18px;
-  border-radius: var(--radius-pill, 999px);
-  background: var(--color-surface-alt, #f3ece3);
-  color: var(--color-primary, #4a3222);
-  font-size: 0.83rem;
+.cs-load-error p {
+  margin: 4px 0 12px;
+}
+
+.cs-load-error button {
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
   font-weight: 700;
 }
 
 /* 모바일: 배너를 절반 정도 높이로 줄인다 */
-@media (max-width: 719px) {
+@container (max-width: 719px) {
   .cs-hero {
     padding: 10px 14px;
-    margin-bottom: var(--space-3, 12px);
-    border-radius: var(--radius-md, 14px);
+    margin-bottom: var(--space-3);
+    border-radius: var(--radius-md);
   }
 
   .cs-hero-badge {
@@ -334,13 +317,6 @@
   .cs-hero-sub {
     font-size: 0.7rem;
   }
-
-  .cs-hero-count {
-    margin-top: 5px;
-    padding: 2px 8px;
-    font-size: 0.66rem;
-  }
-
   .cs-hero-mark {
     right: -2px;
     bottom: -20px;
@@ -349,14 +325,14 @@
 }
 
 /* 모바일·태블릿: 한 화면에 가게가 4곳 이상 보이도록 가로형 작은 카드로 바꾼다 */
-@media (max-width: 1023px) {
+@container (max-width: 1023px) {
   .cs-grid {
-    gap: var(--space-2, 8px);
+    gap: var(--space-2);
   }
 
   .cs-card {
     flex-direction: row;
-    border-radius: var(--radius-md, 14px);
+    border-radius: var(--radius-md);
   }
 
   .cs-card-top {
@@ -427,16 +403,16 @@
   }
 }
 
-@media (min-width: 720px) {
+@container (min-width: 720px) {
   /* PC 배너는 목록이 바로 보이도록 낮게 유지한다 */
   .cs-hero {
-    padding: var(--space-4, 16px) var(--space-6, 32px);
-    margin-bottom: var(--space-4, 16px);
+    padding: var(--space-4) var(--space-6);
+    margin-bottom: var(--space-4);
   }
 
   .cs-hero-heading {
     max-width: none;
-    margin: var(--space-2, 8px) 0 4px;
+    margin: var(--space-2) 0 4px;
     font-size: 1.35rem;
     word-break: keep-all;
   }
@@ -444,11 +420,6 @@
   .cs-hero-sub {
     font-size: 0.83rem;
   }
-
-  .cs-hero-count {
-    margin-top: var(--space-2, 8px);
-  }
-
   .cs-hero-mark {
     right: 24px;
     bottom: -40px;
@@ -461,7 +432,7 @@
   }
 }
 
-@media (min-width: 1024px) {
+@container (min-width: 1024px) {
   .cs-grid {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -472,5 +443,146 @@
 
   .cs-discount {
     font-size: 2.3rem;
+  }
+}
+/* 카드 전체를 누르면 세일 상세: 가게 이름 버튼을 카드 크기로 늘린다. 관심 버튼은 그 위에 둔다 */
+.cs-card {
+  position: relative;
+}
+
+.cs-card-open {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cs-card-open::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.cs-card-open:focus-visible {
+  outline: none;
+}
+
+.cs-card:has(.cs-card-open:focus-visible) {
+  outline: 3px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.cs-card .cs-like {
+  position: relative;
+  z-index: 2;
+}
+
+/* 2차 탭 안의 마감세일 묶음 (ClosingSaleSection) */
+.cs-section-sale {
+  overflow: hidden;
+  margin-bottom: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+}
+
+.cs-page--detail .cs-card-top {
+  padding: 14px 16px;
+}
+
+.cs-detail-body {
+  display: grid;
+  gap: 8px;
+  padding: 12px 16px 14px;
+}
+
+.cs-detail-facts {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+}
+
+.cs-detail-facts div {
+  display: flex;
+  gap: 12px;
+}
+
+.cs-detail-facts dt {
+  flex: none;
+  width: 56px;
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+.cs-detail-facts dd {
+  margin: 0;
+}
+
+.cs-page--detail .cs-like {
+  justify-self: start;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+}
+
+.cs-detail-tip {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+/* 좁은 화면: 세일 카드를 작게 줄여 두 개씩 나란히 보여준다 (2차 탭의 세일 묶음은 그대로) */
+@container (max-width: 600px) {
+  .cs-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .cs-card {
+    flex-direction: column;
+    border-radius: 14px;
+  }
+
+  .cs-card .cs-card-top {
+    flex: none;
+    gap: 4px;
+    padding: 10px 8px;
+  }
+
+  .cs-card .cs-discount {
+    font-size: 1.25rem;
+  }
+
+  .cs-card .cs-card-body {
+    padding: 8px 10px 10px;
+  }
+
+  .cs-card .cs-card-name {
+    font-size: 0.88rem;
+    overflow-wrap: anywhere;
+  }
+
+  .cs-card .cs-card-meta {
+    font-size: 0.64rem;
+  }
+
+  .cs-card .cs-card-desc {
+    font-size: 0.7rem;
+  }
+
+  .cs-card .cs-card-foot {
+    flex-wrap: wrap;
+    gap: 2px 6px;
+    font-size: 0.66rem;
+  }
+
+  .cs-card .cs-like {
+    font-size: 0.66rem;
   }
 }

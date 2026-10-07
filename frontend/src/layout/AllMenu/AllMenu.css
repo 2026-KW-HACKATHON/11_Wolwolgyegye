@@ -1,0 +1,63 @@
+/* 전체 메뉴: 카테고리를 3칸 격자로 */
+.all-menu {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.all-menu__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 84px;
+  padding: 10px 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.all-menu__icon {
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  color: var(--color-text-muted);
+}
+
+.all-menu__icon .icon {
+  display: block;
+}
+
+.all-menu__label {
+  white-space: nowrap;
+}
+
+/* 지금 탭: 하단 바와 같이 색 + 굵은 글씨 + 테두리로 (색만으로 전하지 않는다) */
+.all-menu__item[aria-current='page'] {
+  border-color: var(--color-primary);
+  border-width: 2px;
+  color: var(--color-primary);
+  font-weight: 800;
+}
+
+.all-menu__item[aria-current='page'] .all-menu__icon {
+  color: var(--color-primary);
+}
+
+/* 유저(로그인·내 정보) 버튼은 격자 아래 구분선 뒤에 따로 */
+.all-menu__user {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}

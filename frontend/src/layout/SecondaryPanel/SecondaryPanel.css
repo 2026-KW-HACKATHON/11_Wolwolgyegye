@@ -1,0 +1,554 @@
+.secondary-panel {
+  position: absolute;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow-y: auto;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-float);
+}
+
+/* 가로 화면: 지도 내 좌측 */
+.secondary-panel[data-layout='wide'],
+.secondary-panel[data-layout='mobile-landscape'] {
+  top: 12px;
+  bottom: 12px;
+  left: 12px;
+  width: min(400px, 44%); /* 카테고리 상세(사진·혜택 표)가 들어가서 조금 넓게 */
+}
+
+/*
+ * 세로 화면: 하단 시트. 가게를 고르면 1차 탭은 접히고(AppShell), 이 시트가 아래에 붙어 올라온다.
+ * 위쪽 지도와 상단의 검색·필터 줄은 가리지 않는다.
+ */
+.secondary-panel[data-layout='portrait'] {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  /* 높이는 SecondaryPanel.tsx 가 정한다: 반(55%, 위쪽 지도가 보이게) / 전체 / 끄는 중인 높이 */
+  transition: height 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border-bottom: 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  animation: secondary-sheet-up 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 끄는 동안에는 손가락을 바로 따라오게 */
+.secondary-panel[data-dragging] {
+  transition: none;
+}
+
+/* 세로 화면: 닫기 줄 전체가 끄는 손잡이. 가운데 막대 = 누르면 반 <-> 전체 */
+.secondary-panel[data-layout='portrait'] .secondary-panel__head {
+  touch-action: none;
+  cursor: grab;
+}
+
+.sd-grip {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 28px;
+  transform: translateX(-50%);
+  touch-action: none;
+}
+
+.sd-grip span {
+  width: 40px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+}
+
+.sd-grip:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: -3px;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes secondary-sheet-up {
+  from { transform: translateY(24px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .secondary-panel[data-layout='portrait'] { animation: none; transition: none; }
+}
+
+/* 예시 표시·닫기(✕) 줄: 탭 안을 스크롤해도 맨 위에 붙어 있다.
+   패널 안쪽 여백만큼 위·좌우로 넓혀서 스크롤되는 내용이 뒤로 비치지 않게 덮는다 */
+.secondary-panel {
+  --sd-head-h: 60px; /* 닫기 줄 높이. 목록 탭 줄이 이 바로 아래에 붙는다 */
+}
+
+.secondary-panel__head {
+  position: sticky;
+  top: calc(-1 * var(--space-4));
+  box-sizing: border-box;
+  height: var(--sd-head-h);
+  z-index: 3;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) 0;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--color-surface);
+}
+
+.secondary-panel__badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.secondary-panel__close {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+  font-size: 16px;
+}
+
+.secondary-panel__close:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: -3px;
+}
+
+.secondary-panel__name {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.04em;
+}
+
+.secondary-panel__category {
+  margin: 0;
+  color: var(--color-neighborhood);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.secondary-panel__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.sd-directions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 46px;
+  margin-top: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.sd-directions .icon {
+  display: block;
+  font-size: 19px;
+}
+
+.sd-directions:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.sd-directions:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.secondary-panel__facts {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.secondary-panel__facts div {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.secondary-panel__facts dt {
+  flex: none;
+  width: 32px;
+  color: var(--color-text-muted);
+}
+
+.secondary-panel__facts dd {
+  margin: 0;
+}
+
+.secondary-panel__badge.is-mock {
+  background: var(--color-brand-soft);
+  color: var(--color-brand);
+}
+
+/* ---------- 가게 정보 아래쪽: 영업시간·메뉴 (SecondaryPanel) ---------- */
+.sd {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.sd-empty {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.sd-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 var(--space-2);
+  font-size: 14px;
+  letter-spacing: -0.03em;
+}
+
+.sd-section h3 span {
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.sd-hours {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.sd-hours div {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.sd-hours dt {
+  min-width: 34px; /* "월~금" 까지 들어가는 폭 */
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+.sd-hours dd {
+  margin: 0;
+}
+
+.sd-hours .is-closed dd {
+  color: var(--color-brand);
+}
+
+.sd-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 메뉴 한 줄: 이름 ……… 가격 */
+.sd-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--color-border);
+  font-size: 13px;
+}
+
+.sd-row small {
+  margin-left: 6px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.sd-row b {
+  flex: none;
+}
+
+.sd-row-desc {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.5;
+}
+
+/* 메뉴판 묶음 (store_menus.section · kind) */
+.sd-menu-group + .sd-menu-group {
+  margin-top: var(--space-3);
+}
+
+.sd-menu-group h4 {
+  margin: 0 0 6px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ---------- 카테고리 묶음 (1차 탭의 상세 화면: features/storeSections.tsx) ---------- */
+.sd-cat {
+  margin: 0 calc(-1 * var(--space-4)); /* 묶음 안의 사진 등은 탭 좌우 끝까지 */
+}
+
+/* 묶음 안에서 글·세일이 여러 개면 사이를 띄운다 */
+.sd-cat-body .sf-section-post + .sf-section-post {
+  border-top: 1px solid var(--color-border);
+}
+
+.sd-cat-body .cs-page--detail {
+  padding: 0 var(--space-4);
+}
+
+/* ---------- 위쪽 사진 줄 (가로로 밀기) ---------- */
+.sd-strip {
+  display: flex;
+  flex: none;
+  gap: 6px;
+  overflow-x: auto;
+  margin: 0 calc(-1 * var(--space-4)) var(--space-2);
+  padding: 0 var(--space-4);
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.sd-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.sd-strip img {
+  flex: none;
+  width: 42%;
+  max-width: 180px;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  object-fit: cover;
+  scroll-snap-align: start;
+}
+
+/* 사진이 한 장뿐이면 넓게 */
+.sd-strip img:only-child {
+  width: 100%;
+  max-width: none;
+  aspect-ratio: 16 / 9;
+}
+
+/* ---------- 목록 탭 [홈 | 가격 | 사진 | 카테고리…]: 닫기 줄 바로 아래에 붙는다 ---------- */
+.sd-tabs {
+  position: sticky;
+  top: calc(var(--sd-head-h) - var(--space-4));
+  z-index: 2;
+  display: flex;
+  flex: none;
+  overflow-x: auto;
+  margin: var(--space-2) calc(-1 * var(--space-4)) 0;
+  padding: 0 var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  scrollbar-width: none;
+}
+
+.sd-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.sd-tabs [role='tab'] {
+  position: relative;
+  flex: 1 0 auto;
+  min-width: 56px;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 고른 탭: 진한 글씨 + 아래 막대 (색만으로 전하지 않는다) */
+.sd-tabs [role='tab'][aria-selected='true'] {
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+.sd-tabs [role='tab'][aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  bottom: -1px;
+  left: 10px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--color-text);
+}
+
+.sd-tabs [role='tab']:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: -3px;
+}
+
+.sd-tabpanel {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-3);
+}
+
+.sd-tabpanel .sd-empty {
+  margin: var(--space-3) 0;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* 홈: 단골(스탬프) 혜택 */
+.sd-perk {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+}
+
+.sd-perk strong {
+  flex: none;
+}
+
+/* 홈: 이 가게 소식 → 탭 바로가기 */
+.sd-shortcuts {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-shortcuts button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.sd-shortcut-label {
+  flex: 1;
+}
+
+.sd-shortcuts b {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.sd-shortcuts .icon {
+  display: block;
+  color: var(--color-text-muted);
+}
+
+.sd-shortcuts button:focus-visible,
+.sd-photos a:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* 사진 탭: 3칸 격자 */
+.sd-photos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-photos a {
+  display: block;
+  border-radius: var(--radius-sm);
+}
+
+.sd-photos img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt);
+  object-fit: cover;
+}
+
+/* 홈: 사장님 정보가 없을 때 보여 주는 카카오맵 정보 */
+.sd-kakao {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.sd-kakao h3 {
+  margin-bottom: 0;
+}
+
+.sd-kakao a[href^='tel:'] {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sd-kakao-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.sd-kakao-link .icon {
+  display: block;
+}
+
+.sd-kakao-link:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.sd-source {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}

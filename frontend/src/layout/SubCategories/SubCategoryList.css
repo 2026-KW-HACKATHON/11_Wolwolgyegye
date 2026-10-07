@@ -1,0 +1,92 @@
+/* 그 외 카테고리: 지도 위쪽의 얇은 한 줄 (네이버 지도처럼) */
+.sub-cats {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sub-cats li {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+
+/* 묶음이 바뀌는 자리에 얇은 구분선 */
+.sub-cats__group-start::before {
+  content: '';
+  width: 1px;
+  height: 16px;
+  margin: 0 4px 0 1px;
+  background: var(--color-border);
+}
+
+.sub-cats__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 10px 0 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: 0 1px 4px rgb(var(--shadow-color) / 0.12);
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+
+/* 보이는 칩은 얇게 두고, 누르는 영역만 위아래로 넓혀 44px 를 맞춘다 */
+.sub-cats__item::after {
+  content: '';
+  position: absolute;
+  inset: -5px 0;
+}
+
+.sub-cats__num {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.sub-cats__count {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.sub-cats__item[aria-pressed='true'] {
+  border-color: var(--color-primary);
+  background: var(--color-tag-partner-bg);
+  color: var(--color-primary);
+  font-weight: 800;
+}
+
+/* 선택 상태를 색만으로 전하지 않도록 번호 자리에 체크 표시 */
+.sub-cats__item[aria-pressed='true'] .sub-cats__num {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 0;
+}
+
+.sub-cats__item[aria-pressed='true'] .sub-cats__num::before {
+  content: '✓';
+  font-size: 11px;
+}
+
+.sub-cats__item:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: -3px;
+}

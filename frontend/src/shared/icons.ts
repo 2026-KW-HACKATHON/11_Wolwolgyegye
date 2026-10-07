@@ -21,7 +21,6 @@ export const ICONS = {
   gift: '<svg class="icon" viewBox="0 0 24 24"><rect x="3.5" y="9" width="17" height="12" rx="1.5"/><path d="M3.5 13.5h17"/><path d="M12 9v12"/><path d="M12 9C9.5 9 8 7.6 8 6a2 2 0 0 1 4-.4A2 2 0 0 1 16 6c0 1.6-1.5 3-4 3Z"/></svg>',
   store:
     '<svg class="icon" viewBox="0 0 24 24"><path d="M4 21V10M20 21V10M4 10l1-6h14l1 6M4 10h16"/><path d="M9 21v-6h6v6"/></svg>',
-  gear: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l1.8-1.4-2-3.5-2.1.7a7.6 7.6 0 0 0-2.6-1.5L14 2h-4l-.5 2.3a7.6 7.6 0 0 0-2.6 1.5l-2.1-.7-2 3.5 1.8 1.4a7.6 7.6 0 0 0 0 3l-1.8 1.4 2 3.5 2.1-.7c.77.66 1.65 1.17 2.6 1.5L10 22h4l.5-2.3a7.6 7.6 0 0 0 2.6-1.5l2.1.7 2-3.5-1.8-1.4Z"/></svg>',
   chevronDown: '<svg class="icon" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
   chevronUp: '<svg class="icon" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
   chevronRight: '<svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>',
@@ -31,25 +30,27 @@ export const ICONS = {
   search: '<svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
   coffee:
     '<svg class="icon" viewBox="0 0 24 24"><path d="M4 9h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9Z"/><path d="M17 10.5h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M7 6c0-1 1-1 1-2M11 6c0-1 1-1 1-2"/></svg>',
-  bread:
-    '<svg class="icon" viewBox="0 0 24 24"><path d="M4 13c0-5 3.5-9 8-9s8 4 8 9-3 6-8 6-8-1-8-6Z"/><path d="M9 9c1-1 2-1.5 3-1.5S14 8 15 9"/></svg>',
   sofa: '<svg class="icon" viewBox="0 0 24 24"><path d="M4 12V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M3 12h18v4a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 16v-4Z"/><path d="M4 17.5V20M20 17.5V20"/></svg>',
   paletteColor:
-    '<svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.7 1.6-1.5 0-.4-.15-.75-.4-1.05-.25-.3-.4-.65-.4-1.05 0-.8.65-1.4 1.4-1.4h1.6A4.2 4.2 0 0 0 20 12 9 9 0 0 0 12 3Z"/><circle cx="7.5" cy="11" r="1.3" fill="#4a90d9" stroke="none"/><circle cx="10.5" cy="7.5" r="1.3" fill="#e86c6c" stroke="none"/><circle cx="15" cy="8" r="1.3" fill="#6fae5c" stroke="none"/><circle cx="17" cy="12" r="1.3" fill="#e8a93c" stroke="none"/></svg>',
-  giftColor:
-    '<svg class="icon" viewBox="0 0 24 24"><rect x="3.5" y="9" width="17" height="12" rx="1.5" fill="#c0463a" stroke="#8b3a2e"/><path d="M3.5 13.5h17" stroke="#f3ece3"/><path d="M12 9v12" stroke="#f3ece3"/><path d="M12 9C9.5 9 8 7.6 8 6a2 2 0 0 1 4-.4A2 2 0 0 1 16 6c0 1.6-1.5 3-4 3Z" fill="#c0463a" stroke="#8b3a2e"/></svg>',
-  rouletteColor:
-    '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="#8b3a2e" stroke-width="2"/><circle cx="12" cy="12" r="9" fill="none" stroke="#c0463a" stroke-width="1" stroke-dasharray="2.8 3.8"/><line x1="12" y1="3.5" x2="12" y2="20.5" stroke="#8b3a2e"/><line x1="3.5" y1="12" x2="20.5" y2="12" stroke="#8b3a2e"/><line x1="6" y1="6" x2="18" y2="18" stroke="#8b3a2e"/><line x1="18" y1="6" x2="6" y2="18" stroke="#8b3a2e"/><circle cx="12" cy="12" r="2.3" fill="#c0463a" stroke="#8b3a2e"/><circle cx="12" cy="4.6" r="1.1" fill="#f3ece3" stroke="none"/></svg>',
-  tagColor:
-    '<svg class="icon" viewBox="0 0 24 24"><path d="M12.6 3.5H6a2.5 2.5 0 0 0-2.5 2.5v6.6c0 .53.21 1.04.59 1.41l8.8 8.8a2 2 0 0 0 2.82 0l6.6-6.6a2 2 0 0 0 0-2.82l-8.8-8.8a2 2 0 0 0-1.41-.59Z" fill="#c0463a" stroke="#8b3a2e"/><circle cx="8.2" cy="8.2" r="1.3" fill="#f3ece3" stroke="none"/></svg>',
-  ticketColor:
-    '<svg class="icon" viewBox="0 0 24 24"><path d="M4 9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1.5a1.7 1.7 0 0 0 0 3V15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1.5a1.7 1.7 0 0 0 0-3V9Z" fill="#e8b04b" stroke="#9c6b12"/><path d="M9 7v10" stroke="#fbe7c6" stroke-dasharray="2.4 2.4"/></svg>',
-  storefrontColor:
-    '<svg class="icon" viewBox="0 0 24 24"><path d="M4 9.5 5 4h14l1 5.5" stroke="currentColor"/><path d="M4 9.5a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0" stroke="#c0463a"/><path d="M5 10v9.5a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10" stroke="currentColor"/></svg>',
+    '<svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.7 1.6-1.5 0-.4-.15-.75-.4-1.05-.25-.3-.4-.65-.4-1.05 0-.8.65-1.4 1.4-1.4h1.6A4.2 4.2 0 0 0 20 12 9 9 0 0 0 12 3Z"/><circle cx="7.5" cy="11" r="1.3" stroke="none" style="fill:var(--primary-500)"/><circle cx="10.5" cy="7.5" r="1.3" stroke="none" style="fill:var(--strong-500)"/><circle cx="15" cy="8" r="1.3" stroke="none" style="fill:var(--primary-400)"/><circle cx="17" cy="12" r="1.3" stroke="none" style="fill:var(--accent-400)"/></svg>',
   megaphone:
     '<svg class="icon" viewBox="0 0 24 24"><path d="M3 10v4a1 1 0 0 0 1 1h2l2.5 5.5V3.5L6 9H4a1 1 0 0 0-1 1Z"/><path d="M9.5 5.5 19 3v18l-9.5-2.5"/><path d="M19 9.5a3 3 0 0 1 0 5"/></svg>',
   compass:
     '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.8 9.2 13 13l-3.8 1.8L11 11l3.8-1.8Z"/></svg>',
+  user: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  bolt: '<svg class="icon" viewBox="0 0 24 24"><path d="M13 2.5 4.5 13.5H12l-1 8 8.5-11H12l1-8Z"/></svg>',
+  chevronLeft: '<svg class="icon" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>',
+  image: '<svg class="icon" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="15.5" cy="9.5" r="1.8"/><path d="m3.5 17 5.5-5.5 4.5 4.5M13.5 16l2-2 5 5"/></svg>',
+  plus: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  minus: '<svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/></svg>',
+  check: '<svg class="icon" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  trash: '<svg class="icon" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5"/></svg>',
+  clock: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  coins: '<svg class="icon" viewBox="0 0 24 24"><ellipse cx="12" cy="7" rx="7" ry="3"/><path d="M5 7v5c0 1.66 3.13 3 7 3s7-1.34 7-3V7M5 12v5c0 1.66 3.13 3 7 3s7-1.34 7-3v-5"/></svg>',
+  stamp: '<svg class="icon" viewBox="0 0 24 24"><path d="M9.5 13.5V11a2.5 2.5 0 1 1 5 0v2.5"/><path d="M5 15.5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2V17H5v-1.5ZM6 20h12"/></svg>',
+  menu: '<svg class="icon" viewBox="0 0 24 24"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></svg>',
+  locate:
+    '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',
 } as const;
 
 export type IconName = keyof typeof ICONS;

@@ -5,7 +5,7 @@ import { isStampPolicy, validBalance } from './policy';
 
 export const STAMP_FILTERS: { key: StampFilter; label: string }[] = [
   { key: 'all', label: '전체' },
-  { key: 'ready', label: '선물 받기' },
+  { key: 'ready', label: '사용 가능' },
   { key: 'collecting', label: '모으는 중' },
   { key: 'saved', label: '찜한 가게' },
 ];
