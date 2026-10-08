@@ -7,9 +7,11 @@
 // - 줌을 줄이면 화면에서 가까운 건물끼리 숫자 묶음으로 합친다. 누르면 그 묶음이 보이게 확대한다.
 //   CLUSTER_MAX_ZOOM 이상에서는 묶지 않는다.
 // ---------------------------------------------------------------------
-import L from 'leaflet';
 import { subCategoryById, type SubCategory } from '../../core/categories/subCategories';
 import { floorLabel, type MapStore } from '../../core/supabase/stores';
+import type { Store } from '../../core/types/place';
+import { ICONS } from '../icons';
+import { escapeHtml } from './popups';
 
 /** 핀 크기 [가로, 세로] (px). 아래 끝 가운데가 가게 위치. 크기를 바꾸면 MainMap.css 의 .pl-pin 도 같이 */
 const PIN_SINGLE: [number, number] = [22, 28];
@@ -22,6 +24,14 @@ export const CLUSTER_MAX_ZOOM = 18;
 /** 이 거리(px) 안에 들어온 건물끼리 묶는다. CLUSTER_MAX_ZOOM 이상에서는 핀이 겹칠 만큼 가까운 것만 */
 const CLUSTER_CELL_PX = 56;
 const OVERLAP_PX = 30;
+
+/** 지도 핀 모양 (렌더러와 상관없이). anchor = 핀 왼쪽 위에서 실제 위치까지의 거리 (px) */
+export interface IconSpec {
+  className: string;
+  html: string;
+  size: [number, number];
+  anchor: [number, number];
+}
 
 interface BuildingGroup {
   key: string;
@@ -72,12 +82,11 @@ export function groupByBuilding(places: MapStore[]): BuildingGroup[] {
  * 현재 줌에서 화면상 가까운 건물끼리 묶는다. 겹친 핀이 따로 보이지 않도록 최대 줌에서도
  * 핀 크기(OVERLAP_PX) 안에 들어온 건물은 하나의 숫자 핀으로 합친다
  */
-export function clusterGroups(map: L.Map, groups: BuildingGroup[]): PlaceCluster[] {
-  const zoom = map.getZoom();
+export function clusterGroups(project: (lat: number, lng: number) => { x: number; y: number }, zoom: number, groups: BuildingGroup[]): PlaceCluster[] {
   const radius = zoom >= CLUSTER_MAX_ZOOM ? OVERLAP_PX : CLUSTER_CELL_PX;
   const buckets: { x: number; y: number; groups: BuildingGroup[] }[] = [];
   for (const g of groups) {
-    const p = map.project([g.lat, g.lng], zoom);
+    const p = project(g.lat, g.lng);
     const near = buckets.find((b) => Math.abs(b.x - p.x) < radius && Math.abs(b.y - p.y) < radius);
     if (near) near.groups.push(g);
     else buckets.push({ x: p.x, y: p.y, groups: [g] });
@@ -108,19 +117,19 @@ function pinHtml(className: string, label: string): string {
 }
 
 /** 가게 1곳 = 작은 핀 / 건물에 여럿 = 숫자 핀 / 건물 여럿 묶음 = 큰 숫자 원. 색은 모두 pinGroup 우선순위 */
-export function clusterIcon(cluster: PlaceCluster, selected: boolean): L.DivIcon {
+export function clusterIcon(cluster: PlaceCluster, selected: boolean): IconSpec {
   const sel = selected ? ' is-selected' : '';
   if (cluster.groups.length > 1) {
     // 묶음 색도 같은 우선순위: 묶인 가게 중 음식점이 하나라도 있으면 음식점 색
     const color = `pl--${pinGroup(cluster.groups.flatMap((g) => g.places))}`;
-    return L.divIcon({ className: 'pl-wrap', html: `<span class="pl-cluster ${color}${sel}">${cluster.count}</span>`, iconSize: [36, 36], iconAnchor: [18, 18] });
+    return { className: 'pl-wrap', html: `<span class="pl-cluster ${color}${sel}">${cluster.count}</span>`, size: [36, 36], anchor: [18, 18] };
   }
   const group = cluster.groups[0];
   const color = `pl--${pinGroup(group.places)}`;
   if (group.places.length === 1) {
-    return L.divIcon({ className: 'pl-wrap', html: pinHtml(`pl-pin--single ${color}${sel}`, ''), iconSize: PIN_SINGLE, iconAnchor: [PIN_SINGLE[0] / 2, PIN_SINGLE[1]] });
+    return { className: 'pl-wrap', html: pinHtml(`pl-pin--single ${color}${sel}`, ''), size: PIN_SINGLE, anchor: [PIN_SINGLE[0] / 2, PIN_SINGLE[1]] };
   }
-  return L.divIcon({ className: 'pl-wrap', html: pinHtml(`${color}${sel}`, String(group.places.length)), iconSize: PIN_BUILDING, iconAnchor: [PIN_BUILDING[0] / 2, PIN_BUILDING[1]] });
+  return { className: 'pl-wrap', html: pinHtml(`${color}${sel}`, String(group.places.length)), size: PIN_BUILDING, anchor: [PIN_BUILDING[0] / 2, PIN_BUILDING[1]] };
 }
 
 /**
@@ -171,4 +180,32 @@ export function buildingListElement(group: BuildingGroup, onPick: (place: MapSto
   }
   root.append(body);
   return root;
+}
+
+/** 추천 가게 핀. 원데이클래스는 자주(동네 소식·원데이클래스 색), 그 밖은 초록(공간대여 색) */
+export function storeIcon(store: Store, selected: boolean, small: boolean, mine: boolean): IconSpec {
+  if (mine) {
+    return {
+      className: 'mm-pin-wrap',
+      html: `<span class="mm-pin mm-pin--mine${selected ? ' is-selected' : ''}">${ICONS.storefront}</span><strong class="mm-mine-tag">내 가게</strong>`,
+      size: [46, 46],
+      anchor: [23, 46],
+    };
+  }
+  if (small) {
+    return {
+      className: 'mm-pin-wrap',
+      html: `<span class="pl-pin pl-pin--single${selected ? ' is-selected' : ''}"><span class="pl-pin__shape"></span><span class="pl-pin__label"></span></span>${selected ? `<strong class="mm-pin-name">${escapeHtml(store.name)}</strong>` : ''}`,
+      size: [22, 28],
+      anchor: [11, 28],
+    };
+  }
+  const kind = store.supports['oneday-class'] ? 'class' : store.supports['space-rental'] ? 'space' : 'store';
+  const glyph = ICONS[kind === 'class' ? 'palette' : kind === 'space' ? 'house' : 'storefront'];
+  return {
+    className: 'mm-pin-wrap',
+    html: `<span class="mm-pin mm-pin--${kind}${selected ? ' is-selected' : ''}">${glyph}</span>${selected ? `<strong class="mm-pin-name">${escapeHtml(store.name)}</strong>` : ''}`,
+    size: [40, 40],
+    anchor: [20, 40],
+  };
 }
