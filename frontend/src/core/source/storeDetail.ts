@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '../supabase/client';
 import type { HoursRow } from '../utils/hours';
+import { resolveStoreMediaUrl } from './mediaUrl';
 
 /**
  * 2차 탭(가게 화면)에 보여줄 가게 한 곳의 모든 정보.
@@ -70,19 +71,18 @@ const COLUMNS = [
 type Row = Record<string, any>;
 const list = (v: unknown): Row[] => (Array.isArray(v) ? v : v ? [v as Row] : []);
 const num = (v: unknown): number | null => (v === null || v === undefined ? null : Number(v));
-const publicUrl = (path: string) => getSupabaseClient().storage.from('store-media').getPublicUrl(path).data.publicUrl;
 const sorted = (images: Row[]) => [...images].sort((a, b) => a.sort_order - b.sort_order);
 function thumbnailOf(images: Row[]): string {
   const first = sorted(images)[0];
-  return first ? publicUrl(first.image_path) : '';
+  return first ? resolveStoreMediaUrl(first.image_path) : '';
 }
 
 /** 사진 탭에 넣을 사진: 가게 사진 → 공간대여 글 사진 → 원데이클래스 글 사진 (공개 글만) */
 function photosOf(row: Row): { url: string; caption: string }[] {
   const posts = (rows: Row[], images: string) => rows.filter((p) => p.is_published)
-    .flatMap((p) => sorted(list(p[images])).map((img) => ({ url: publicUrl(img.image_path), caption: p.title as string })));
+    .flatMap((p) => sorted(list(p[images])).map((img) => ({ url: resolveStoreMediaUrl(img.image_path), caption: p.title as string })));
   return [
-    ...sorted(list(row.store_images)).map((img) => ({ url: publicUrl(img.image_path), caption: '' })),
+    ...sorted(list(row.store_images)).map((img) => ({ url: resolveStoreMediaUrl(img.image_path), caption: '' })),
     ...posts(list(row.space_rentals), 'space_rental_images'),
     ...posts(list(row.one_day_classes), 'one_day_class_images'),
   ];

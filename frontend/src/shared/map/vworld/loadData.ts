@@ -15,6 +15,7 @@ interface MapData {
   stationExits: FeatureCollection | null;
   adminDong: FeatureCollection | null;
   schoolFacilities: FeatureCollection | null;
+  landmarks: FeatureCollection | null;
   areas: Record<AreaKey, FeatureCollection | null>;
 }
 
@@ -38,7 +39,7 @@ async function fetchGeoJSON(url: string): Promise<FeatureCollection | null> {
  * 필수 파일이 없으면 null 을 돌려준다. (안내문은 화면 컴포넌트가 띄운다)
  */
 export async function loadData(): Promise<MapData | null> {
-  const [buildings, roads, railways, subwayLines, stations, stationExits, adminDong, schoolFacilities, ...areaList] = await Promise.all([
+  const [buildings, roads, railways, subwayLines, stations, stationExits, adminDong, schoolFacilities, landmarks, ...areaList] = await Promise.all([
     fetchGeoJSON(DATA_URLS.buildings),
     fetchGeoJSON(DATA_URLS.roads),
     fetchGeoJSON(DATA_URLS.railways),
@@ -47,6 +48,7 @@ export async function loadData(): Promise<MapData | null> {
     fetchGeoJSON(DATA_URLS.stationExits),
     fetchGeoJSON(DATA_URLS.adminDong),
     fetchGeoJSON(DATA_URLS.schoolFacilities),
+    fetchGeoJSON(DATA_URLS.landmarks),
     ...AREA_LAYERS.map((a) => fetchGeoJSON(a.url)),
   ]);
 
@@ -56,5 +58,5 @@ export async function loadData(): Promise<MapData | null> {
   AREA_LAYERS.forEach((a, i) => {
     areas[a.key] = areaList[i];
   });
-  return { buildings, roads, railways, subwayLines, stations, stationExits, adminDong, schoolFacilities, areas };
+  return { buildings, roads, railways, subwayLines, stations, stationExits, adminDong, schoolFacilities, landmarks, areas };
 }

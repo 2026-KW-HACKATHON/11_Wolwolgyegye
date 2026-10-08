@@ -26,8 +26,9 @@ const CAMPUS_BUILDINGS: { id: string; name: string; at?: [number, number] }[] = 
   { id: '1135010200104660000018644', name: '연구관', at: [37.619517, 127.057732] },
 ];
 
-/** 이 줌부터 라벨을 보여준다. 멀리서 볼 때(처음 화면 포함)는 숨기고, 캠퍼스를 확대했을 때만 보인다 */
+/** 주요 시설 이름 다음 단계. 가게명이 나타나는 배율에서는 건물명을 숨겨 겹침을 줄인다. */
 const LABEL_MIN_ZOOM = 17;
+const LABEL_MAX_ZOOM = 18.2;
 
 /** 고리(외곽선) 하나의 면적과 무게중심 (경위도 평면 근사, 건물 크기에서는 충분) */
 function ringCentroid(ring: Position[]): { area: number; lat: number; lng: number } {
@@ -71,7 +72,8 @@ export function drawCampusLabels(ctx: DrawContext, buildingsGeoJSON: FeatureColl
       .addTo(layer);
   }
   const update = () => {
-    if (ctx.map.getZoom() >= LABEL_MIN_ZOOM) layer.addTo(ctx.map);
+    const zoom = ctx.map.getZoom();
+    if (zoom >= LABEL_MIN_ZOOM && zoom < LABEL_MAX_ZOOM) layer.addTo(ctx.map);
     else layer.remove();
   };
   update();

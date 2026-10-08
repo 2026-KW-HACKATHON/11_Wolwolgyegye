@@ -1,4 +1,5 @@
 import { fetchStoresByIds } from '../../core/source/storeSource';
+import { resolveStoreMediaUrl } from '../../core/source/mediaUrl';
 import { getSupabaseClient } from '../../core/supabase/client';
 import type { Store } from '../../core/types/place';
 import { FEED_CATEGORIES, type ClassPost, type FeedKind, type FeedPost, type PostInput, type SpacePost } from './types';
@@ -36,7 +37,7 @@ interface ClassRow {
 
 function firstImageUrl(images: ImageRow[]): string {
   const first = [...(images ?? [])].sort((a, b) => a.sort_order - b.sort_order)[0];
-  return first ? getSupabaseClient().storage.from('store-media').getPublicUrl(first.image_path).data.publicUrl : '';
+  return first ? resolveStoreMediaUrl(first.image_path) : '';
 }
 
 /** 공개 가게의 공간대여·원데이클래스 글을 DB에서 읽는다. */

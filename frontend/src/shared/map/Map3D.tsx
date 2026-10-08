@@ -304,7 +304,7 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
           id: 'buildings', source: 'buildings', type: 'fill-extrusion', minzoom: 14.5,
           paint: {
             'fill-extrusion-color': colors.building,
-            'fill-extrusion-height': ['max', 3, ['*', ['to-number', ['get', 'levels'], 1], 3]],
+            'fill-extrusion-height': ['max', 3, ['to-number', ['get', 'height'], 3]],
             'fill-extrusion-base': 0,
             'fill-extrusion-opacity': 0.9,
             'fill-extrusion-vertical-gradient': true,

@@ -10,6 +10,7 @@ import type { MarkerStyleId } from '../../core/map/markerStyle';
 import { ADMIN_DONG_LABEL, AREA_LAYERS, createStyles } from './vworld/config';
 import { drawStations, drawSubwayLines } from './osm/drawTransit';
 import { drawCampusLabels } from './vworld/campusLabels';
+import { drawMajorLandmarkLabels } from './vworld/mapLabels';
 import { drawArea, drawBoundary, drawBuildings, drawRailways, drawRoads, drawSchoolFacilities, visibleSchoolFacilities, type BuildingOutlines, type DrawContext } from './vworld/draw';
 import { isInWolgye1 } from './vworld/geometry';
 import { loadData } from './vworld/loadData';
@@ -114,6 +115,15 @@ const myLocationStyle = (css: (name: string) => string): L.CircleMarkerOptions =
 });
 
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
+
+/** 이 배율부터 핀 옆에 가게명을 함께 표시한다. */
+const STORE_DETAIL_LABEL_MIN_ZOOM = 18.2;
+
+function storeDetailLabel(names: string[]): string {
+  const unique = [...new Set(names.filter(Boolean))];
+  if (unique.length === 0) return '';
+  return `<strong>${escapeHtml(unique[0])}</strong>${unique.length > 1 ? `<small>외 ${unique.length - 1}곳</small>` : ''}`;
+}
 
 /** 가게 핀. 원데이클래스는 자주(동네 소식·원데이클래스 색), 그 밖은 초록(공간대여 색) */
 function storeIcon(store: Store, selected: boolean, small: boolean, mine: boolean): L.DivIcon {
@@ -276,6 +286,7 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
       if (data.subwayLines) drawSubwayLines(ctx, data.subwayLines);
       if (data.stations) drawStations(ctx, data.stations, data.stationExits);
       if (data.adminDong) drawBoundary(ctx, data.adminDong, ctx.styles.ADMIN_DONG_STYLE, ADMIN_DONG_LABEL, 'admin-dong-label');
+      if (data.landmarks) drawMajorLandmarkLabels(ctx, data.landmarks);
       if (data.buildings) drawCampusLabels(ctx, data.buildings);
       adminDongRef.current = data.adminDong;
 
@@ -383,6 +394,17 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
         const selected = selectedPlaceId !== null && cluster.groups.some((g) => g.places.some((p) => p.id === selectedPlaceId));
         const marker = L.marker([cluster.lat, cluster.lng], { icon: clusterIcon(cluster, selected), zIndexOffset: selected ? 500 : 0, keyboard: true });
         const [group] = cluster.groups;
+        if (map.getZoom() >= STORE_DETAIL_LABEL_MIN_ZOOM) {
+          const label = storeDetailLabel(cluster.groups.flatMap((building) => building.places.map((place) => place.name)));
+          if (label) marker.bindTooltip(label, {
+            permanent: true,
+            direction: 'top',
+            offset: [0, -PIN_POPUP_OFFSET],
+            className: 'store-detail-label',
+            opacity: 1,
+            interactive: false,
+          });
+        }
         if (cluster.groups.length > 1) {
           // 축소 상태의 숫자 핀도 바로 건물 → 층 → 가게 순서로 확인한다.
           marker.on('click', () => {
@@ -460,21 +482,32 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
         if (!mine && !allowOutsideWolgye && !isInWolgye1(lat, lng, adminDongRef.current)) continue;
         const selected = store.id === selectedId;
         if (!selected && !mine && !visibleBounds.contains([lat, lng])) continue;
-        L.marker([lat, lng], { icon: storeIcon(store, selected, smallPins, mine), title: mine ? `내 가게: ${store.name}` : store.name, zIndexOffset: mine ? 2000 : selected ? 1000 : 0 })
-          .on('click', () => onSelectRef.current(store.id))
-          .addTo(layer);
+        const marker = L.marker([lat, lng], { icon: storeIcon(store, selected, smallPins, mine), title: mine ? `내 가게: ${store.name}` : store.name, zIndexOffset: mine ? 2000 : selected ? 1000 : 0 });
+        if (map.getZoom() >= STORE_DETAIL_LABEL_MIN_ZOOM) marker.bindTooltip(storeDetailLabel([store.name]), {
+          permanent: true,
+          direction: 'top',
+          offset: [0, -38],
+          className: 'store-detail-label',
+          opacity: 1,
+          interactive: false,
+        });
+        marker.on('click', () => onSelectRef.current(store.id)).addTo(layer);
       }
     };
-    const scheduleRender = () => {
-      if (renderedCoverage?.contains(map.getBounds())) return;
+    const scheduleRender = (force = false) => {
+      if (!force && renderedCoverage?.contains(map.getBounds())) return;
       if (renderFrame !== null) cancelAnimationFrame(renderFrame);
       renderFrame = requestAnimationFrame(render);
     };
     renderedCoverage = null;
     scheduleRender();
-    map.on('moveend zoomend', scheduleRender);
+    const renderAfterMove = () => scheduleRender(false);
+    const renderAfterZoom = () => scheduleRender(true);
+    map.on('moveend', renderAfterMove);
+    map.on('zoomend', renderAfterZoom);
     return () => {
-      map.off('moveend zoomend', scheduleRender);
+      map.off('moveend', renderAfterMove);
+      map.off('zoomend', renderAfterZoom);
       if (renderFrame !== null) cancelAnimationFrame(renderFrame);
     };
   }, [stores, selectedId, status, allowOutsideWolgye, smallPins, myStoreKey]);

@@ -17,11 +17,14 @@ import {
 /** 수집 스크립트가 저장한 파일 위치 (frontend/public/data/vworld, frontend/public/data/osm) */
 const DATA_DIR = '/data/vworld';
 const OSM_DIR = '/data/osm';
+const MAP_DATA_DIR = '/data/3d';
 
 export const DATA_URLS = {
   buildings: `${DATA_DIR}/buildings.geojson`,
   adminDong: `${DATA_DIR}/admin_dong.geojson`,
   schoolFacilities: `${DATA_DIR}/school_facilities.geojson`,
+  /** 2D·3D가 함께 쓰는 주요 시설 이름표 */
+  landmarks: `${MAP_DATA_DIR}/landmarks.geojson`,
   /** 도로·철도는 OpenStreetMap (scripts/fetch-osm.js) */
   roads: `${OSM_DIR}/roads.geojson`,
   railways: `${OSM_DIR}/railways.geojson`,
