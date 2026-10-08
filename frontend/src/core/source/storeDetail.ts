@@ -29,42 +29,33 @@ export interface StoreDetail {
   name: string;
   address: string;
   isMock: boolean;
-  phone: string;
   /** 좌표 (카카오 장소 검색에서 같은 가게를 찾을 때 쓴다) */
   lat: number | null;
   lng: number | null;
-  /** 대표 사진 공개 URL (store_images 첫 장). 없으면 '' */
-  thumbnailUrl: string;
   /** 사진 탭: 가게 사진 + 공개 중인 공간대여·원데이클래스 글 사진 (가게 사진이 앞) */
   photos: { url: string; caption: string }[];
   hours: HoursRow[];
   menus: StoreMenu[];
-  sales: {
-    id: string;
-    discountType: 'amount' | 'rate' | 'free';
-    discountAmount: number | null;
-    discountRate: number | null;
-    condition: string;
-    offer: string;
-    endsAt: string;
-  }[];
+  /** 진행 중인 마감세일 수 */
+  saleCount: number;
   /** 이 가게와 직접 연결된 제휴 단과대학 이름 */
   partnerColleges: string[];
-  spaceRentals: { id: string; title: string; summary: string; category: string; price: number; capacity: number; minHours: number | null; availableHours: string }[];
-  classes: { id: string; title: string; summary: string; category: string; startsAt: string; durationMinutes: number; price: number; currentCount: number; maxCount: number }[];
-  stamp: { requiredStamps: number; reward: string; unit: string; condition: string } | null;
+  /** 공개 중인 공간대여 · 원데이클래스 글 수 */
+  spaceRentalCount: number;
+  classCount: number;
+  stamp: { requiredStamps: number; reward: string } | null;
 }
 
 const COLUMNS = [
-  'id, name, address, is_mock, phone, lat, lng',
+  'id, name, address, is_mock, lat, lng',
   'store_hours(weekday, opens_at, closes_at, is_closed)',
   'store_images(image_path, sort_order)',
   'store_menus(id, name, price, type_id, sort_order, section, kind, description)',
-  'closing_sales(id, discount_type, discount_amount, discount_rate, condition, offer, ends_at)',
+  'closing_sales(ends_at)',
   'store_partners(partners(name))',
-  'space_rentals(id, title, summary, price, capacity, min_hours, available_hours, created_at, is_published, space_rental_categories(name), space_rental_images(image_path, sort_order))',
-  'one_day_classes(id, title, summary, starts_at, duration_minutes, price, current_count, max_count, is_published, one_day_class_categories(name), one_day_class_images(image_path, sort_order))',
-  'stamp_policies(required_stamps, reward, unit, condition)',
+  'space_rentals(title, is_published, space_rental_images(image_path, sort_order))',
+  'one_day_classes(title, is_published, one_day_class_images(image_path, sort_order))',
+  'stamp_policies(required_stamps, reward)',
 ].join(', ');
 
 /** DB 응답 한 행. 모양은 아래 fetchStoreDetail 에서 바로 바꾼다 */
@@ -72,10 +63,6 @@ type Row = Record<string, any>;
 const list = (v: unknown): Row[] => (Array.isArray(v) ? v : v ? [v as Row] : []);
 const num = (v: unknown): number | null => (v === null || v === undefined ? null : Number(v));
 const sorted = (images: Row[]) => [...images].sort((a, b) => a.sort_order - b.sort_order);
-function thumbnailOf(images: Row[]): string {
-  const first = sorted(images)[0];
-  return first ? resolveStoreMediaUrl(first.image_path) : '';
-}
 
 /** 사진 탭에 넣을 사진: 가게 사진 → 공간대여 글 사진 → 원데이클래스 글 사진 (공개 글만) */
 function photosOf(row: Row): { url: string; caption: string }[] {
@@ -110,10 +97,8 @@ export async function fetchStoreDetail(id: string): Promise<StoreDetail | null> 
       name: row.name ?? '',
       address: row.address ?? '',
       isMock: Boolean(row.is_mock),
-      phone: row.phone ?? '',
       lat: num(row.lat),
       lng: num(row.lng),
-      thumbnailUrl: thumbnailOf(list(row.store_images)),
       photos: photosOf(row),
       hours: list(row.store_hours) as HoursRow[],
       menus: list(row.store_menus)
@@ -122,28 +107,12 @@ export async function fetchStoreDetail(id: string): Promise<StoreDetail | null> 
           id: m.id, name: m.name, price: m.price, typeId: m.type_id,
           section: m.section || null, kind: m.kind ?? null, description: m.description || null,
         })),
-      sales: list(row.closing_sales)
-        .filter((s) => Date.parse(s.ends_at) > now)
-        .sort((a, b) => a.ends_at.localeCompare(b.ends_at))
-        .map((s) => ({
-          id: s.id, discountType: s.discount_type, discountAmount: s.discount_amount, discountRate: num(s.discount_rate),
-          condition: s.condition, offer: s.offer, endsAt: s.ends_at,
-        })),
+      saleCount: list(row.closing_sales).filter((s) => Date.parse(s.ends_at) > now).length,
       partnerColleges: list(row.store_partners).map((link) => link.partners?.name).filter(Boolean),
-      // 사장님은 RLS 로 자기 가게의 비공개(등록 취소한) 글도 읽으므로, 손님 화면에는 공개 글만 남긴다
-      spaceRentals: list(row.space_rentals).filter((r) => r.is_published)
-        .sort((a, b) => b.created_at.localeCompare(a.created_at))
-        .map((r) => ({
-          id: r.id, title: r.title, summary: r.summary, category: r.space_rental_categories?.name ?? '', price: r.price,
-          capacity: r.capacity, minHours: r.min_hours, availableHours: r.available_hours,
-        })),
-      classes: list(row.one_day_classes).filter((c) => c.is_published)
-        .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
-        .map((c) => ({
-          id: c.id, title: c.title, summary: c.summary, category: c.one_day_class_categories?.name ?? '', startsAt: c.starts_at,
-          durationMinutes: c.duration_minutes, price: c.price, currentCount: c.current_count, maxCount: c.max_count,
-        })),
-      stamp: stamp ? { requiredStamps: stamp.required_stamps, reward: stamp.reward, unit: stamp.unit, condition: stamp.condition } : null,
+      // 사장님은 RLS 로 자기 가게의 비공개(등록 취소한) 글도 읽으므로, 손님 화면에는 공개 글만 센다
+      spaceRentalCount: list(row.space_rentals).filter((r) => r.is_published).length,
+      classCount: list(row.one_day_classes).filter((c) => c.is_published).length,
+      stamp: stamp ? { requiredStamps: stamp.required_stamps, reward: stamp.reward } : null,
     };
   } catch {
     return null;

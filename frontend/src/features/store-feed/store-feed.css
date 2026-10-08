@@ -5,7 +5,6 @@
 /* 채워진 버튼은 문의하기처럼 핵심 행동에만 쓴다 */
 .sf-primary { background: var(--color-primary); color: var(--color-on-primary); }
 .sf-primary:hover { background: var(--color-primary-dark); }
-.sf-primary span { font-size: 11px; border: 1px solid currentColor; border-radius: 5px; padding: 1px 5px; }
 .sf-secondary { border-color: var(--color-border); background: var(--color-surface); color: var(--color-text); }
 /* 소개 배너는 한 줄 높이로 줄여 검색·필터·첫 카드가 첫 화면에 함께 보이게 한다 */
 .sf-hero { display: flex; align-items: center; gap: 14px; border-radius: var(--radius-lg); padding: 14px 18px; background: var(--color-bg); }

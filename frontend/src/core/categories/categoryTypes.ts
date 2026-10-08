@@ -21,8 +21,6 @@ export interface PanelMeta extends PageMeta {
 /** 카테고리 네비게이션 바에 나열되는 카테고리 */
 export interface Category extends PanelMeta {
   icon: IconName;
-  /** true 면 사용자가 끌 수 없이 항상 노출 */
-  isFixed: boolean;
   /** true 면 사장님 계정(가게를 가진 사용자)에게만 보인다 */
   ownerOnly?: boolean;
 }

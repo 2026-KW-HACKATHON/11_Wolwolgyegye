@@ -92,7 +92,7 @@ function validImage(value: string): boolean {
   try { return new URL(value).protocol === 'https:' && value.length <= 2048; } catch { return false; }
 }
 
-export function validatePost(value: unknown, checkFuture = true): string | null {
+export function validatePost(value: unknown): string | null {
   if (!value || typeof value !== 'object') return '게시글 형식이 올바르지 않아요.';
   const post = value as Record<string, unknown>;
   if (post.kind !== 'space-rental' && post.kind !== 'oneday-class') return '카테고리를 선택해 주세요.';
@@ -106,7 +106,7 @@ export function validatePost(value: unknown, checkFuture = true): string | null 
     if (!text(post.schedule, 200) || (post.minimumHours !== null && !integer(post.minimumHours, 1, 24))) return '이용 가능 시간과 최소 이용 시간을 입력해 주세요.';
   } else {
     if (typeof post.startsAt !== 'string' || !Number.isFinite(Date.parse(post.startsAt))) return '수업 날짜와 시간을 입력해 주세요.';
-    if (checkFuture && post.status === 'open' && Date.parse(post.startsAt) <= Date.now()) return '수업 시작 시간은 현재 이후로 선택해 주세요.';
+    if (post.status === 'open' && Date.parse(post.startsAt) <= Date.now()) return '수업 시작 시간은 현재 이후로 선택해 주세요.';
     if (!integer(post.durationMinutes, 15, 1440)) return '수업 시간은 15분~1,440분 사이로 입력해 주세요.';
   }
   return null;

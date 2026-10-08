@@ -9,7 +9,6 @@
    2층 의미 토큰 (--color-…): 화면은 이것만 쓴다. 1층 이름만 가리키므로 팔레트를 바꾸면 함께 바뀐다.
 
    팔레트 고르기: <html data-palette="1|2|3|4|5|6|7|8|9"> (없으면 1번). 설정 화면이 바꾸고 이 기기에 저장한다.
-   다크 모드: <html data-theme="dark"> (토글 UI 는 아직 없음).
    단계 값은 원색 5개를 섞어 만들고, 대비(본문 4.5:1)를 검사해 계산한 값이다.
    ========================================================================== */
 
@@ -23,7 +22,6 @@
   --primary-300: #6d7586;
   --primary-400: #414b61;
   --primary-500: #14213d;
-  --primary-600: #0d1528;
   --primary-700: #070c15;
   --deep-800: #05080f;
   --deep-900: #000000;
@@ -82,7 +80,6 @@
   --primary-300: #86878f;
   --primary-400: #626375;
   --primary-500: #3d405b;
-  --primary-600: #34364d;
   --primary-700: #2b2d40;
   --deep-800: #292a3c;
   --deep-900: #222332;
@@ -141,7 +138,6 @@
   --primary-300: #657d81;
   --primary-400: #335665;
   --primary-500: #003049;
-  --primary-600: #002a40;
   --primary-700: #002538;
   --deep-800: #002336;
   --deep-900: #001f2f;
@@ -200,7 +196,6 @@
   --primary-300: #b2c2b9;
   --primary-400: #9bb3ab;
   --primary-500: #576d68;
-  --primary-600: #637b75;
   --primary-700: #465854;
   --deep-800: #3d4c48;
   --deep-900: #252e2c;
@@ -259,7 +254,6 @@
   --primary-300: #986ca0;
   --primary-400: #763c87;
   --primary-500: #540d6e;
-  --primary-600: #450b5b;
   --primary-700: #39084a;
   --deep-800: #340845;
   --deep-900: #2a0637;
@@ -318,7 +312,6 @@
   --primary-300: #798396;
   --primary-400: #4e5e82;
   --primary-500: #22396f;
-  --primary-600: #16285b;
   --primary-700: #0d184a;
   --deep-800: #091444;
   --deep-900: #010736;
@@ -377,7 +370,6 @@
   --primary-300: #ab6767;
   --primary-400: #923a3f;
   --primary-500: #790d16;
-  --primary-600: #620b12;
   --primary-700: #4d080e;
   --deep-800: #47080d;
   --deep-900: #36060a;
@@ -436,7 +428,6 @@
   --primary-300: #9aa76e;
   --primary-400: #7a904b;
   --primary-500: #557426;
-  --primary-600: #4f591d;
   --primary-700: #473d14;
   --deep-800: #443411;
   --deep-900: #3d1d09;
@@ -495,7 +486,6 @@
   --primary-300: #7f95ac;
   --primary-400: #58789c;
   --primary-500: #315b8c;
-  --primary-600: #374d6d;
   --primary-700: #3b4152;
   --deep-800: #3d3d49;
   --deep-900: #413333;
@@ -568,7 +558,6 @@
   /* 주 버튼·선택 상태 */
   --color-primary: var(--primary-500);
   --color-primary-dark: var(--primary-700);
-  --color-primary-light: var(--primary-400);
   --color-on-primary: var(--base-50);
 
   /* 강조 (가격·핀·하트처럼 눈에 띄어야 하는 곳) */
@@ -662,46 +651,4 @@
   --space-4: 16px;
   --space-5: 24px;
   --space-6: 32px;
-}
-
-/* 다크 모드: 팔레트 색을 섞어 만든다 (CSS 에서만 쓰는 값이라 color-mix) */
-[data-theme='dark'] {
-  --color-bg: var(--deep-950);
-  --color-surface: color-mix(in srgb, var(--deep-950) 82%, var(--primary-500));
-  --color-surface-alt: color-mix(in srgb, var(--deep-950) 70%, var(--primary-500));
-  --color-header: color-mix(in srgb, var(--deep-950) 70%, black);
-  --color-header-dark: color-mix(in srgb, var(--deep-950) 50%, black);
-
-  --color-primary: var(--primary-400);
-  --color-primary-dark: var(--primary-300);
-  --color-primary-light: var(--primary-300);
-  --color-on-primary: var(--deep-950);
-
-  --color-brand: var(--accent-300);
-  --color-brand-soft: color-mix(in srgb, var(--deep-950) 80%, var(--accent-400));
-  --color-accent-soft: color-mix(in srgb, var(--deep-950) 80%, var(--accent-400));
-  --color-neighborhood: var(--support-400);
-  --color-neighborhood-soft: color-mix(in srgb, var(--deep-950) 80%, var(--support-400));
-
-  --color-text: var(--base-50);
-  --color-text-muted: color-mix(in srgb, var(--base-50) 62%, var(--deep-950));
-  --color-text-faint: color-mix(in srgb, var(--base-50) 42%, var(--deep-950));
-  --color-border: color-mix(in srgb, var(--deep-950) 72%, var(--base-50));
-
-  --color-tag-coupon-bg: color-mix(in srgb, var(--deep-950) 78%, var(--accent-400));
-  --color-tag-coupon-text: var(--accent-300);
-  --color-tag-discount-text: var(--strong-300);
-  --color-tag-partner-bg: color-mix(in srgb, var(--deep-950) 75%, var(--primary-400));
-  --color-tag-partner-text: var(--primary-300);
-  --color-tag-space-bg: color-mix(in srgb, var(--deep-950) 80%, var(--base-200));
-  --color-tag-space-text: var(--base-100);
-
-  --color-cat-space-bg: color-mix(in srgb, var(--deep-950) 80%, var(--base-200));
-  --color-cat-class-bg: color-mix(in srgb, var(--deep-950) 78%, var(--accent-400));
-  --color-cat-coupon-bg: color-mix(in srgb, var(--deep-950) 70%, var(--primary-500));
-  --color-cat-partner-bg: color-mix(in srgb, var(--deep-950) 75%, var(--primary-400));
-
-  --shadow-color: 0 0 0;
-  --color-info: #9cc3ea;
-  --color-info-soft: color-mix(in srgb, var(--deep-950) 80%, #9cc3ea);
 }

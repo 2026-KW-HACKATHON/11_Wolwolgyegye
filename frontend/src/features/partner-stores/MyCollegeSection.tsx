@@ -14,7 +14,7 @@ export default function MyCollegeSection() {
   const [error, setError] = useState(false);
 
   // 사장님 계정은 학생이 아니라 가게 운영자라 단과대를 등록하지 않는다
-  if (status === 'checking' || status === 'owner') return null;
+  if (status === 'owner') return null;
 
   async function choose(next: CollegeKey | null) {
     if (!userId || saving || next === college) return;

@@ -23,7 +23,7 @@
 .ad-application summary { padding: 14px 2px; cursor: pointer; font-weight: 800; }
 .ad-form { display: flex; gap: 10px; align-items: end; padding: 0 0 16px; }
 .ad-form label, .ad-search { display: flex; flex: 1; flex-direction: column; gap: 5px; color: var(--color-text-muted); font-size: .78rem; font-weight: 800; }
-.ad-form input, .ad-form select, .ad-form textarea, .ad-search input { width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); color: var(--color-text); font: inherit; }
+.ad-form input, .ad-form textarea, .ad-search input { width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); color: var(--color-text); font: inherit; }
 .ad-form button { padding: 11px 16px; border-radius: 10px; background: var(--color-primary); color: var(--color-on-primary); font-weight: 800; white-space: nowrap; }
 .ad-form button:disabled, .ad-store button:disabled { opacity: .5; cursor: wait; }
 .ad-reject button { background: var(--color-danger); color: var(--color-on-dark); }

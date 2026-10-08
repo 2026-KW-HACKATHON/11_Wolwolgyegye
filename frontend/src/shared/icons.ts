@@ -3,8 +3,6 @@
  * currentColor 를 쓰므로 감싸는 요소의 색상(CSS 변수)과 함께 재사용된다.
  */
 export const ICONS = {
-  building:
-    '<svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1M9 15h1M14 15h1"/><path d="M10 21v-4h4v4"/></svg>',
   house:
     '<svg class="icon" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></svg>',
   palette:
@@ -19,8 +17,6 @@ export const ICONS = {
   calendar:
     '<svg class="icon" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>',
   gift: '<svg class="icon" viewBox="0 0 24 24"><rect x="3.5" y="9" width="17" height="12" rx="1.5"/><path d="M3.5 13.5h17"/><path d="M12 9v12"/><path d="M12 9C9.5 9 8 7.6 8 6a2 2 0 0 1 4-.4A2 2 0 0 1 16 6c0 1.6-1.5 3-4 3Z"/></svg>',
-  store:
-    '<svg class="icon" viewBox="0 0 24 24"><path d="M4 21V10M20 21V10M4 10l1-6h14l1 6M4 10h16"/><path d="M9 21v-6h6v6"/></svg>',
   chevronDown: '<svg class="icon" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
   chevronUp: '<svg class="icon" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
   chevronRight: '<svg class="icon" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>',

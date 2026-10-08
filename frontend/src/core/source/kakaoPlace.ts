@@ -9,8 +9,6 @@
  */
 
 export interface KakaoPlace {
-  id: string;
-  name: string;
   /** 예: 음식점 > 중식 > 중국요리 */
   category: string;
   phone: string;
@@ -21,7 +19,7 @@ export interface KakaoPlace {
 }
 
 interface KakaoPlaceResult {
-  id: string; place_name: string; category_name: string; phone: string;
+  place_name: string; category_name: string; phone: string;
   road_address_name: string; address_name: string; place_url: string; distance: string;
 }
 
@@ -32,7 +30,7 @@ interface KakaoSdk {
       Places: new () => {
         keywordSearch: (query: string, callback: (data: KakaoPlaceResult[], status: string) => void, options?: Record<string, unknown>) => void;
       };
-      Status: { OK: string; ZERO_RESULT: string; ERROR: string };
+      Status: { OK: string };
       SortBy: { DISTANCE: string };
     };
   };
@@ -102,7 +100,7 @@ export function findKakaoPlace(store: { id: string; name: string; lat: number | 
     }), []);
     const hit = pickSame(store.name, results);
     return hit ? {
-      id: hit.id, name: hit.place_name, category: hit.category_name, phone: hit.phone,
+      category: hit.category_name, phone: hit.phone,
       roadAddress: hit.road_address_name, address: hit.address_name, url: hit.place_url,
     } : null;
   })().catch(() => null);
@@ -110,5 +108,3 @@ export function findKakaoPlace(store: { id: string; name: string; lat: number | 
   // 오류·키 없음으로 null 이 나온 경우도 이 화면에서는 다시 찾지 않는다 (새로고침하면 다시)
   return job;
 }
-
-export const KAKAO_ENABLED = !!KEY;

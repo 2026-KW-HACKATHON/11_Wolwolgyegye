@@ -87,5 +87,5 @@ export default function PartnerSection({ storeId }: { storeId: string }) {
     return () => window.removeEventListener(AUDIENCE_EVENT, sync);
   }, []);
   if (!view) return null;
-  return <div className="ps-page ps-page--detail" data-sd-target={`partner-${storeId}`}><PartnerDetail view={view} audience={audience} /></div>;
+  return <div className="ps-page ps-page--detail"><PartnerDetail view={view} audience={audience} /></div>;
 }

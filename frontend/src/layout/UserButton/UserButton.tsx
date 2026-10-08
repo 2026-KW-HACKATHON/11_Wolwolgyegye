@@ -1,6 +1,5 @@
-import { useAuthStatus } from '../../core/auth/useAuthStatus';
+import { useAuth } from '../../core/auth/AuthContext';
 import Icon from '../../shared/Icon';
-import { useUserSession } from '../../shared/session/UserSessionContext';
 import './UserButton.css';
 
 /**
@@ -8,8 +7,7 @@ import './UserButton.css';
  * 비로그인 / 일반 사용자 / 사장님 상태에 따라 표시만 달라진다.
  */
 export default function UserButton({ active, onClick }: { active: boolean; onClick: () => void }) {
-  const { userName } = useUserSession();
-  const status = useAuthStatus();
+  const { userName, status } = useAuth();
   const label = status === 'owner' ? '사장님' : userName ? '내 정보' : '로그인';
 
   return (

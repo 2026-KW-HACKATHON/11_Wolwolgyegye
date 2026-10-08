@@ -14,18 +14,15 @@ database/
 ├─ package-lock.json    위 도구의 버전 고정 (손대지 않음)
 ├─ supabase/
 │  ├─ config.toml       내 컴퓨터에서 Supabase 를 띄울 때 쓰는 설정 (지금은 안 씀)
-│  └─ migrations/       DB 모양을 만드는 SQL. 번호 순서대로 한 번씩 실행
-│     ├─ 20261004000100_schema.sql     표 21개 전체 + 접근 권한 + 함수
-│     ├─ 20261005000100_mock_flag.sql  예시 가게 표시 칸(is_mock) 추가
-│     ├─ 20261005110000_menu_details.sql  메뉴 구역·공통 분류·비고·메뉴판 칸 추가
-│     └─ 20261005120000_feed_categories.sql  공간대여·원데이클래스 분류를 6개씩으로 늘림
+│  └─ migrations/       DB 모양을 만드는 SQL. 번호 순서대로 한 번씩 실행 (하는 일은 각 파일 맨 위 주석)
 ├─ scripts/
-│  └─ menu_excel_to_csv.py  팀원이 판독한 메뉴 엑셀 → DB 적재용 CSV
+│  ├─ menu_excel_to_csv.py     팀원이 판독한 메뉴 엑셀 → DB 적재용 CSV
+│  └─ partner_excel_to_csv.py  제휴매장 엑셀 → 제휴 혜택 CSV
 ├─ mock/
 │  └─ seed_mock.sql     예시(가짜) 데이터 넣기
 └─ tests/
    ├─ bootstrap.sql     검사용 가짜 Supabase 기본 틀 (실제 DB 에 실행 금지)
-   ├─ database.test.mjs DB 모양·권한 검사 12개
+   ├─ database.test.mjs DB 모양·권한 검사 20개
    └─ mock.test.mjs     예시 데이터 넣기·지우기 검사 4개
 ```
 
@@ -33,15 +30,8 @@ database/
 
 ### migrations — DB 모양 만들기
 - Supabase 대시보드 → **SQL Editor** 에 파일 전체를 붙여 넣고 실행합니다.
-- **번호 순서대로, 파일마다 한 번만** 실행합니다. (2026-10-05 실제 DB 에 둘 다 실행 완료)
+- **번호 순서대로, 파일마다 한 번만** 실행합니다.
 - 이미 실행한 파일은 고치지 않습니다. 바꿀 게 생기면 새 번호의 파일을 추가합니다.
-
-| 파일 | 하는 일 |
-|---|---|
-| `20261004000100_schema.sql` | 가게·메뉴·영업시간·사진·제휴·마감세일·공간대여·원데이클래스·스탬프·로그인 표를 만들고, 누가 무엇을 읽고 쓸 수 있는지(권한)를 정한다 |
-| `20261005000100_mock_flag.sql` | 가게 표에 "예시 가게" 표시(`is_mock`)를 추가한다 |
-| `20261005110000_menu_details.sql` | 메뉴 표에 구역 제목·공통 분류·옵션/비고·메뉴판 등록일·메뉴판 파일 칸을 추가한다 |
-| `20261005120000_feed_categories.sql` | 공간대여·원데이클래스 분류를 3개씩에서 6개씩으로 늘린다 (화면의 분류 목록과 이름이 같아야 함) |
 
 ### scripts/menu_excel_to_csv.py — 메뉴 엑셀 정리
 팀원이 메뉴판 사진을 직접 판독한 엑셀(1행 제목, A~H열)을 DB 에 넣기 좋은 CSV 로 바꿉니다.
@@ -75,7 +65,7 @@ python database/scripts/menu_excel_to_csv.py "엑셀 경로.xlsx"
 
 ```powershell
 npm ci     # 처음 한 번
-npm test   # 검사 16개 실행
+npm test   # 검사 24개 실행
 ```
 
 ## 실제 가게 데이터는 어디서 오나
@@ -84,8 +74,9 @@ npm test   # 검사 16개 실행
 |---|---|
 | 가게 851곳 (월계1동 상가정보) | `frontend` 폴더에서 `npm run fetch:sbiz` → `npm run import:stores` (관리자 키 `SUPABASE_SECRET_KEY` 필요) |
 | 메뉴 3,762개 (팀원이 메뉴판 사진 판독, 가게 94곳) | 엑셀 → `scripts/menu_excel_to_csv.py` → `frontend` 폴더에서 `npm run import:menus -- "CSV 경로"` (미리보기) → 같은 명령 끝에 `--apply` (관리자 키 필요). 가게 이름 연결이 안 되면 `frontend/scripts/import-menus.js` 의 `STORE_ALIASES` 에 상가업소번호를 적는다 |
-| 메뉴·세일·공간대여 등 | 사장님 화면에서 (로그인 연결 후) |
-| 제휴 혜택, 가게 공개/숨김, 사장님 승인 | 운영자가 SQL Editor 에서 |
+| 메뉴·세일·공간대여 등 | 사장님 화면에서 |
+| 제휴 혜택 | `frontend` 폴더에서 `npm run import:partner-benefits` (관리자 키 필요) |
+| 가게 공개/숨김, 사장님 승인 | 관리자 화면(`/admin`)에서 |
 
 ## 지킬 것
 - 관리자 키(`sb_secret_…`)는 `frontend/.env.local` 에만 두고, 앞에 `VITE_` 를 붙이지 않습니다. 채팅·git 에 올리지 않습니다.

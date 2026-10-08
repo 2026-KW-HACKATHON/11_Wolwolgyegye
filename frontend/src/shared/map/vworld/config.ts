@@ -133,7 +133,6 @@ export function createStyles(css: (name: string) => string): MapStyles {
       apartment: { fillColor: css('--apartment-fill'), fillOpacity: 1, stroke: false },
     },
     // 월계1동 경계 (점선 외곽선, 채우지 않음). 아래 건물 클릭을 가로막지 않도록 interactive false
-    // (월계동 법정동 경계는 지금은 그리지 않는다. 수집 스크립트는 boundary.geojson 을 계속 저장한다)
     ADMIN_DONG_STYLE: { color: css('--admin-dong'), weight: 2.5, dashArray: '4 6', fill: false, interactive: false },
   };
 }

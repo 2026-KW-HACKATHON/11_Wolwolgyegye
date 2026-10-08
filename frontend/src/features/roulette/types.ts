@@ -50,7 +50,6 @@ export interface MenuPreset {
 /** 메뉴 -> 가게 연결 한 건 */
 export interface RouletteStoreLink {
   id: string;
-  menuName: string;
   storeId: string;
   /** 이 메뉴 기준으로 가게를 소개하는 한 줄 (예: "양념치킨 20,000원") */
   desc: string;

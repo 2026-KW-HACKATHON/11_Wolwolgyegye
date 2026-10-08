@@ -34,12 +34,9 @@ const FEATURE_PANEL_IDS = new Set(['space-rental', 'oneday-class', 'closing-sale
 /** 이 탭에서는 모든 가게를 동네 소식처럼 작은 주황 핀(상가정보 핀과 같이 묶음)으로 보여준다 */
 const PLACE_PIN_PANEL_IDS = new Set(['recommend', 'owner', 'user']);
 
-/** 지도에 표시할 가게: 가게가 지원하는 카테고리면 그 가게만, 아니면(동네 소식·유저) 전체 */
+/** 지도에 표시할 가게: 그 카테고리를 지원하는 가게만 */
 function storesForPanel(stores: Store[], panelId: string): Store[] {
-  const key = panelId as keyof CategorySupport;
-  const matched = stores.filter((store) => store.supports[key]);
-  if (FEATURE_PANEL_IDS.has(panelId)) return matched;
-  return matched.length > 0 ? matched : stores;
+  return stores.filter((store) => store.supports[panelId as keyof CategorySupport]);
 }
 
 /** 카테고리 가게 → 2차 탭 요약 */
@@ -186,8 +183,8 @@ export default function AppShell() {
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   /** 2차 탭에 연 지도 가게 (카테고리 가게와 동시에 열리지 않는다) */
   const [selectedPlace, setSelectedPlace] = useState<MapStore | null>(null);
-  /** 2차 탭을 1차 탭에서 열었을 때 처음 보여줄 카테고리(항목). seq 는 같은 곳을 다시 눌러도 스크롤하도록 */
-  const [focus, setFocus] = useState<(SecondaryFocus & { seq: number }) | null>(null);
+  /** 2차 탭을 1차 탭에서 열었을 때 처음 보여줄 카테고리(항목). 같은 곳을 다시 눌러도 스크롤하도록 매번 새 객체로 둔다 */
+  const [focus, setFocus] = useState<SecondaryFocus | null>(null);
   const [locating, setLocating] = useState(false);
   const [listOpen, setListOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -498,7 +495,7 @@ export default function AppShell() {
   /** 1차 탭에서 가게를 연다: 2차 탭을 열고, focus 가 있으면 그 카테고리(항목)를 맨 위로 스크롤한다 */
   const openStore = useCallback((storeId: string, target?: SecondaryFocus) => {
     selectAnyStore(storeId);
-    setFocus(target ? { ...target, seq: Date.now() } : null);
+    setFocus(target ? { ...target } : null);
     revealMap();
   }, [selectAnyStore, revealMap]);
 

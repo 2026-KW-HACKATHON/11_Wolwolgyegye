@@ -68,29 +68,6 @@
 /* ==========================================================================
    목록: 스탬프 지갑
    ========================================================================== */
-.st-wallet {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 18px;
-  padding: 22px 20px 20px;
-  margin-bottom: 20px;
-  border: 1px solid var(--st-line);
-  border-radius: 24px;
-  background:
-    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--st-ink) 7%, transparent) 1px, transparent 1.5px) 0 0 / 14px 14px,
-    var(--st-cream);
-}
-
-.st-wallet-title {
-  margin: 10px 0 0;
-  font-size: 1.45rem;
-  line-height: 1.35;
-  font-weight: 850;
-  letter-spacing: -0.035em;
-  word-break: keep-all;
-}
-.st-wallet-title em { font-style: normal; color: var(--st-brand); }
-
 /* 검색·정렬·필터 */
 .st-toolbar { display: flex; gap: 8px; }
 .st-search {
@@ -319,7 +296,6 @@
 .st-how li > span:last-child { color: var(--st-muted); font-size: 0.82rem; line-height: 1.55; }
 
 .st-demo-note { margin: 18px 0 0; color: var(--st-muted); font-size: 0.78rem; line-height: 1.6; text-align: center; }
-.st-demo-note button { min-height: 44px; margin-left: 6px; padding: 0 4px; border: 0; background: none; color: var(--st-brand); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 
 /* ==========================================================================
    가게별 적립판
@@ -411,15 +387,7 @@
 .st-slots li.is-gift .st-slot-empty { border-color: var(--st-gold); background: var(--st-gold-pale); color: var(--st-gold); font-size: 1.3rem; }
 
 .st-seal { display: block; width: 100%; height: auto; color: var(--st-seal); opacity: 0.9; transform: rotate(var(--st-tilt)); overflow: visible; }
-.st-seal--sm { width: 100%; }
 .st-slots li.is-gift .st-seal { color: var(--st-gold); }
-.st-seal.is-fresh { animation: st-press 0.62s cubic-bezier(0.2, 0.8, 0.3, 1.15) both; }
-@keyframes st-press {
-  0% { opacity: 0; transform: rotate(calc(var(--st-tilt) - 16deg)) scale(1.9); }
-  55% { opacity: 1; transform: rotate(var(--st-tilt)) scale(0.9); }
-  78% { transform: rotate(var(--st-tilt)) scale(1.05); }
-  100% { opacity: 0.9; transform: rotate(var(--st-tilt)) scale(1); }
-}
 
 .st-paper-foot {
   display: flex;
@@ -544,11 +512,6 @@
 .st-steps li { display: flex; align-items: center; gap: 10px; }
 .st-steps b { display: grid; flex-shrink: 0; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--st-brand); color: var(--color-on-dark); font-size: 0.75rem; }
 
-.st-demo-box { display: grid; gap: 10px; padding: 14px; border: 1.5px dashed color-mix(in srgb, var(--st-gold) 50%, transparent); border-radius: 16px; background: var(--st-gold-pale); }
-.st-demo-box p { margin: 0; color: var(--color-tag-coupon-text); font-size: 0.82rem; line-height: 1.6; }
-.st-demo-box p b { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 6px; background: var(--st-gold); color: var(--color-on-dark); font-size: 0.72rem; }
-.st-demo-box .st-btn { min-height: 48px; background: var(--st-ink); }
-
 .st-voucher {
   position: relative;
   display: grid;
@@ -613,8 +576,6 @@
 
 @container (min-width: 720px) {
   .st-filters { flex-wrap: wrap; margin: 14px 0 24px; padding: 0; overflow: visible; }
-  .st-wallet { grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); align-items: center; gap: 28px; padding: 30px 32px; }
-  .st-wallet-title { font-size: 1.9rem; }
   .st-detail {
     grid-template-columns: minmax(0, 1.25fr) minmax(300px, 1fr);
     grid-template-areas: 'card actions' 'history actions';
@@ -653,18 +614,12 @@
   .st-skeleton { height: 170px; border-radius: 14px; }
 }
 
-/* 가로로 눕힌 휴대폰처럼 세로가 짧은 화면: 상단 요약을 낮게 */
-@media (max-height: 520px) and (orientation: landscape) {
-  .st-wallet { gap: 14px; padding: 16px 20px; }
-  .st-wallet-title { margin-top: 6px; font-size: 1.3rem; }
-}
-
 @media (hover: hover) {
   .st-row:hover { background: var(--st-cream); }
   .st-item:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .st-seal.is-fresh, .st-skeleton { animation: none; }
+  .st-skeleton { animation: none; }
   .st-item, .st-btn, .st-progress span, .st-code-bar span { transition: none; }
 }

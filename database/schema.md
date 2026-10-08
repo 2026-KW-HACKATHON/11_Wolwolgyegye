@@ -113,7 +113,7 @@ stores                             가게
    │  └─ stamp_transactions        적립·사용 기록 (서버에서만 기록)
    └─ stamp_codes                  6자리 적립 코드 (사용자 + 가게당 하나, 3분·1회용, 서버 함수로만 발급·사용)
 
-partners                           제휴사 (광운대 단과대학 7곳)
+partners                           제휴사 (광운대 단과대학 8곳)
 └─ name                            제휴사 이름
 
 space_rental_categories            공간대여 분류 (모임·파티 / 스터디·회의 / 촬영·작업 / 연습·공연 / 공유주방 / 전시·팝업)

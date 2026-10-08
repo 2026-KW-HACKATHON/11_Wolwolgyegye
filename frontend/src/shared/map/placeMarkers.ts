@@ -34,7 +34,6 @@ export interface IconSpec {
 }
 
 export interface BuildingGroup {
-  key: string;
   lat: number;
   lng: number;
   /** 건물명, 없으면 주소 */
@@ -69,8 +68,7 @@ export function groupByBuilding(places: MapStore[]): BuildingGroup[] {
     if (list) list.push(place);
     else byKey.set(key, [place]);
   }
-  return [...byKey.entries()].map(([key, list]) => ({
-    key,
+  return [...byKey.values()].map((list) => ({
     lat: list.reduce((sum, p) => sum + p.lat, 0) / list.length,
     lng: list.reduce((sum, p) => sum + p.lng, 0) / list.length,
     name: list.find((p) => p.buildingName)?.buildingName || list[0].address || '이름 없는 건물',

@@ -37,7 +37,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         // 내 단과대는 따로 읽는다: 칸이 아직 없는 DB 에서도 이름·사장님 정보는 그대로 불러오도록
         client.from('profiles').select('college_id').eq('user_id', user.id).maybeSingle(),
         client.from('stores').select('id, name').eq('owner_id', user.id),
-        client.from('owner_applications').select('id, status, review_note, store_name').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1),
+        client.from('owner_applications').select('status, review_note, store_name').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1),
         client.rpc('is_current_user_admin'),
       ]);
       if (current !== revision.current) return;

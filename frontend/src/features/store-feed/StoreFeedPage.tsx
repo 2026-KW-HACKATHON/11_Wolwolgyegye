@@ -5,7 +5,7 @@ import { useShell } from '../../layout/AppShell/ShellContext';
 import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
 import Icon from '../../shared/Icon';
 import { useToast } from '../../shared/toast/ToastContext';
-import { FEED_CHANGE_EVENT, findFeedStore } from './feedSource';
+import { FEED_CHANGE_EVENT, fetchFeedPosts, findFeedStore } from './feedSource';
 import { scheduleLabel } from './FeedPostDetail';
 import { FEED_CATEGORIES, formatPrice, isAvailable, type FeedKind, type FeedPost } from './types';
 import FeedDialog from './FeedDialog';
@@ -14,8 +14,8 @@ import PostVisual from './PostVisual';
 import './store-feed.css';
 
 const COPY = {
-  'space-rental': { label: '공간 대여', eyebrow: '우리 동네, 우리만의 공간', title: '좋은 공간을 나누면,\n일상이 조금 특별해져요.', description: '쉬는 날의 카페부터 조용한 작업실까지. 사장님이 직접 소개하는 동네 공간을 만나보세요.', icon: 'house' as const },
-  'oneday-class': { label: '원데이클래스', eyebrow: '동네에서 발견하는 새로운 취향', title: '처음이라 더 즐거운,\n하루의 작은 배움.', description: '반죽을 만지고, 커피를 내리고, 나만의 작품을 만들어요. 동네 사장님이 오늘은 선생님이 됩니다.', icon: 'paletteColor' as const },
+  'space-rental': { label: '공간 대여', eyebrow: '우리 동네, 우리만의 공간', title: '좋은 공간을 나누면, 일상이 조금 특별해져요.', icon: 'house' as const },
+  'oneday-class': { label: '원데이클래스', eyebrow: '동네에서 발견하는 새로운 취향', title: '처음이라 더 즐거운, 하루의 작은 배움.', icon: 'paletteColor' as const },
 };
 /** 분류 줄에 바로 보이는 분류 수 ('전체' 제외. 나머지는 더보기) */
 const QUICK_CATEGORIES = 3;
@@ -27,7 +27,7 @@ const QUICK_CATEGORIES = 3;
  * - ?edit=ID : 그 글의 수정 창을 연다 (2차 탭의 "글 수정" 버튼)
  * - ?compose=1 : 글쓰기 창을 연다
  */
-export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loadPosts: () => Promise<FeedPost[]> }) {
+export default function StoreFeedPage({ kind }: { kind: FeedKind }) {
   const copy = COPY[kind];
   const { status } = useAuth();
   const canWrite = status === 'owner';
@@ -46,10 +46,10 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
 
   const reload = useCallback(async () => {
     setError('');
-    try { setPosts(await loadPosts()); }
+    try { setPosts(await fetchFeedPosts(kind)); }
     catch (e) { setError(e instanceof Error ? e.message : '피드를 불러오지 못했어요.'); }
     finally { setLoading(false); }
-  }, [loadPosts]);
+  }, [kind]);
 
   useEffect(() => {
     if (!active) return;
@@ -101,7 +101,7 @@ export default function StoreFeedPage({ kind, loadPosts }: { kind: FeedKind; loa
     {/* 소개 배너는 한 줄 높이로 줄여 검색·필터·첫 카드가 첫 화면에 함께 보이게 한다 */}
     <section className="sf-hero">
       <span className="sf-hero-art" aria-hidden="true"><Icon name={copy.icon} /></span>
-      <div><span className="sf-eyebrow">{copy.eyebrow}</span><h1>{copy.title.replace('\n', ' ')}</h1></div>
+      <div><span className="sf-eyebrow">{copy.eyebrow}</span><h1>{copy.title}</h1></div>
       {canWrite && <button type="button" className="sf-secondary sf-hero-write" onClick={() => setEditing(null)}>＋ 글쓰기</button>}
     </section>
 

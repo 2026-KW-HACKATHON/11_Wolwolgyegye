@@ -31,8 +31,8 @@ interface SecondaryPanelProps {
   place: SecondaryPlace | null;
   layout: LayoutMode;
   onClose: () => void;
-  /** 처음 보여줄 카테고리(항목). seq 가 바뀔 때마다 다시 스크롤한다 */
-  focus: (SecondaryFocus & { seq: number }) | null;
+  /** 처음 보여줄 카테고리(항목). 새 객체가 올 때마다 다시 스크롤한다 */
+  focus: SecondaryFocus | null;
 }
 
 type DetailState = { id: string; detail: StoreDetail | null } | null;
@@ -140,7 +140,7 @@ const SecondaryPanel = forwardRef<HTMLElement, SecondaryPanelProps>(function Sec
   // 사장님이 등록한 정보(영업시간·스탬프·글)가 하나도 없으면 카카오맵에서 같은 가게를 찾아 홈을 채운다
   const loadedDetail = loaded?.id === id ? loaded.detail : null;
   const ownerEmpty = !!loadedDetail && !loadedDetail.hours.length && !loadedDetail.stamp
-    && !STORE_SECTIONS.some((section) => section.has(loadedDetail));
+    && !STORE_SECTIONS.some((section) => section.count(loadedDetail) > 0);
   useEffect(() => {
     if (!loadedDetail || !ownerEmpty) return;
     let cancelled = false;
@@ -192,7 +192,7 @@ const SecondaryPanel = forwardRef<HTMLElement, SecondaryPanelProps>(function Sec
     ? { lat: detail.lat, lng: detail.lng }
     : null);
   const hours = detail ? groupBusinessHours(detail.hours) : [];
-  const sections = detail ? STORE_SECTIONS.filter((section) => section.has(detail)) : [];
+  const sections = detail ? STORE_SECTIONS.filter((section) => section.count(detail) > 0) : [];
   const photos = detail?.photos ?? [];
   const tabs = [...BASE_TABS, ...sections.map((section) => ({ id: section.id, label: section.label }))];
   // 가게 정보를 읽기 전이거나 그 카테고리 글이 없으면 홈

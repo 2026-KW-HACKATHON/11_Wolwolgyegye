@@ -52,8 +52,3 @@ export function groupBusinessHours(rows: HoursRow[]): HoursLine[] {
   if (new Set(texts).size !== texts.length) return daily;
   return runs.map((r) => ({ label: r.from === r.to ? DAY_LABELS[r.from] : `${DAY_LABELS[r.from]}~${DAY_LABELS[r.to]}`, text: r.text }));
 }
-
-/** 영업시간 한 줄 문자열 (목록 카드용). 예: "월~금 10:00~21:00 / 토~일 11:00~20:00". 정보가 없으면 '' */
-export function formatBusinessHours(rows: HoursRow[]): string {
-  return groupBusinessHours(rows).map((line) => `${line.label} ${line.text}`).join(' / ');
-}

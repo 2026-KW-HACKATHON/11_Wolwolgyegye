@@ -2,12 +2,11 @@ import { subCategoryById } from '../categories/subCategories';
 import { getSupabaseClient } from '../supabase/client';
 import { MAP_CENTER } from '../../shared/map/vworld/mapExtent';
 import type { CategorySupport, GeoPoint, Store } from '../types/place';
-import { formatBusinessHours, type HoursRow } from '../utils/hours';
 
 /**
  * 가게 공통 정보를 가져오는 지점. 모든 카테고리의 source.ts 가 이 함수로 storeId 를 가게로 바꾼다.
  * DB stores 표(공개 가게만, RLS)에서 읽고, 한 번 읽은 가게는 앱이 켜져 있는 동안 기억한다.
- * 대표 사진은 store_images 의 첫 장(sort_order 순), supports 는 카테고리별 표에 그 가게 행이 있는지로 채운다.
+ * supports 는 카테고리별 표에 그 가게 행이 있는지로 채운다.
  * DB 설정이 없거나 연결에 실패하면 가게가 없는 것으로 본다 (화면은 빈 목록을 보여준다).
  */
 interface StoreRow {
@@ -20,19 +19,12 @@ interface StoreRow {
   lng: number;
   phone: string;
   is_mock: boolean;
-  store_hours: HoursRow[];
-  store_images: { image_path: string; sort_order: number }[];
 }
 
-const STORE_COLUMNS = 'id, name, type_id, industry, address, lat, lng, phone, is_mock, store_hours(weekday, opens_at, closes_at, is_closed), store_images(image_path, sort_order)';
+const STORE_COLUMNS = 'id, name, type_id, industry, address, lat, lng, phone, is_mock';
 /** 한 번에 묻는 id 수 (주소 길이 제한) */
 const ID_CHUNK = 150;
 const cache = new Map<string, Store>();
-
-function thumbnailOf(images: StoreRow['store_images']): string {
-  const first = [...(images ?? [])].sort((a, b) => a.sort_order - b.sort_order)[0];
-  return first ? getSupabaseClient().storage.from('store-media').getPublicUrl(first.image_path).data.publicUrl : '';
-}
 
 function toStore(row: StoreRow): Store {
   return {
@@ -41,8 +33,6 @@ function toStore(row: StoreRow): Store {
     cuisineType: subCategoryById(row.type_id)?.label ?? (row.industry || undefined),
     location: { lat: row.lat, lng: row.lng },
     address: row.address,
-    thumbnailUrl: thumbnailOf(row.store_images),
-    businessHours: formatBusinessHours(row.store_hours ?? []),
     phone: row.phone,
     supports: {},
     isMock: row.is_mock,

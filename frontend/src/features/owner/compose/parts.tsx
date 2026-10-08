@@ -3,10 +3,10 @@ import Icon from '../../../shared/Icon';
 import type { IconName } from '../../../shared/icons';
 
 /** 흰 카드 한 묶음 (제목 + 내용) */
-export function Card({ title, children }: { title?: string; children: ReactNode }) {
+export function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="ow-card">
-      {title && <h2 className="ow-card-title">{title}</h2>}
+      <h2 className="ow-card-title">{title}</h2>
       {children}
     </section>
   );
@@ -26,14 +26,14 @@ export function Field({ label, required, hint, children, htmlFor }: { label: str
 }
 
 /** 하나만 고르는 칩 묶음 (radio) */
-export function ChoiceChips<T extends string>({ label, options, value, onChange, columns = 3, icons }: {
-  label: string; options: readonly T[]; value: T | ''; onChange: (value: T) => void; columns?: number; icons?: Partial<Record<T, IconName>>;
+export function ChoiceChips<T extends string>({ label, options, value, onChange, columns = 3 }: {
+  label: string; options: readonly T[]; value: T | ''; onChange: (value: T) => void; columns?: number;
 }) {
   return (
     <div className="ow-chips" role="radiogroup" aria-label={label} data-cols={columns}>
       {options.map((option) => (
         <button key={option} type="button" role="radio" aria-checked={value === option} onClick={() => onChange(option)}>
-          {value === option ? <Icon name="check" /> : icons?.[option] && <Icon name={icons[option]!} />}
+          {value === option && <Icon name="check" />}
           <span>{option}</span>
         </button>
       ))}
@@ -106,7 +106,7 @@ export function readImage(file: File): Promise<string> {
 }
 
 /** 점선 상자의 "사진 추가" 버튼 (숨긴 file input 을 연다) */
-export function PhotoAdd({ label, onPick, size = 'tile', disabled }: { label: string; onPick: (file: File) => void; size?: 'tile' | 'wide' | 'box'; disabled?: boolean }) {
+export function PhotoAdd({ label, onPick, size = 'tile', disabled }: { label: string; onPick: (file: File) => void; size?: 'tile' | 'wide'; disabled?: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
   return (
     <>

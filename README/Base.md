@@ -2,13 +2,13 @@
 
 1. Branch
     
-- Branch는 오직 6개로만 구성하여 사용할 예정이며, 다음과 같은 용도로 사용한다.
-    - `Main` : 최종 / 4명의 대면 혹은 원격 허락 하에 수정 가능
-    - `Develop` : 팀원 모두의 코드를 취합한 환경 / Main 이전 모두가 다룰 수 있는 Demo
-        - `Song`
-        - `Min`
+- Branch는 6개로 구성하며, 다음과 같은 용도로 사용한다.
+    - `main` : 최종 / 4명의 대면 혹은 원격 허락 하에 수정 가능
+    - `develop` : 팀원 모두의 코드를 취합한 환경 / main 이전 모두가 다룰 수 있는 통합본
+        - `choo`
+        - `min`
         - `Young`
-        - `Jun`   : 각 중간글자로 브랜치의 이름을 명명하며, 본인의 코드를 작성 후 올린다.
+        - `jun`   : 팀원별 브랜치. 본인의 코드를 작성 후 올린다.
 ---
 2. Flowchart
 
@@ -32,7 +32,7 @@
         - 기본 로그인
         - `회원 가입`
             - 손님
-                - 기본 로그인 (네이버, 카카오, 구글)
+                - 카카오 간편로그인, 이메일 가입
             - `사장님`
                 - `본인 인증 (철저히)`
                     - `관리자 승인`
@@ -66,7 +66,7 @@
         │  ├─ device/      layoutMode.ts, useLayoutModeDetector.ts, LayoutModeContext.ts
         │  ├─ auth/        authTypes.ts, AuthContext.ts, useAuthStatus.ts
         │  ├─ router/      useActivePath.ts
-        │  ├─ categories/  categoryTypes.ts, categories.ts, subCategories.ts, enabledCategories.ts, useVisibleCategories.ts
+        │  ├─ categories/  categoryTypes.ts, categories.ts, subCategories.ts, useVisibleCategories.ts
         │  ├─ types/       place.ts            (가게 공통 규격 Store — 필드는 추가만)
         │  ├─ source/      storeSource.ts      (storeId -> Store 조회, 사용자 위치)
         │  ├─ supabase/    client.ts, config.ts, stores.ts (지도 가게 = DB 공개 가게 읽기)
@@ -76,12 +76,12 @@
         │  ├─ CategoryNav/       CategoryNav.tsx/.css                 (카테고리 바: 하단 가로 / 우측 세로)
         │  ├─ SwipePanel/        SwipePanel.tsx/.css                  (1차 탭: 닫힘 / 반 / 전체)
         │  ├─ KeepAlivePages/    KeepAlivePages.tsx, PageActiveContext.ts
-        │  ├─ SecondaryPanel/    SecondaryPanel.tsx/.css              (2차 탭 자리, 구현 예정)
+        │  ├─ SecondaryPanel/    SecondaryPanel.tsx/.css              (2차 탭: 가게 상세)
         │  ├─ SubCategories/     SubCategoryList.tsx/.css             (그 외 카테고리: 지도 위쪽 한 줄)
         │  ├─ UserButton/        UserButton.tsx/.css                  (유저 및 설정)
         │  └─ Splash/            Splash.tsx, Splash.css
         ├─ shared/
-        │  └─ map/               MainMap.tsx/.css (배경 지도, Leaflet 1.9.4), StoreMap.tsx (위치 약도)
+        │  └─ map/               MainMap.tsx/.css (배경 지도, Leaflet 1.9.4)
         │     ├─ osm/            normalize.ts (도로·철도·역 속성 정규화), drawTransit.ts (지하철 노선·역 이름표·출구)
         │     ├─ vworld/         mapExtent.ts (지도 범위 규칙), config.ts (스타일·레이어 순서), normalize.ts (속성 정규화),
         │     │                  loadData.ts, draw.ts, geometry.ts (월계1동 안쪽 판단)
@@ -89,7 +89,7 @@
         └─ features/
             ├─ pageRegistry.ts
             ├─ recommend / space-rental / oneday-class / roulette / closing-sale
-            │   / coupon / partner-stores / user (login + settings)   (폴더 형식은 Code.md 4번 참고)
+            │   / coupon / partner-stores / user / login / settings   (폴더 형식은 Code.md 4번 참고)
             └─ owner/   사장님 화면 (/owner, AppShell 밖 독립 라우트)
 - database
     └─ supabase/migrations/  (DB 표 형태만. 설명은 database/README.md)
@@ -100,10 +100,3 @@
 4. Image
 
 - 이미지 파일들은 반드시 `(Image)폴더로 묶어서 사용하는 공간 바로 하위 폴더`로 혹은 `상위 데이터 셋 집합`에 넣어둔다.
----
-5. Language
-
-- `HTML` + `CSS` + `JAVASCRIPT`
-- `PYTHON`
-- `+ETC`
-
