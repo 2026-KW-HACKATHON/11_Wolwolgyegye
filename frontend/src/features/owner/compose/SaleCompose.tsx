@@ -5,22 +5,35 @@ import { createSale, validateSale, type SaleInput } from '../ownerApi';
 import ComposeShell from './ComposeShell';
 import { Card, DoneStep, Field, FormError, Stepper, Toggle, WonInput } from './parts';
 
-/** 기본 마감 시각: 오늘 21시 (이미 지났거나 30분도 안 남았으면 2시간 뒤) */
-function defaultEnd(): string {
+const pad = (n: number) => String(n).padStart(2, '0');
+/** Date → 날짜 칸 값(YYYY-MM-DD, 내 시간대) */
+const dateValue = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+/** 기본 마감: 오늘 21시 (이미 지났거나 30분도 안 남았으면 2시간 뒤, 자정을 넘기면 다음 날) */
+function defaultEnd(): { date: string; time: string } {
   const now = new Date();
   const tonight = new Date(now);
   tonight.setHours(21, 0, 0, 0);
   const end = tonight.getTime() > now.getTime() + 30 * 60_000 ? tonight : new Date(now.getTime() + 2 * 3600_000);
-  return `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+  return { date: dateValue(end), time: `${pad(end.getHours())}:${pad(end.getMinutes())}` };
 }
 
-/** 마감 시각(HH:MM) → 오늘 그 시각. 자정을 넘기는 값(지금보다 이른 시각)이면 내일로 */
-function endDate(hhmm: string): Date {
+/** 날짜(YYYY-MM-DD) + 시각(HH:MM) → Date. 비어 있으면 null */
+function endDate(date: string, hhmm: string): Date | null {
+  if (!date || !hhmm) return null;
+  const [y, mo, d] = date.split('-').map(Number);
   const [h, m] = hhmm.split(':').map(Number);
-  const date = new Date();
-  date.setHours(h, m, 0, 0);
-  if (date.getTime() <= Date.now()) date.setDate(date.getDate() + 1);
-  return date;
+  const result = new Date(y, mo - 1, d, h, m, 0, 0);
+  return Number.isFinite(result.getTime()) ? result : null;
+}
+
+/** 마감 날짜를 사람이 읽는 말로: 오늘 / 내일 / 10월 12일 (일) */
+function dayLabel(d: Date): string {
+  const today = new Date();
+  const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+  if (d.toDateString() === today.toDateString()) return '오늘';
+  if (d.toDateString() === tomorrow.toDateString()) return '내일';
+  return d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
 }
 
 /**
@@ -34,22 +47,23 @@ export default function SaleCompose({ storeId, onClose }: { storeId: string; onC
   const [regular, setRegular] = useState<number | null>(null);
   const [salePrice, setSalePrice] = useState<number | null>(null);
   const [quantity, setQuantity] = useState(5);
-  const [end, setEnd] = useState(defaultEnd);
+  const [endDay, setEndDay] = useState(() => defaultEnd().date);
+  const [end, setEnd] = useState(() => defaultEnd().time);
   const [visitOnly, setVisitOnly] = useState(true);
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
   const percent = regular && salePrice !== null && salePrice < regular ? Math.round((1 - salePrice / regular) * 100) : null;
-  const ends = end ? endDate(end) : null;
-  const tomorrow = ends ? ends.toDateString() !== new Date().toDateString() : false;
+  const ends = endDate(endDay, end);
 
   async function submit() {
     if (!name.trim()) { setError('상품명을 입력해 주세요.'); return; }
     if (!regular) { setError('정가를 입력해 주세요.'); return; }
     if (salePrice === null) { setError('할인가를 입력해 주세요. 무료로 드리면 0원을 입력해 주세요.'); return; }
     if (salePrice >= regular) { setError('할인가는 정가보다 낮아야 해요.'); return; }
-    if (!ends) { setError('마감 시간을 골라 주세요.'); return; }
+    if (!ends) { setError('마감 날짜와 시간을 골라 주세요.'); return; }
+    if (ends.getTime() <= Date.now()) { setError('마감 시간이 이미 지났어요. 지금 이후로 골라 주세요.'); return; }
     const condition = [
       `정가 ${regular.toLocaleString('ko-KR')}원 → ${salePrice.toLocaleString('ko-KR')}원`,
       `${quantity}개 한정`,
@@ -104,13 +118,20 @@ export default function SaleCompose({ storeId, onClose }: { storeId: string; onC
           <Field label="판매 수량" required>
             <div className="ow-narrow"><Stepper label="판매 수량" value={quantity} onChange={setQuantity} min={1} max={999} unit="개" /></div>
           </Field>
-          <Field label="마감 시간" required htmlFor="sa-end" hint={tomorrow ? '지금보다 이른 시각이라 내일 그 시각까지로 등록돼요.' : undefined}>
-            <span className="ow-addon">
-              <Icon name="clock" />
-              <span className="ow-addon-prefix">{tomorrow ? '내일' : '오늘'}</span>
-              <input id="sa-end" type="time" value={end} onChange={(e) => setEnd(e.target.value)} />
-            </span>
-          </Field>
+          <div className="ow-grid-2">
+            <Field label="마감 날짜" required htmlFor="sa-end-day">
+              <span className="ow-addon">
+                <Icon name="calendar" />
+                <input id="sa-end-day" type="date" min={dateValue(new Date())} value={endDay} onChange={(e) => setEndDay(e.target.value)} />
+              </span>
+            </Field>
+            <Field label="마감 시간" required htmlFor="sa-end">
+              <span className="ow-addon">
+                <Icon name="clock" />
+                <input id="sa-end" type="time" value={end} onChange={(e) => setEnd(e.target.value)} />
+              </span>
+            </Field>
+          </div>
           <Toggle icon="storefront" label="매장 방문만 가능" desc="온라인 결제 없이, 매장에 직접 방문한 고객만 구매할 수 있어요." checked={visitOnly} onChange={setVisitOnly} />
           <Field label="구매자 안내" htmlFor="sa-note">
             <textarea id="sa-note" className="ow-input" rows={3} maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} placeholder="구매 시 참고할 내용을 입력해 주세요." />
@@ -119,7 +140,7 @@ export default function SaleCompose({ storeId, onClose }: { storeId: string; onC
       </>}
 
       {step === 2 && (
-        <DoneStep icon="bolt" title="마감세일을 등록했어요" desc={`${name} · ${ends ? `${tomorrow ? '내일' : '오늘'} ${end}` : ''}까지 이웃들에게 보여요.`}
+        <DoneStep icon="bolt" title="마감세일을 등록했어요" desc={`${name} · ${ends ? `${dayLabel(ends)} ${end}` : ''}까지 이웃들에게 보여요.`}
           actions={[
             { label: '마감세일 보기', onClick: () => navigate('/closing-sale') },
             { label: '가게 관리로', onClick: onClose, primary: true },

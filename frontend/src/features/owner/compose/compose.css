@@ -231,12 +231,6 @@ textarea.ow-input {
   display: block;
 }
 
-.ow-addon-prefix {
-  flex: none;
-  padding-left: 14px;
-  font-weight: 700;
-}
-
 .ow-addon input,
 .ow-addon select,
 .ow-addon .ow-time-range {
