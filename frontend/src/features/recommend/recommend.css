@@ -64,6 +64,7 @@
 .rp-save.is-saved .icon { fill: currentColor; }
 .rp-post-main { display: block; }
 .rp-post-cover { position: relative; aspect-ratio: 640 / 260; overflow: hidden; background: var(--rp-green-soft); }
+.rp-post-cover--portrait { aspect-ratio: 4 / 3; }
 .rp-post-cover img, .rp-artwork { display: block; width: 100%; height: 100%; object-fit: cover; }
 .rp-post-type { position: absolute; top: 13px; left: 14px; padding: 5px 9px; border-radius: 7px; background: var(--rp-paper); color: var(--rp-green); font-size: 11px; font-weight: 750; }
 .rp-post-cover--oneday-class .rp-post-type { color: var(--rp-brand); }

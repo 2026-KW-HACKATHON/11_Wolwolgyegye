@@ -5,6 +5,7 @@ import { useToast } from '../../shared/toast/ToastContext';
 import { findFeedStore } from '../store-feed/feedSource';
 import { formatPrice, isAvailable, type FeedPost } from '../store-feed/types';
 import CategoryArt from '../store-feed/CategoryArt';
+import PostImage, { usesPortraitFrame } from '../store-feed/PostImage';
 
 export default function FeedPostCard({ post, onShowStore }: { post: FeedPost; onShowStore: (id: string) => void }) {
   const store = findFeedStore(post.storeId);
@@ -27,8 +28,8 @@ export default function FeedPostCard({ post, onShowStore }: { post: FeedPost; on
     </header>
     <Link className="rp-post-main" to={href}>
       <h3>{post.title}</h3>
-      <div className={'rp-post-cover rp-post-cover--' + post.kind}>
-        {post.imageUrl ? <img src={post.imageUrl} alt={post.title} loading="lazy" /> : <CategoryArt post={post} className="rp-artwork" />}
+      <div className={'rp-post-cover rp-post-cover--' + post.kind + (usesPortraitFrame(post.imageUrl) ? ' rp-post-cover--portrait' : '')}>
+        {post.imageUrl ? <PostImage src={post.imageUrl} alt={post.title} /> : <CategoryArt post={post} className="rp-artwork" />}
         <span className="rp-post-type">{post.kind === 'space-rental' ? '공간 대여' : '원데이클래스'}</span>
       </div>
       <div className="rp-post-body">

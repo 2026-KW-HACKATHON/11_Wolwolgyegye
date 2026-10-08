@@ -95,6 +95,7 @@
   .sf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .sf-card { border-radius: 14px; }
   .sf-card .sf-visual { height: 96px; }
+  .sf-card .sf-visual--portrait { height: 128px; }
   .sf-card .sf-category-label { top: 8px; left: 8px; padding: 3px 7px; font-size: 10px; }
   .sf-card-content { padding: 10px 10px 12px; }
   .sf-byline { gap: 5px; font-size: 10px; }.sf-byline > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
