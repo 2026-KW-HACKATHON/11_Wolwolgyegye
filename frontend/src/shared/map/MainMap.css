@@ -96,7 +96,9 @@
 
 /* 3D 건물 이름표: 전체 건물이 아니라 선별된 랜드마크만, 겹치지 않을 때 표시한다. */
 .mm-landmark-label {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   max-width: 132px;
   padding: 3px 7px;
   overflow: hidden;
@@ -115,6 +117,20 @@
   pointer-events: none;
   backdrop-filter: blur(4px);
 }
+
+.mm-landmark-label::before {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border: 1px solid color-mix(in srgb, currentColor 55%, transparent);
+  background: color-mix(in srgb, currentColor 18%, var(--color-surface));
+  content: '';
+}
+
+.mm-landmark-label--campus::before { transform: rotate(45deg); }
+.mm-landmark-label--public::before { border-radius: 2px; }
+.mm-landmark-label--school::before { border-radius: 50%; }
+.mm-landmark-label--residence::before { clip-path: polygon(50% 0, 100% 42%, 86% 42%, 86% 100%, 14% 100%, 14% 42%, 0 42%); }
 
 .mm-landmark-label--campus {
   border-color: color-mix(in srgb, var(--color-brand) 45%, transparent);
@@ -483,6 +499,57 @@
 .pl-cluster.is-selected {
   outline: 3px solid var(--color-brand);
   outline-offset: 2px;
+}
+
+/* 설정 > 지도 가게 핀. 기본 간판형, 기존 모양, 다이아형을 2D 지도에도 같은 규칙으로 적용한다. */
+.mm-root[data-marker-style='signboard'] {
+  --pin-gradient: linear-gradient(145deg, var(--color-brand) 0%, var(--color-primary) 100%);
+  --pin-shape: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 30'%3E%3Cpath d='M4 1h16a3 3 0 0 1 3 3v18a3 3 0 0 1-3 3h-5l-3 5-3-5H4a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3Z'/%3E%3C/svg%3E");
+}
+
+.mm-root[data-marker-style='signboard'] .pl-cluster {
+  border-radius: 12px 12px 12px 4px;
+  background: linear-gradient(145deg, var(--color-brand), var(--color-primary));
+}
+
+.mm-root[data-marker-style='classic'] .mm-pin:not(.mm-pin--mine) {
+  border-radius: 50% 50% 50% 8px;
+  background: linear-gradient(145deg, #f2361a, #f4b847);
+  transform: rotate(-45deg);
+}
+
+.mm-root[data-marker-style='classic'] .mm-pin:not(.mm-pin--mine) .icon {
+  transform: rotate(45deg);
+}
+
+.mm-root[data-marker-style='classic'] .mm-pin.is-selected:not(.mm-pin--mine) {
+  transform: rotate(-45deg) scale(1.15);
+}
+
+.mm-root[data-marker-style='diamond'] {
+  --pin-gradient: linear-gradient(145deg, #0f766e, #14b8a6);
+  --pin-shape: none;
+}
+
+.mm-root[data-marker-style='diamond'] .pl-pin__shape {
+  background: var(--pin-gradient);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  -webkit-mask: none;
+  mask: none;
+}
+
+.mm-root[data-marker-style='diamond'] .pl-cluster {
+  border: 3px solid #f1c75b;
+  border-radius: 3px;
+  background: linear-gradient(145deg, #0f766e, #14b8a6);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+
+.mm-root[data-marker-style='diamond'] .mm-pin:not(.mm-pin--mine) {
+  border-color: #f1c75b;
+  border-radius: 3px;
+  background: linear-gradient(145deg, #0f766e, #14b8a6);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
 }
 
 /* 층별 가게 목록 팝업 */

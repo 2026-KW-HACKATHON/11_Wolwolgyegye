@@ -24,9 +24,18 @@
 
 .rp-home { padding: 0 20px 28px; }
 .rp-welcome { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 0 10px; }
-.rp-welcome p { margin: 0 0 5px; color: var(--rp-green); font-size: 12px; font-weight: 700; }
+.rp-welcome p { margin: 0 0 7px; color: var(--rp-green); font-size: 12px; font-weight: 700; }
+.rp-neighborhood-badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border: 1px solid color-mix(in srgb, var(--rp-green) 25%, transparent); border-radius: 999px; background: var(--rp-green-soft); }
+.rp-neighborhood-badge .icon { font-size: 13px; }
+.rp-welcome-user { display: block; margin: 0 0 4px; color: var(--rp-muted); font-size: 11px; }
 .rp-welcome h1 { margin: 0; font-size: clamp(20px, 5.4vw, 23px); line-height: 1.3; font-weight: 800; letter-spacing: -.065em; }
 .rp-welcome div > span { display: block; margin-top: 3px; color: var(--rp-muted); font-size: 13px; letter-spacing: -.03em; }
+.rp-neighborhood-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 4px 0 10px; }
+.rp-neighborhood-links :is(a, button) { display: flex; align-items: center; gap: 9px; min-width: 0; min-height: 58px; padding: 9px 10px; border: 1px solid var(--rp-line); border-radius: 14px; background: color-mix(in srgb, var(--rp-paper) 88%, var(--rp-green-soft)); color: var(--rp-ink); text-align: left; }
+.rp-neighborhood-links :is(a, button) > .icon { flex: 0 0 auto; width: 31px; height: 31px; padding: 7px; border-radius: 10px; background: var(--rp-green-soft); color: var(--rp-green); }
+.rp-neighborhood-links span { display: grid; min-width: 0; }
+.rp-neighborhood-links b { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.rp-neighborhood-links small { overflow: hidden; color: var(--rp-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .rp-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 0 10px; }
 .rp-eyebrow { margin: 0 0 3px; color: var(--rp-muted); font-size: 12px; }
 .rp-section-heading h2 { margin: 0; font-size: 20px; letter-spacing: -.05em; font-weight: 800; }
@@ -48,6 +57,7 @@
 .rp-post-owner div { flex: 1; min-width: 0; }
 .rp-post-owner strong { display: block; overflow: hidden; font-size: 14px; white-space: nowrap; text-overflow: ellipsis; }
 .rp-post-owner div > span { display: block; color: var(--rp-muted); font-size: 11px; margin-top: 1px; }
+.rp-post-owner div > .rp-local-badge { display: inline-flex; width: fit-content; margin-top: 3px; padding: 2px 6px; border: 1px solid color-mix(in srgb, var(--rp-green) 28%, transparent); border-radius: 999px; background: var(--rp-green-soft); color: var(--rp-green); font-size: 9px; font-weight: 750; }
 /* 찜 = 테두리 버튼 */
 .rp-save { display: grid; flex: none; place-items: center; width: 44px; height: 44px; border: 1px solid var(--rp-line); color: var(--rp-muted); font-size: 21px; border-radius: 50%; }
 .rp-save.is-saved { border-color: color-mix(in srgb, var(--rp-brand) 45%, transparent); color: var(--rp-brand); background: var(--rp-brand-soft); }
@@ -105,6 +115,7 @@
   .rp-post-avatar { width: 24px; height: 24px; border-radius: 8px; font-size: 14px; }
   .rp-post-owner strong { font-size: 11px; }
   .rp-post-owner div > span { font-size: 9px; }
+  .rp-post-owner div > .rp-local-badge { display: none; }
   .rp-save { width: 30px; height: 30px; font-size: 14px; }
   .rp-post h3 { display: -webkit-box; overflow: hidden; padding: 0 10px 8px; font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .rp-post-cover { aspect-ratio: 16 / 10; }

@@ -5,6 +5,7 @@ import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { FeatureCollection, GeoJsonProperties, Point } from 'geojson';
 import type { GeoPoint, Store } from '../../core/types/place';
+import type { MarkerStyleId } from '../../core/map/markerStyle';
 import type { MapStore } from '../../core/supabase/stores';
 import type { MainMapHandle, MainMapProps, MapInsets } from './MainMap';
 import { MAP_CENTER, MAP_EXTENT } from './vworld/mapExtent';
@@ -42,6 +43,35 @@ async function fetchGeoJSON(url: string): Promise<FeatureCollection> {
 
 function cssColor(element: HTMLElement, name: string, fallback: string): string {
   return getComputedStyle(element).getPropertyValue(name).trim() || fallback;
+}
+
+function markerSvg(style: MarkerStyleId, variant: 'normal' | 'selected' | 'mine' | 'cluster', colors: { brand: string; surface: string }): string {
+  const selected = variant === 'selected';
+  const mine = variant === 'mine';
+  const cluster = variant === 'cluster';
+  const palette = style === 'classic'
+    ? { fill: '#ef762f', stroke: colors.surface, accent: colors.surface }
+    : style === 'diamond'
+      ? { fill: '#147d78', stroke: '#f1c75b', accent: '#fff7d6' }
+      : { fill: colors.surface, stroke: colors.brand, accent: colors.brand };
+  if (selected) Object.assign(palette, { fill: colors.brand, stroke: colors.surface, accent: colors.surface });
+  if (mine) Object.assign(palette, { fill: '#2563eb', stroke: colors.surface, accent: colors.surface });
+  const shape = style === 'classic'
+    ? `<path d="M32 3A25 25 0 0 0 13 44L29 66Q32 70 35 66L51 44A25 25 0 0 0 32 3Z"/>`
+    : style === 'diamond'
+      ? `<path d="M32 3 59 31 32 67 5 31Z"/>`
+      : `<path d="M10 5h44a6 6 0 0 1 6 6v39a6 6 0 0 1-6 6H39l-7 12-7-12H10a6 6 0 0 1-6-6V11a6 6 0 0 1 6-6Z"/>`;
+  const shop = cluster ? '' : `<path d="M20 28h24l-2-8H22l-2 8Zm2 0v16h20V28M27 44V34h10v10M19 28c0 4 6 4 6 0 0 4 7 4 7 0 0 4 7 4 7 0 0 4 6 4 6 0" fill="none" stroke="${palette.accent}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="72" viewBox="0 0 64 72"><g fill="${palette.fill}" stroke="${palette.stroke}" stroke-width="4" stroke-linejoin="round">${shape}</g>${shop}</svg>`;
+}
+
+function loadMarkerImage(svg: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('지도 핀 이미지를 만들지 못했어요.'));
+    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  });
 }
 
 function storesToGeoJSON(stores: Store[], selectedId: string | null, myStoreIds: string[]): PointCollection {
@@ -135,6 +165,7 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
   onPlaceSelect,
   placesMonth,
   myStoreIds = EMPTY_IDS,
+  markerStyle = 'signboard',
 }, ref) {
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -234,6 +265,18 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
         };
         map.setPaintProperty('background', 'background-color', colors.background);
 
+        const [normalMarker, selectedMarker, mineMarker, clusterMarker] = await Promise.all([
+          loadMarkerImage(markerSvg(markerStyle, 'normal', colors)),
+          loadMarkerImage(markerSvg(markerStyle, 'selected', colors)),
+          loadMarkerImage(markerSvg(markerStyle, 'mine', colors)),
+          loadMarkerImage(markerSvg(markerStyle, 'cluster', colors)),
+        ]);
+        if (mapRef.current !== map) return;
+        map.addImage('store-marker', normalMarker, { pixelRatio: 2 });
+        map.addImage('store-marker-selected', selectedMarker, { pixelRatio: 2 });
+        map.addImage('store-marker-mine', mineMarker, { pixelRatio: 2 });
+        map.addImage('store-cluster', clusterMarker, { pixelRatio: 2 });
+
         const areas = [
           ['area-school', school, colors.school],
           ['area-apartment', apartment, colors.apartment],
@@ -272,19 +315,25 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
 
         map.addSource('places', { type: 'geojson', data: placesToGeoJSON(placesRef.current, selectedPlaceId), cluster: true, clusterRadius: 34, clusterMaxZoom: 17 });
         map.addLayer({
-          id: 'place-clusters', source: 'places', type: 'circle', filter: ['has', 'point_count'],
-          paint: { 'circle-color': colors.place, 'circle-radius': ['step', ['get', 'point_count'], 15, 20, 19, 60, 23], 'circle-stroke-color': '#fff', 'circle-stroke-width': 2 },
+          id: 'place-clusters', source: 'places', type: 'symbol', filter: ['has', 'point_count'],
+          layout: {
+            'icon-image': 'store-cluster',
+            'icon-size': ['step', ['get', 'point_count'], 0.88, 20, 1.02, 60, 1.15],
+            'icon-allow-overlap': true,
+            'text-field': ['get', 'point_count_abbreviated'],
+            'text-size': 11,
+            'text-allow-overlap': true,
+            'text-ignore-placement': true,
+          },
+          paint: { 'text-color': markerStyle === 'signboard' ? colors.brand : '#fff', 'text-halo-color': colors.surface, 'text-halo-width': markerStyle === 'diamond' ? 0.8 : 0 },
         });
         map.addLayer({
-          id: 'place-cluster-count', source: 'places', type: 'symbol', filter: ['has', 'point_count'],
-          layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-size': 11 }, paint: { 'text-color': '#fff' },
-        });
-        map.addLayer({
-          id: 'place-points', source: 'places', type: 'circle', filter: ['!', ['has', 'point_count']],
-          paint: {
-            'circle-color': ['case', ['boolean', ['get', 'selected'], false], colors.brand, colors.place],
-            'circle-radius': ['case', ['boolean', ['get', 'selected'], false], 10, 7],
-            'circle-stroke-color': '#fff', 'circle-stroke-width': 2,
+          id: 'place-points', source: 'places', type: 'symbol', filter: ['!', ['has', 'point_count']],
+          layout: {
+            'icon-image': ['case', ['boolean', ['get', 'selected'], false], 'store-marker-selected', 'store-marker'],
+            'icon-size': ['case', ['boolean', ['get', 'selected'], false], 0.84, 0.66],
+            'icon-anchor': 'bottom',
+            'icon-allow-overlap': true,
           },
         });
         // 네이버 지도처럼 멀리서는 랜드마크만, 충분히 확대하면 개별 가게 이름을 보여 준다.
@@ -311,11 +360,12 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
 
         map.addSource('feature-stores', { type: 'geojson', data: storesToGeoJSON(storesRef.current, selectedId, myStoreIds) });
         map.addLayer({
-          id: 'feature-stores', source: 'feature-stores', type: 'circle',
-          paint: {
-            'circle-color': ['case', ['boolean', ['get', 'mine'], false], '#2563eb', ['boolean', ['get', 'selected'], false], colors.brand, '#157a5b'],
-            'circle-radius': ['case', ['any', ['boolean', ['get', 'mine'], false], ['boolean', ['get', 'selected'], false]], 12, 9],
-            'circle-stroke-color': '#fff', 'circle-stroke-width': 3,
+          id: 'feature-stores', source: 'feature-stores', type: 'symbol',
+          layout: {
+            'icon-image': ['case', ['boolean', ['get', 'mine'], false], 'store-marker-mine', ['boolean', ['get', 'selected'], false], 'store-marker-selected', 'store-marker'],
+            'icon-size': ['case', ['any', ['boolean', ['get', 'mine'], false], ['boolean', ['get', 'selected'], false]], 1, 0.78],
+            'icon-anchor': 'bottom',
+            'icon-allow-overlap': true,
           },
         });
         map.addLayer({
@@ -399,7 +449,7 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
   }, [places, selectedPlaceId]);
 
   return (
-    <div ref={rootRef} className="mm-root mm-root--3d">
+    <div ref={rootRef} className="mm-root mm-root--3d" data-marker-style={markerStyle}>
       <div ref={canvasRef} className="mm-canvas mm-maplibre" role="region" aria-label="월계1동 3D 지도" />
       <p className="mm-source">
         건물 © 브이월드 · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">도로 © OpenStreetMap contributors</a>

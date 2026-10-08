@@ -563,7 +563,7 @@ export default function AppShell() {
                 type="search"
                 enterKeyHint="search"
                 aria-label="가게 이름·업종·주소 검색"
-                placeholder="가게·업종·주소 검색"
+                placeholder="월계1동 가게·업종·주소 검색"
                 value={storeQuery}
                 onChange={(event) => { searchedTermRef.current = ''; setStoreQuery(event.target.value); }}
                 onBlur={jumpToSearchResult}

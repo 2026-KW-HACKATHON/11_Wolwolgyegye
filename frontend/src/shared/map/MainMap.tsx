@@ -6,6 +6,7 @@ import type { GeoPoint, Store } from '../../core/types/place';
 import { ICONS } from '../icons';
 import { buildingListElement, clusterGroups, clusterIcon, CLUSTER_MAX_ZOOM, groupByBuilding, pinGroup, PIN_POPUP_OFFSET } from './placeMarkers';
 import type { MapStore } from '../../core/supabase/stores';
+import type { MarkerStyleId } from '../../core/map/markerStyle';
 import { ADMIN_DONG_LABEL, AREA_LAYERS, createStyles } from './vworld/config';
 import { drawStations, drawSubwayLines } from './osm/drawTransit';
 import { drawCampusLabels } from './vworld/campusLabels';
@@ -54,6 +55,8 @@ export interface MainMapProps {
   smallPins?: boolean;
   /** 사장님 본인 가게 id. 이 가게는 '내 가게' 핀으로 크게 눈에 띄게 그린다 (월계1동 밖이어도) */
   myStoreIds?: string[];
+  /** 설정 화면에서 고른 지도 가게 핀 모양 */
+  markerStyle?: MarkerStyleId;
 }
 
 type Status = 'loading' | 'ready' | 'missing';
@@ -147,7 +150,7 @@ function storeIcon(store: Store, selected: boolean, small: boolean, mine: boolea
  *
  * 그리는 순서 (아래 → 위): 영역(학교 → 아파트 단지 → 강·하천 → 산) → 도로 → 건물 → 학교 건물 → 월계1동 경계 점선 → 가게 핀
  */
-const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ stores, selectedId, onSelect, getInsets, showZoomControl, portrait, places, selectedPlaceId, onPlaceSelect, placesMonth, allowOutsideWolgye = false, smallPins = false, myStoreIds }, ref) {
+const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ stores, selectedId, onSelect, getInsets, showZoomControl, portrait, places, selectedPlaceId, onPlaceSelect, placesMonth, allowOutsideWolgye = false, smallPins = false, myStoreIds, markerStyle = 'signboard' }, ref) {
   // 배열은 렌더마다 새로 만들어지므로 내용(id 목록)이 바뀔 때만 핀을 다시 그린다
   const myStoreKey = (myStoreIds ?? []).join(',');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -481,7 +484,7 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
   // 선택한 가게를 가운데로 옮기는 건 AppShell 이 한다 (가게 창 크기가 정해진 뒤에, centerOn)
 
   return (
-    <div className="mm-root">
+    <div className="mm-root" data-marker-style={markerStyle}>
       <div ref={containerRef} className="mm-canvas" role="region" aria-label="월계1동 지도" />
       <p className="mm-source">
         © 브이월드 · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>
