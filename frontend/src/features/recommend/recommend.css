@@ -136,6 +136,5 @@
 }
 @container (max-width: 359px) {
   .rp-home { padding-right: 14px; padding-left: 14px; }
-  .rp-welcome-flower { display: none; }
   .rp-section-heading h2 { font-size: 18px; }
 }

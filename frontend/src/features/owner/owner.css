@@ -52,20 +52,6 @@
   text-overflow: ellipsis;
 }
 
-.op-store-select {
-  min-width: 0;
-  max-width: 60%;
-  min-height: 40px;
-  padding: 6px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
 .oc-store-edit {
   display: inline-flex;
   flex: none;

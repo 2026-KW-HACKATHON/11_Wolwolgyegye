@@ -46,10 +46,6 @@ export interface Store {
   /** 지도에는 위경도만 쓰지만, 목록/상세 화면에 사람이 읽을 주소가 필요해서 별도로 둔다 */
   address: string;
 
-  /** 대표 사진 공개 URL (store_images 첫 장). 없으면 '' */
-  thumbnailUrl: string;
-  /** 지금은 자유 문자열로 둔다. 예: "매일 10:00 - 21:00" (요일별 구조화는 다음 단계에서 검토) */
-  businessHours: string;
   phone: string;
 
   supports: CategorySupport;

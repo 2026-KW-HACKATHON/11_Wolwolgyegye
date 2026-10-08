@@ -15,8 +15,6 @@ interface BenefitRow {
   store_id: string;
   offer: string;
   condition: string;
-  discount_amount: number | null;
-  discount_rate: number | string | null;
   benefit_partners: { partners: { name: string } | { name: string }[] | null }[] | null;
 }
 
@@ -75,7 +73,7 @@ async function fetchBenefits(storeIds: string[]): Promise<PartnerBenefit[]> {
   for (let index = 0; index < storeIds.length; index += 100) {
     const { data, error } = await getSupabaseClient()
       .from('partner_benefits')
-      .select('id, store_id, offer, condition, discount_amount, discount_rate, benefit_partners(partners(name))')
+      .select('id, store_id, offer, condition, benefit_partners(partners(name))')
       .in('store_id', storeIds.slice(index, index + 100))
       .order('created_at');
     if (error) throw error;
@@ -90,8 +88,6 @@ async function fetchBenefits(storeIds: string[]): Promise<PartnerBenefit[]> {
         colleges,
         offer: row.offer,
         condition: row.condition,
-        discountAmount: row.discount_amount,
-        discountRate: row.discount_rate === null ? null : Number(row.discount_rate),
       });
     }
   }

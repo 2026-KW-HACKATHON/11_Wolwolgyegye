@@ -6,7 +6,6 @@
 로그인·회원가입은 Supabase Auth로 연결했다. 가짜(mock) 데이터는 두지 않는다.
 `fetchMapStores()`(`core/supabase/stores.ts`)가 공개 가게 전부를 지도 핀으로 읽는다. 표 구조 그림은 `database/schema.md`.
 카테고리 화면은 각 `features/<카테고리>/source.ts` 에서 DB 를 읽는다: 마감세일(closing_sales), 공간대여(space_rentals), 원데이클래스(one_day_classes), 제휴 가게(partner_benefits·partners·store_menus), 스탬프(stamp_policies), 룰렛(store_menus 이름 검색). 가게 공통 정보·영업시간은 `core/source/storeSource.ts` 가 붙인다.
-글 쓰기·수정, 찜, 스탬프 적립은 아직 이 브라우저에만 저장한다 (로그인 연결 후 DB 로 옮긴다).
 
 ## 로컬 설정
 
@@ -47,16 +46,14 @@ npm run build
 - 기본 Kakao provider의 활성화는 위 맞춤형 제공자를 대신하지 않는다. 제공자 생성 전에는 사이트의 카카오 버튼이 동작하지 않는다. 운영 사이트에서 로그인 버튼 → Kakao 동의 → `/login` 복귀 → 세션 생성까지 검증해야 한다.
 - 비밀번호·OAuth 토큰·`service_role` 키는 앱 테이블이나 프론트 환경변수에 저장하지 않는다. 실제 권한은 RLS와 `stores.owner_id`가 판단한다.
 
-브라우저에서 이메일 가입→인증→로그인→로그아웃, 카카오 로그인→복귀, 사장님 신청→관리자 승인→`/owner` 접근을 각각 실제 계정으로 점검해야 한다. 관리자 승인 API와 화면은 아직 구현되지 않아 승인 처리는 서버 측에서 별도로 수행한다.
+브라우저에서 이메일 가입→인증→로그인→로그아웃, 카카오 로그인→복귀, 사장님 신청→관리자 승인→`/owner` 접근을 각각 실제 계정으로 점검해야 한다.
 
-## 다음 단계
+## 배포
 
-1. 가게 2차 탭에 메뉴·영업시간·사진을 연결하고, 사장님 글쓰기·세일 등록을 DB 저장으로 바꾼다.
-2. 관리자 승인 API와 화면을 만들고, 승인된 사장님 계정으로 본인 가게의 게시글 등록을 검증한다.
-3. 배포할 때 Vercel에도 동일한 공개용 환경변수를 설정하고 새 빌드를 실행한다.
+- 배포할 때 Vercel에도 동일한 공개용 환경변수를 설정하고 새 빌드를 실행한다.
 
 ## SQL 수동 적용 주의
 
-DB 구조는 SQL Editor에서 수동으로 적용한다. 2026-10-04 구조를 새로 설계해 `database/supabase/migrations/20261004000100_schema.sql` 하나로 바꿨다. 적용 순서는 `database/README.md` 참고.
+DB 구조는 SQL Editor에서 수동으로 적용한다. `database/supabase/migrations/` 의 파일을 번호 순서대로 적용한다. 자세한 내용은 `database/README.md` 참고.
 수동 실행은 CLI migration 이력 등록과 별개다. 이후 `db push`를 쓰려면 먼저 실제 스키마와 migration 이력을 대조해야 한다.
 `database/tests/bootstrap.sql`은 운영 DB에 실행하지 않는다.

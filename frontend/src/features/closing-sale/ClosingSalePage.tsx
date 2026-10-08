@@ -79,8 +79,6 @@ export default function ClosingSalePage() {
     const next = new URLSearchParams(params); next.delete('sale'); setParams(next, { replace: true });
   }, [active, params, sales, setParams, openSale]);
 
-  /** 배너에 보여줄 진행 중인 세일 가게 수 (한 가게가 여러 세일을 올려도 한 곳으로 센다) */
-
   async function toggleLike(id: string) {
     if (!userId) return;
     const exists = likedIds.includes(id);

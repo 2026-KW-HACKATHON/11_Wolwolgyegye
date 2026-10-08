@@ -2,7 +2,6 @@ import { getSupabaseClient } from '../../core/supabase/client';
 
 export interface AdminOwnerApplication {
   id: string;
-  user_id: string;
   applicant_name: string;
   applicant_email: string | null;
   contact_phone: string;
@@ -12,9 +11,6 @@ export interface AdminOwnerApplication {
   requested_store_phone: string | null;
   business_registration_number: string | null;
   status: 'pending' | 'approved' | 'rejected';
-  approved_store_id: string | null;
-  review_note: string;
-  reviewed_at: string | null;
   created_at: string;
 }
 
@@ -23,13 +19,9 @@ export interface AdminStore {
   name: string;
   cuisine_type: string | null;
   address: string;
-  lat: number;
-  lng: number;
-  phone: string;
   owner_id: string | null;
   is_published: boolean;
   is_demo: boolean;
-  created_at: string;
 }
 
 function message(error: { message?: string } | null, fallback: string): string {

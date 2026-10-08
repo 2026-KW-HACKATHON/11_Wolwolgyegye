@@ -4,18 +4,16 @@ import { useId, type CSSProperties } from 'react';
  * 적립판에 찍히는 도장 한 개. 잉크 번짐·거친 테두리는 SVG 필터로 만든다. (그림일 뿐이라 aria-hidden)
  * 색은 currentColor 라서 CSS(.st-seal)에서 정한다.
  */
-export default function StampSeal({ initial, date, tilt, seed, fresh = false, size = 'md' }: {
+export default function StampSeal({ initial, date, tilt, seed }: {
   initial: string;
   date?: string;
   tilt: number;
   seed: number;
-  fresh?: boolean;
-  size?: 'sm' | 'md';
 }) {
   const id = `st-ink-${useId().replace(/:/g, '')}`;
   return (
     <svg
-      className={`st-seal st-seal--${size}${fresh ? ' is-fresh' : ''}`}
+      className="st-seal"
       viewBox="0 0 100 100"
       style={{ '--st-tilt': `${tilt}deg` } as CSSProperties}
       aria-hidden="true"

@@ -17,7 +17,7 @@ function containsPattern(term: string) {
   return `"%${escaped}%"`;
 }
 
-function matchOf(menu: WheelMenu & Partial<MenuMatch>): MenuMatch {
+function matchOf(menu: WheelMenu & Partial<MenuMatch>): Required<MenuMatch> {
   const keywords = (menu.keywords?.length ? menu.keywords : [menu.name]).map((k) => k.trim()).filter(Boolean);
   return {
     keywords, exclude: menu.exclude ?? [], storeNames: menu.storeNames ?? [], excludeStoreNames: menu.excludeStoreNames ?? [],
@@ -26,7 +26,7 @@ function matchOf(menu: WheelMenu & Partial<MenuMatch>): MenuMatch {
 }
 
 /** 메뉴판에 그 메뉴가 있는 가게. 가게마다 메뉴판 순서상 첫 메뉴 하나로 소개한다 */
-async function fetchMenuHits({ keywords, exclude = [] }: MenuMatch, menuName: string): Promise<RouletteStoreLink[]> {
+async function fetchMenuHits({ keywords, exclude }: Required<MenuMatch>): Promise<RouletteStoreLink[]> {
   const { data, error } = await getSupabaseClient().from('store_menus')
     .select('id, store_id, name, price')
     .or(keywords.map((k) => `name.ilike.${containsPattern(k)}`).join(','))
@@ -40,14 +40,14 @@ async function fetchMenuHits({ keywords, exclude = [] }: MenuMatch, menuName: st
     if (seen.has(m.store_id) || exclude.some((e) => m.name.includes(e))) return [];
     seen.add(m.store_id);
     return [{
-      id: m.id, menuName, storeId: m.store_id, specialty: false,
+      id: m.id, storeId: m.store_id, specialty: false,
       desc: `${m.name} ${m.price.toLocaleString('ko-KR')}원`,
     }];
   });
 }
 
 /** 업종이 맞거나 가게 이름에 키워드가 든 가게 후보 (메뉴판 메뉴 수 포함) */
-async function fetchSpecialtyStores({ keywords, storeNames = [], industries = [], looseIndustries = [] }: MenuMatch): Promise<StoreHitRow[]> {
+async function fetchSpecialtyStores({ keywords, storeNames, industries, looseIndustries }: Required<MenuMatch>): Promise<StoreHitRow[]> {
   const filters = [...keywords, ...storeNames].map((k) => `name.ilike.${containsPattern(k)}`);
   const allIndustries = [...industries, ...looseIndustries];
   if (allIndustries.length) filters.push(`industry.in.(${allIndustries.map((i) => `"${i}"`).join(',')})`);
@@ -68,19 +68,19 @@ async function fetchLinksByMenu(menu: WheelMenu & Partial<MenuMatch>): Promise<R
   const match = matchOf(menu);
   if (!match.keywords.length) return [];
   // 둘 중 하나라도 못 읽으면 오류로 넘긴다 (일부만 보여주면 "가게 없음" 으로 오해한다)
-  const [menuHits, specialty] = await Promise.all([fetchMenuHits(match, menu.name), fetchSpecialtyStores(match)]);
+  const [menuHits, specialty] = await Promise.all([fetchMenuHits(match), fetchSpecialtyStores(match)]);
 
   const links = new Map(menuHits.map((l) => [l.storeId, l]));
-  const nameWords = [...match.keywords, ...(match.storeNames ?? [])];
+  const nameWords = [...match.keywords, ...match.storeNames];
   for (const s of specialty) {
-    if ((match.excludeStoreNames ?? []).some((k) => s.name.includes(k))) continue;
+    if (match.excludeStoreNames.some((k) => s.name.includes(k))) continue;
     const hit = links.get(s.id);
-    const trusted = nameWords.some((k) => s.name.includes(k)) || (match.industries ?? []).includes(s.industry);
+    const trusted = nameWords.some((k) => s.name.includes(k)) || match.industries.includes(s.industry);
     const hasMenus = (s.store_menus?.[0]?.count ?? 0) > 0;
     if (!trusted && !hit && hasMenus) continue;
     links.set(s.id, hit
       ? { ...hit, specialty: true }
-      : { id: `store-${s.id}`, menuName: menu.name, storeId: s.id, specialty: true, desc: s.industry || `${menu.name} 전문` });
+      : { id: `store-${s.id}`, storeId: s.id, specialty: true, desc: s.industry || `${menu.name} 전문` });
   }
   return [...links.values()];
 }

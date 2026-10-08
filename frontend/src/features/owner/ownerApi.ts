@@ -281,7 +281,7 @@ interface NewsClassRow extends PostRowBase { starts_at: string; duration_minutes
 
 const CANCELLED = { label: '등록 취소', tone: 'off' } as const;
 const POST_COLUMNS = 'id, title, summary, price, status, created_at, cancelled_at, cancel_reason';
-interface NewsSaleRow { id: string; offer: string; condition: string; discount_type: SaleDiscountType; discount_amount: number | null; discount_rate: number | string | null; starts_at: string; ends_at: string; created_at: string }
+interface NewsSaleRow { id: string; offer: string; discount_type: SaleDiscountType; discount_amount: number | null; discount_rate: number | string | null; starts_at: string; ends_at: string; created_at: string }
 
 function saleTitle(row: NewsSaleRow): string {
   const rate = row.discount_rate === null ? null : Number(row.discount_rate);
@@ -298,7 +298,7 @@ export async function fetchOwnerDashboard(storeId: string): Promise<OwnerDashboa
   const [spaces, classes, sales, stamp] = await Promise.all([
     client.from('space_rentals').select(`${POST_COLUMNS}, available_hours, capacity, min_hours, space_rental_categories(name)`).eq('store_id', storeId),
     client.from('one_day_classes').select(`${POST_COLUMNS}, starts_at, duration_minutes, current_count, max_count, one_day_class_categories(name)`).eq('store_id', storeId),
-    client.from('closing_sales').select('id, offer, condition, discount_type, discount_amount, discount_rate, starts_at, ends_at, created_at')
+    client.from('closing_sales').select('id, offer, discount_type, discount_amount, discount_rate, starts_at, ends_at, created_at')
       .eq('store_id', storeId).gt('ends_at', nowIso),
     client.from('stamp_policies').select('required_stamps, reward, unit').eq('store_id', storeId).maybeSingle(),
   ]);

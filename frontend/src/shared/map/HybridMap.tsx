@@ -30,14 +30,13 @@ type MapMode = '2d' | '3d';
 function initialMode(): MapMode {
   try {
     const saved = window.localStorage.getItem(MODE_STORAGE_KEY);
-    if (saved === '2d') return '2d';
     if (saved === '3d' && canUseWebGL()) return '3d';
   } catch { /* 기본값 사용 */ }
-  return canUseWebGL() ? '3d' : '2d';
+  return '2d';
 }
 
 /**
- * 첫 접속은 3D 지도. 평면은 MapLibre(WebGL) 지도이며, 사용자가 고른 2D/3D 모드와 가게 핀 모양은 이 기기에 저장한다.
+ * 첫 접속은 2D 지도. 평면은 MapLibre(WebGL) 지도이며, 사용자가 고른 2D/3D 모드와 가게 핀 모양은 이 기기에 저장한다.
  * WebGL 을 못 쓰는 기기에서는 Leaflet 평면 지도를 쓰고 3D 버튼을 숨긴다.
  */
 const HybridMap = forwardRef<MainMapHandle, MainMapProps>(function HybridMap(props, ref) {

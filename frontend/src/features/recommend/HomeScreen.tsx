@@ -4,7 +4,6 @@ import { useAuth } from '../../core/auth/AuthContext';
 import { usePageActive } from '../../layout/KeepAlivePages/PageActiveContext';
 import Icon from '../../shared/Icon';
 import { useFavoriteStores } from '../../shared/favorites/useFavoriteStores';
-import { useUserSession } from '../../shared/session/UserSessionContext';
 import { formatSaleDiscount } from '../closing-sale/discount';
 import { fetchClosingSales } from '../closing-sale/source';
 import type { ClosingSaleView } from '../closing-sale/types';
@@ -16,8 +15,7 @@ type FeedFilter = 'all' | 'saved' | FeedKind;
 const FILTERS = [['all', '전체 소식'], ['space-rental', '공간 대여'], ['oneday-class', '원데이클래스'], ['saved', '찜한 가게']] as const;
 
 export default function HomeScreen({ onShowNearby, onShowStore }: { onShowNearby: () => void; onShowStore: (id: string) => void }) {
-  const { userName } = useUserSession();
-  const { ownedStores } = useAuth();
+  const { userName, ownedStores } = useAuth();
   const { isFavorite } = useFavoriteStores();
   const active = usePageActive();
   const [posts, setPosts] = useState<FeedPost[]>([]);

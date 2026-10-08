@@ -46,7 +46,7 @@ function cssColor(element: HTMLElement, name: string, fallback: string): string 
   return getComputedStyle(element).getPropertyValue(name).trim() || fallback;
 }
 
-function markerSvg(style: MarkerStyleId, variant: 'normal' | 'selected' | 'mine' | 'cluster', colors: { brand: string; surface: string }): string {
+function markerSvg(style: MarkerStyleId, variant: 'normal' | 'selected' | 'mine' | 'cluster', colors: { surface: string }): string {
   const selected = variant === 'selected';
   const mine = variant === 'mine';
   const cluster = variant === 'cluster';
@@ -266,7 +266,6 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
           apartment: cssColor(root, '--apartment-fill', '#e6dfd4'),
           boundary: cssColor(root, '--admin-dong', '#8a5c3d'),
           brand: cssColor(root, '--color-brand', '#8f2635'),
-          place: cssColor(root, '--place-pin', '#ed7c31'),
           me: cssColor(root, '--map-me', '#1a73e8'),
           text: cssColor(root, '--color-text', '#211a16'),
           surface: cssColor(root, '--color-surface', '#fffdf8'),

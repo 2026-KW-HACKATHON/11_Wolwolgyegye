@@ -64,7 +64,7 @@ export default function StampDetail({ view: v, onBack, onStamped }: Props) {
               return (
                 <li key={i} className={`${on ? 'is-on' : ''}${gift ? ' is-gift' : ''}`}>
                   {on ? (
-                    <StampSeal initial={initial} date={dates[i] ? shortDate(dates[i]) : undefined} tilt={tiltOf(v.storeId, i)} seed={i + 2} fresh={false} />
+                    <StampSeal initial={initial} date={dates[i] ? shortDate(dates[i]) : undefined} tilt={tiltOf(v.storeId, i)} seed={i + 2} />
                   ) : (
                     <span className="st-slot-empty" aria-hidden="true">{gift ? <Icon name="gift" /> : i + 1}</span>
                   )}

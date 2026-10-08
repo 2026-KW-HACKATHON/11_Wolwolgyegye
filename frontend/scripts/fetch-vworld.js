@@ -23,8 +23,6 @@ import { fileURLToPath } from 'node:url';
 // 설정 상수 (필요하면 여기만 고치면 된다)
 // ---------------------------------------------------------------------
 const BUILDING_LAYER = 'LT_C_SPBD';       // 건물 (도로명주소 건물)
-const BOUNDARY_LAYER = 'LT_C_ADEMD_INFO'; // 읍면동(법정동) 경계
-const BOUNDARY_EMD_CD = '11350102';       // 서울 노원구 월계동(법정동) 코드
 
 // 행정동 경계: 2D데이터 API 에는 없고 WFS 로만 제공되는 센서스 행정동 경계 레이어를 쓴다.
 // adm_cd 는 통계청 센서스 행정동 코드라서 행정안전부 행정동 코드와 체계가 다르다.
@@ -258,28 +256,6 @@ async function fetchAllPages(layer, label) {
   console.log(`  받은 ${all.length}건 → 중복 ${all.length - unique.length}건 제거 → ${unique.length}건`);
 
   return { type: 'FeatureCollection', features: unique };
-}
-
-/** 월계동(법정동) 경계를 emd_cd 로 정확히 일치 조회한다 */
-async function fetchBoundary() {
-  console.log(`\n[경계] ${BOUNDARY_LAYER} (emd_cd=${BOUNDARY_EMD_CD}) 수집 시작`);
-  // 이름(like) 검색은 광주 광산구 월계동이 섞이므로 코드로 정확히 조회한다.
-  const res = await requestOnce(
-    buildUrl({
-      layer: BOUNDARY_LAYER,
-      page: 1,
-      size: 10,
-      attrFilter: `emd_cd:=:${BOUNDARY_EMD_CD}`,
-      geometry: true,
-    }),
-    '경계',
-  );
-  const features = featuresOf(res);
-  if (features.length !== 1) {
-    console.warn(`  ! 경고: 경계 결과가 ${features.length}건입니다 (정확히 1건이어야 함). boundary.geojson 저장을 건너뜁니다.`);
-    return null;
-  }
-  return { type: 'FeatureCollection', features };
 }
 
 /**
@@ -616,17 +592,7 @@ async function main() {
   const buildings = await fetchAllPages(BUILDING_LAYER, '건물');
   await save('buildings.geojson', buildings);
 
-  // 경계는 실패해도 건물 결과는 이미 저장되어 있으므로 경고만 남긴다
-  await sleep(REQUEST_INTERVAL_MS);
-  let boundary = null;
-  try {
-    boundary = await fetchBoundary();
-    if (boundary) await save('boundary.geojson', boundary);
-  } catch (e) {
-    console.warn(`  ! 경계 수집 실패: ${mask(e.message)} — 경계 저장을 건너뜁니다.`);
-  }
-
-  // 월계1동(행정동) 경계 — 실패해도 계속 진행
+  // 월계1동(행정동) 경계 — 실패해도 건물 결과는 이미 저장되어 있으므로 계속 진행
   await sleep(REQUEST_INTERVAL_MS);
   let adminDong = null;
   try {
@@ -668,7 +634,6 @@ async function main() {
   const seconds = ((Date.now() - started) / 1000).toFixed(1);
   console.log('\n========== 결과 ==========');
   console.log(`public/data/vworld/buildings.geojson : ${buildings.features.length}개`);
-  console.log(`public/data/vworld/boundary.geojson  : ${boundary ? `${boundary.features.length}개` : '저장 안 함'}`);
   console.log(`public/data/vworld/admin_dong.geojson: ${adminDong ? `${adminDong.features.length}개` : '저장 안 함'}`);
   console.log(`public/data/vworld/school_facilities.geojson: ${schoolFacilities ? `${schoolFacilities.features.length}개` : '저장 안 함'}`);
   for (const [file, fc] of Object.entries(areas)) {

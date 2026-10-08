@@ -2,7 +2,6 @@ import { createContext, useContext } from 'react';
 import type { AuthStatus } from './authTypes';
 
 export interface OwnerApplication {
-  id: string;
   status: 'pending' | 'approved' | 'rejected';
   review_note: string;
   store_name: string;

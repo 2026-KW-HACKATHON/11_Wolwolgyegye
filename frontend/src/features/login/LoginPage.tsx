@@ -69,7 +69,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     const query = storeQuery.trim();
-    if (!wantsOwner || status === 'guest' || status === 'checking' || query.length < 2) {
+    if (!wantsOwner || status === 'guest' || query.length < 2) {
       setStoreResults([]);
       setStoreSearchBusy(false);
       setStoreSearchError('');
@@ -235,7 +235,7 @@ export default function LoginPage() {
     });
   }
 
-  if (status !== 'guest' && status !== 'checking') {
+  if (status !== 'guest') {
     return (
       <div className="lp-card">
         <div className="lp-user-badge">{(userName ?? '월').charAt(0)}</div>

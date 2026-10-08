@@ -199,8 +199,7 @@ async function main() {
   console.log(`건물과 연결         : ${linked}곳 (건물관리번호 일치) / 연결 안 됨 ${features.length - linked}곳 → 지도에 점으로 표시`);
   console.log(`아파트 단지 안 가게 : ${inComplex}곳`);
   console.log(`소요 시간           : ${((Date.now() - started) / 1000).toFixed(1)}초`);
-  console.log('
-다음 단계: npm run import:stores 로 DB 에 넣는다.');
+  console.log('\n다음 단계: npm run import:stores 로 DB 에 넣는다.');
 }
 
 main().catch((e) => {

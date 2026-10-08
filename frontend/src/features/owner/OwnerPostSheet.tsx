@@ -78,7 +78,7 @@ export default function OwnerPostSheet({ item, onClose, onCancelled }: { item: O
 
         {cancelled && (
           <section className="opd-cancelled" aria-label="등록 취소 내용">
-            <strong>{post.cancelledAt ? `${dateTime.format(new Date(post.cancelledAt))}에 등록을 취소했어요` : '등록을 취소했어요'}</strong>
+            <strong>{`${dateTime.format(new Date(post.cancelledAt!))}에 등록을 취소했어요`}</strong>
             <p>사유: {post.cancelReason}</p>
           </section>
         )}

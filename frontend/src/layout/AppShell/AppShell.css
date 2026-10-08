@@ -18,7 +18,6 @@
 
 /* 지도 + 그 위에 올라오는 탭·버튼 영역. --inset-* 은 탭이 가리고 있는 크기 */
 .app-stage {
-  --inset-top: 0px;
   --inset-right: 0px;
   --inset-bottom: 0px;
   --inset-left: 0px;
