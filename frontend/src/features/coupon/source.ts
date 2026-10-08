@@ -55,9 +55,23 @@ export async function fetchStamps(): Promise<StampView[]> {
   });
 }
 
-/** 직원에게 보여줄 임시 적립 코드. 실제 잔액 변경은 서버의 검증된 처리만 수행한다. */
+/** 직원에게 보여줄 임시 적립 코드. 서버가 만들어 저장하고, 사장님이 입력하면 서버가 적립한다. */
 export const STAMP_CODE_TTL_SECONDS = 180;
-export function issueStampCode(): { code: string; expiresAt: number } {
-  const n = Math.floor(Math.random() * 1_000_000).toString().padStart(6, '0');
-  return { code: n, expiresAt: Date.now() + STAMP_CODE_TTL_SECONDS * 1000 };
+export interface StampCode { code: string; expiresAt: number }
+
+export async function issueStampCode(storeId: string): Promise<StampCode> {
+  const { data, error } = await getSupabaseClient().rpc('issue_stamp_code', { p_store_id: storeId });
+  const row = Array.isArray(data) ? data[0] : data;
+  if (error || !row) {
+    throw new Error(error?.code === '42501' ? '로그인한 손님만 적립 코드를 받을 수 있어요.' : '적립 코드를 받지 못했어요.');
+  }
+  return { code: row.code, expiresAt: Date.parse(row.expires_at) };
+}
+
+/** 이 코드로 적립이 끝났으면 찍힌 개수, 아직이면 null */
+export async function fetchStampCodeUse(storeId: string, code: string): Promise<number | null> {
+  const { data, error } = await getSupabaseClient().from('stamp_codes')
+    .select('code, used_count').eq('store_id', storeId).maybeSingle();
+  if (error || !data || data.code !== code) return null;
+  return data.used_count ?? null;
 }

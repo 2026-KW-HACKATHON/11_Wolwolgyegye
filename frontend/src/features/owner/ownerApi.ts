@@ -411,3 +411,25 @@ export async function deleteStampPolicy(storeId: string): Promise<void> {
   if (error || !data?.length) throw new Error('스탬프 혜택을 없애지 못했어요. 잠시 뒤 다시 시도해 주세요.');
   forgetStores();
 }
+
+// ---------- 스탬프 적립 (손님 코드 입력) ----------
+
+export interface StampRedeemResult {
+  /** 손님의 적립 후 잔액 */
+  balance: number;
+  requiredStamps: number;
+}
+
+/** 손님이 보여준 6자리 코드로 스탬프를 찍는다. 코드 확인·적립은 서버(redeem_stamp_code)가 한 번에 한다 */
+export async function redeemStampCode(storeId: string, code: string, count: number): Promise<StampRedeemResult> {
+  if (!/^\d{6}$/.test(code)) throw new Error('6자리 숫자 코드를 입력해 주세요.');
+  if (!Number.isInteger(count) || count < 1 || count > 100) throw new Error('찍을 개수는 1 ~ 100개로 입력해 주세요.');
+  const { data, error } = await getSupabaseClient().rpc('redeem_stamp_code', { p_store_id: storeId, p_code: code, p_count: count });
+  const row = Array.isArray(data) ? data[0] : data;
+  if (error || !row) {
+    if (error?.code === 'P0002') throw new Error('코드가 맞지 않거나 시간이 지났어요. 손님 화면의 번호를 다시 확인해 주세요.');
+    if (error?.code === '42501') throw new Error('이 가게의 사장님만 스탬프를 찍을 수 있어요.');
+    throw new Error('스탬프를 찍지 못했어요. 잠시 뒤 다시 시도해 주세요.');
+  }
+  return { balance: row.balance, requiredStamps: row.required_stamps };
+}

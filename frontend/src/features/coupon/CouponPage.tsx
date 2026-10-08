@@ -67,6 +67,7 @@ export default function CouponPage() {
     navigate(`/coupon?store=${encodeURIComponent(storeId)}`);
   }, [navigate]);
 
+  const reloadStamps = useCallback(() => setVersion((n) => n + 1), []);
   const changeFilter = useCallback((value: StampFilter) => { setFocusId(null); setFilter(value); }, []);
   const pick = useCallback((view: StampView) => {
     if (!isReady(view) && view.count === 0) setPicked((prev) => (prev.includes(view.storeId) ? prev : [...prev, view.storeId]));
@@ -81,6 +82,7 @@ export default function CouponPage() {
           key={selected.storeId}
           view={selected}
           onBack={() => navigate('/coupon')}
+          onStamped={reloadStamps}
         />
       </div>
     );
