@@ -2,7 +2,7 @@
 // OpenStreetMap 도로·철도 속성 정규화 (OSM 태그 이름은 여기서만 사용한다)
 // 데이터: scripts/fetch-osm.js 가 저장한 public/data/osm/*.geojson. 규칙을 바꾸려면 이 파일만 고친다.
 // ---------------------------------------------------------------------
-import type { Feature } from 'geojson';
+import type { Feature, FeatureCollection } from 'geojson';
 
 type Props = Record<string, unknown>;
 const propsOf = (feature: Feature): Props => (feature.properties ?? {}) as Props;
@@ -122,4 +122,22 @@ export interface StationExitInfo {
 export function normalizeStationExit(feature: Feature): StationExitInfo {
   const p = propsOf(feature);
   return { number: clean(p.ref) || clean(p.name).replace(/[^0-9-]/g, ''), stationId: clean(p.station_id) };
+}
+
+/** 이 줌(Leaflet 기준)부터 지하철 출구와 역-출구 연결선을 보여준다 (그 아래에서는 역만) */
+export const EXIT_MIN_ZOOM = 17;
+
+/** 같은 노선(1호선의 여러 계통 등)이 여러 개 들어 있으면 가장 긴 것 하나만 남긴다 */
+export function longestSubwayLines(linesGeoJSON: FeatureCollection): Feature[] {
+  const pointCount = (f: Feature) => {
+    const g = f.geometry;
+    return g?.type === 'MultiLineString' ? g.coordinates.flat().length : g?.type === 'LineString' ? g.coordinates.length : 0;
+  };
+  const longest = new Map<string, Feature>();
+  for (const feature of linesGeoJSON.features || []) {
+    const base = subwayLineBase(feature);
+    const prev = longest.get(base);
+    if (!prev || pointCount(feature) > pointCount(prev)) longest.set(base, feature);
+  }
+  return [...longest.values()];
 }

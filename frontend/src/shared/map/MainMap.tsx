@@ -3,17 +3,17 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { FeatureCollection } from 'geojson';
 import type { GeoPoint, Store } from '../../core/types/place';
-import { ICONS } from '../icons';
-import { buildingGroupsListElement, buildingListElement, clusterGroups, clusterIcon, groupByBuilding, pinGroup, PIN_POPUP_OFFSET } from './placeMarkers';
+import { buildingGroupsListElement, buildingListElement, clusterGroups, clusterIcon, groupByBuilding, pinGroup, PIN_POPUP_OFFSET, storeIcon, type IconSpec } from './placeMarkers';
 import type { MapStore } from '../../core/supabase/stores';
 import type { MarkerStyleId } from '../../core/map/markerStyle';
 import { ADMIN_DONG_LABEL, AREA_LAYERS, createStyles } from './vworld/config';
 import { drawStations, drawSubwayLines } from './osm/drawTransit';
-import { drawCampusLabels } from './vworld/campusLabels';
 import { drawMajorLandmarkLabels } from './vworld/mapLabels';
-import { drawArea, drawBoundary, drawBuildings, drawRailways, drawRoads, drawSchoolFacilities, visibleSchoolFacilities, type BuildingOutlines, type DrawContext } from './vworld/draw';
+import { drawArea, drawBoundary, drawBuildings, drawCampusLabels, drawRailways, drawRoads, drawSchoolFacilities, type BuildingOutlines, type DrawContext } from './vworld/draw';
+import { escapeHtml } from './popups';
 import { isInWolgye1 } from './vworld/geometry';
 import { loadData } from './vworld/loadData';
+import { visibleSchoolFacilities } from './vworld/normalize';
 import { LANDSCAPE_MIN_ZOOM_HEIGHT_RATIO, MAP_CENTER, MAP_EXTENT, MAP_HEIGHT_PER_RECT, portraitMinZoomHeightRatio, WOLGYE1_LAT_SPAN } from './vworld/mapExtent';
 import './MainMap.css';
 
@@ -114,8 +114,6 @@ const myLocationStyle = (css: (name: string) => string): L.CircleMarkerOptions =
   radius: 8, color: css('--map-me-ring'), weight: 3, fillColor: css('--map-me'), fillOpacity: 1, interactive: false,
 });
 
-const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-
 /** 이 배율부터 핀 옆에 가게명을 함께 표시한다. */
 const STORE_DETAIL_LABEL_MIN_ZOOM = 18.2;
 
@@ -125,33 +123,8 @@ function storeDetailLabel(names: string[]): string {
   return `<strong>${escapeHtml(unique[0])}</strong>${unique.length > 1 ? `<small>외 ${unique.length - 1}곳</small>` : ''}`;
 }
 
-/** 가게 핀. 원데이클래스는 자주(동네 소식·원데이클래스 색), 그 밖은 초록(공간대여 색) */
-function storeIcon(store: Store, selected: boolean, small: boolean, mine: boolean): L.DivIcon {
-  if (mine) {
-    return L.divIcon({
-      className: 'mm-pin-wrap',
-      html: `<span class="mm-pin mm-pin--mine${selected ? ' is-selected' : ''}">${ICONS.storefront}</span><strong class="mm-mine-tag">내 가게</strong>`,
-      iconSize: [46, 46],
-      iconAnchor: [23, 46],
-    });
-  }
-  if (small) {
-    return L.divIcon({
-      className: 'mm-pin-wrap',
-      html: `<span class="pl-pin pl-pin--single${selected ? ' is-selected' : ''}"><span class="pl-pin__shape"></span><span class="pl-pin__label">${ICONS.storefront}</span></span>${selected ? `<strong class="mm-pin-name">${escapeHtml(store.name)}</strong>` : ''}`,
-      iconSize: [22, 28],
-      iconAnchor: [11, 28],
-    });
-  }
-  const kind = store.supports['oneday-class'] ? 'class' : store.supports['space-rental'] ? 'space' : 'store';
-  const glyph = ICONS[kind === 'class' ? 'palette' : kind === 'space' ? 'house' : 'storefront'];
-  return L.divIcon({
-    className: 'mm-pin-wrap',
-    html: `<span class="mm-pin mm-pin--${kind}${selected ? ' is-selected' : ''}">${glyph}</span>${selected ? `<strong class="mm-pin-name">${escapeHtml(store.name)}</strong>` : ''}`,
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
-  });
-}
+/** 렌더러와 상관없는 핀 모양 → Leaflet 아이콘 */
+const divIcon = ({ className, html, size, anchor }: IconSpec) => L.divIcon({ className, html, iconSize: size, iconAnchor: anchor });
 
 /**
  * 앱 전체 배경 지도 (Leaflet 1.9.4, 배경 타일 없음).
@@ -390,9 +363,10 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
         visibleBounds.contains([group.lat, group.lng])
         || (selectedPlaceId !== null && group.places.some((place) => place.id === selectedPlaceId))
       ));
-      for (const cluster of clusterGroups(map, visibleGroups)) {
+      const zoom = map.getZoom();
+      for (const cluster of clusterGroups((lat, lng) => map.project([lat, lng], zoom), zoom, visibleGroups)) {
         const selected = selectedPlaceId !== null && cluster.groups.some((g) => g.places.some((p) => p.id === selectedPlaceId));
-        const marker = L.marker([cluster.lat, cluster.lng], { icon: clusterIcon(cluster, selected), zIndexOffset: selected ? 500 : 0, keyboard: true });
+        const marker = L.marker([cluster.lat, cluster.lng], { icon: divIcon(clusterIcon(cluster, selected)), zIndexOffset: selected ? 500 : 0, keyboard: true });
         const [group] = cluster.groups;
         if (map.getZoom() >= STORE_DETAIL_LABEL_MIN_ZOOM) {
           const label = storeDetailLabel(cluster.groups.flatMap((building) => building.places.map((place) => place.name)));
@@ -482,7 +456,7 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
         if (!mine && !allowOutsideWolgye && !isInWolgye1(lat, lng, adminDongRef.current)) continue;
         const selected = store.id === selectedId;
         if (!selected && !mine && !visibleBounds.contains([lat, lng])) continue;
-        const marker = L.marker([lat, lng], { icon: storeIcon(store, selected, smallPins, mine), title: mine ? `내 가게: ${store.name}` : store.name, zIndexOffset: mine ? 2000 : selected ? 1000 : 0 });
+        const marker = L.marker([lat, lng], { icon: divIcon(storeIcon(store, selected, smallPins, mine)), title: mine ? `내 가게: ${store.name}` : store.name, zIndexOffset: mine ? 2000 : selected ? 1000 : 0 });
         if (map.getZoom() >= STORE_DETAIL_LABEL_MIN_ZOOM) marker.bindTooltip(storeDetailLabel([store.name]), {
           permanent: true,
           direction: 'top',

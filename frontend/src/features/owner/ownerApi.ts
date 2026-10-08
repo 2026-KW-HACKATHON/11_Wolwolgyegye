@@ -403,3 +403,10 @@ export async function saveStampPolicy(storeId: string, input: StampPolicyInput, 
   if (error) throw new Error('스탬프 혜택을 저장하지 못했어요.');
   forgetStores();
 }
+
+/** 스탬프판을 없앤다. 손님들이 모은 스탬프와 이력도 함께 지워진다 (DB on delete cascade) */
+export async function deleteStampPolicy(storeId: string): Promise<void> {
+  const { data, error } = await getSupabaseClient().from('stamp_policies').delete().eq('store_id', storeId).select('store_id');
+  if (error || !data?.length) throw new Error('스탬프 혜택을 없애지 못했어요. 잠시 뒤 다시 시도해 주세요.');
+  forgetStores();
+}

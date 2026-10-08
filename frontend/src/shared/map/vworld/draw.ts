@@ -4,10 +4,12 @@
 // ---------------------------------------------------------------------
 import L from 'leaflet';
 import type { Feature, FeatureCollection } from 'geojson';
-import { normalizeOsmRoad, normalizeRailway, type RoadGrade, type RoadInfo } from '../osm/normalize';
-import { NO_INFO, ROAD_GRADE_LABELS, SCHOOL_FACILITY_LABELS, type AreaLayerConfig, type MapStyles } from './config';
+import { normalizeOsmRoad, normalizeRailway, type RoadGrade } from '../osm/normalize';
+import { areaPopupHtml, buildingPopupHtml, railwayPopupHtml, roadPopupHtml, schoolFacilityPopupHtml } from '../popups';
+import { CAMPUS_LABEL_MAX_ZOOM, CAMPUS_LABEL_MIN_ZOOM, campusLabelPoints } from './campusLabels';
+import type { AreaLayerConfig, MapStyles } from './config';
 import { withoutOverlaps } from './geometry';
-import { normalizeBuilding, normalizeSchoolFacility, type AreaInfo, type BuildingInfo } from './normalize';
+import { normalizeBuilding, normalizeSchoolFacility } from './normalize';
 
 export interface DrawContext {
   map: L.Map;
@@ -16,11 +18,6 @@ export interface DrawContext {
   /** 경계 점선용 Canvas (pane 'boundary', 마우스 이벤트 통과) */
   boundaryRenderer: L.Canvas;
   styles: MapStyles;
-}
-
-/** 팝업에 넣을 문자열의 HTML 특수문자를 이스케이프 */
-function escapeHtml(s: unknown): string {
-  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 }
 
 /** 영역 하나(산/강/학교/아파트)를 그린다. 클릭하면 이름과 설명을 보여준다 (config.popup 이 false 면 안내창 없음) */
@@ -36,15 +33,6 @@ export function drawArea(ctx: DrawContext, config: AreaLayerConfig, geojson: Fea
       sublayer.bindPopup(() => areaPopupHtml(config.label, info));
     },
   } as L.GeoJSONOptions).addTo(ctx.map);
-}
-
-function areaPopupHtml(label: string, { title, lines }: AreaInfo) {
-  // 줄마다 이스케이프한 뒤 <br> 로 잇는다 (빈 줄은 뺀다)
-  const detailHtml = (lines || []).filter(Boolean).map(escapeHtml).join('<br>');
-  return `
-    <div class="popup-kind">${escapeHtml(label)}</div>
-    <div class="popup-title">${escapeHtml(title || NO_INFO)}</div>
-    ${detailHtml ? `<div>${detailHtml}</div>` : ''}`;
 }
 
 /**
@@ -81,20 +69,6 @@ export function drawRoads(ctx: DrawContext, roadsGeoJSON: FeatureCollection) {
   return layers;
 }
 
-function roadPopupHtml({ name, grade, widthM, lanes, bridge }: RoadInfo) {
-  const rows = [
-    ['구분', `${grade ? ROAD_GRADE_LABELS[grade] : NO_INFO}${bridge ? ' (다리)' : ''}`],
-    ['도로폭', widthM === null ? NO_INFO : `${widthM}m`],
-    ['차로수', lanes === null ? NO_INFO : `${lanes}차로`],
-  ];
-  return `
-    <div class="popup-kind">도로</div>
-    <div class="popup-title">${escapeHtml(name || '이름 없는 도로')}</div>
-    <table class="popup-table">
-      ${rows.map(([k, v]) => `<tr><td>${k}</td><td>${escapeHtml(v)}</td></tr>`).join('')}
-    </table>`;
-}
-
 /**
  * 철도(OpenStreetMap)를 그린다. 바탕 선 위에 흰 점선을 겹쳐 철길처럼 보이게 한다.
  * 지하 구간은 그리지 않는다. 클릭하면 노선 이름을 보여준다.
@@ -105,10 +79,7 @@ export function drawRailways(ctx: DrawContext, railwaysGeoJSON: FeatureCollectio
     renderer: ctx.featureRenderer,
     style: ctx.styles.RAILWAY_BASE_STYLE,
     onEachFeature(feature, sublayer) {
-      const { name, kindLabel } = normalizeRailway(feature);
-      sublayer.bindPopup(() => `
-        <div class="popup-kind">${escapeHtml(kindLabel)}</div>
-        <div class="popup-title">${escapeHtml(name || '이름 없는 노선')}</div>`);
+      sublayer.bindPopup(() => railwayPopupHtml(feature));
     },
   } as L.GeoJSONOptions).addTo(ctx.map);
   L.geoJSON(above, { renderer: ctx.featureRenderer, style: ctx.styles.RAILWAY_DASH_STYLE, interactive: false } as L.GeoJSONOptions).addTo(ctx.map);
@@ -163,11 +134,6 @@ export function drawBuildings(ctx: DrawContext, buildingsGeoJSON: FeatureCollect
   };
 }
 
-/** 지도에 그리는 학교 건물 (종류를 알 수 있는 건물만) */
-export function visibleSchoolFacilities(geojson: FeatureCollection | null): Feature[] {
-  return (geojson?.features || []).filter((feature) => normalizeSchoolFacility(feature).kind !== null);
-}
-
 /**
  * 학교 안 건물을 그린다. 색은 일반 건물과 같고, 누르면 학교 이름과 건물 종류를 보여준다.
  * 겹치는 일반 건물은 drawBuildings 가 미리 뺀다.
@@ -177,33 +143,14 @@ export function drawSchoolFacilities(ctx: DrawContext, facilities: Feature[]) {
     renderer: ctx.featureRenderer,
     style: ctx.styles.BUILDING_STYLE,
     onEachFeature(feature, sublayer) {
-      const info = normalizeSchoolFacility(feature);
-      if (!info.kind) return;
-      const label = SCHOOL_FACILITY_LABELS[info.kind];
+      if (!normalizeSchoolFacility(feature).kind) return;
       const path = sublayer as L.Path;
       path.on('mouseover', () => path.setStyle(ctx.styles.BUILDING_HOVER_STYLE));
       path.on('mouseout', () => layer.resetStyle(path));
-      path.bindPopup(() => `
-        <div class="popup-kind">학교 건물 · ${escapeHtml(label)} (추정)</div>
-        <div class="popup-title">${escapeHtml(info.name || '이름 없는 건물')}</div>
-        <table class="popup-table">
-          <tr><td>학교</td><td>${escapeHtml(info.school || NO_INFO)}</td></tr>
-          <tr><td>층수</td><td>${escapeHtml(info.floors === null ? '층수 정보 없음' : `지상 ${info.floors}층`)}</td></tr>
-        </table>`);
+      path.bindPopup(() => schoolFacilityPopupHtml(feature));
     },
   } as L.GeoJSONOptions);
   return layer.addTo(ctx.map);
-}
-
-function buildingPopupHtml({ name, address, floors }: BuildingInfo) {
-  const floorsText = floors === null ? '층수 정보 없음' : `지상 ${floors}층`;
-  return `
-    <div class="popup-kind">건물</div>
-    <div class="popup-title">${escapeHtml(name || NO_INFO)}</div>
-    <table class="popup-table">
-      <tr><td>주소</td><td>${escapeHtml(address || NO_INFO)}</td></tr>
-      <tr><td>층수</td><td>${escapeHtml(floorsText)}</td></tr>
-    </table>`;
 }
 
 /**
@@ -226,5 +173,24 @@ export function drawBoundary(ctx: DrawContext, boundaryGeoJSON: FeatureCollectio
       .setContent(label)
       .addTo(ctx.map);
   }
+  return layer;
+}
+
+/** 캠퍼스 건물 라벨을 경계 pane(마우스 이벤트 통과)에 붙이고, 줌에 따라 보이거나 숨긴다 */
+export function drawCampusLabels(ctx: DrawContext, buildingsGeoJSON: FeatureCollection) {
+  const layer = L.layerGroup();
+  for (const { name, at } of campusLabelPoints(buildingsGeoJSON)) {
+    L.tooltip({ permanent: true, direction: 'center', className: 'campus-label', pane: 'boundary', interactive: false })
+      .setLatLng(at)
+      .setContent(name)
+      .addTo(layer);
+  }
+  const update = () => {
+    const zoom = ctx.map.getZoom();
+    if (zoom >= CAMPUS_LABEL_MIN_ZOOM && zoom < CAMPUS_LABEL_MAX_ZOOM) layer.addTo(ctx.map);
+    else layer.remove();
+  };
+  update();
+  ctx.map.on('zoomend', update);
   return layer;
 }

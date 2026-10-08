@@ -1,9 +1,13 @@
 import { forwardRef, lazy, Suspense, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import type { GeoPoint } from '../../core/types/place';
 import { useMarkerStyle } from '../../core/map/markerStyle';
-import MainMap, { type MainMapHandle, type MainMapProps, type MapInsets } from './MainMap';
+import type { MainMapHandle, MainMapProps, MapInsets } from './MainMap';
+import Map2D from './Map2D';
+import './MainMap.css';
 
 const Map3D = lazy(() => import('./Map3D'));
+/** WebGL 을 못 쓰는 기기에서만 쓰는 Leaflet(Canvas) 2D 지도 */
+const MainMap = lazy(() => import('./MainMap'));
 
 function canUseWebGL(): boolean {
   try {
@@ -32,8 +36,12 @@ function initialMode(): MapMode {
   return canUseWebGL() ? '3d' : '2d';
 }
 
-/** 첫 접속은 3D 지도. 사용자가 고른 2D/3D 모드와 가게 핀 모양은 이 기기에 저장한다. */
+/**
+ * 첫 접속은 3D 지도. 평면은 MapLibre(WebGL) 지도이며, 사용자가 고른 2D/3D 모드와 가게 핀 모양은 이 기기에 저장한다.
+ * WebGL 을 못 쓰는 기기에서는 Leaflet 평면 지도를 쓰고 3D 버튼을 숨긴다.
+ */
 const HybridMap = forwardRef<MainMapHandle, MainMapProps>(function HybridMap(props, ref) {
+  const [webgl] = useState(canUseWebGL);
   const [mode, setMode] = useState<MapMode>(initialMode);
   const markerStyle = useMarkerStyle();
   const mapRef = useRef<MainMapHandle | null>(null);
@@ -68,10 +76,6 @@ const HybridMap = forwardRef<MainMapHandle, MainMapProps>(function HybridMap(pro
   }, [mode]);
 
   const toggleMode = () => {
-    if (mode === '2d' && !canUseWebGL()) {
-      window.alert('이 기기에서는 3D 지도를 사용할 수 없어요. 2D 지도를 이용해 주세요.');
-      return;
-    }
     const next = mode === '2d' ? '3d' : '2d';
     setMode(next);
     try { window.localStorage.setItem(MODE_STORAGE_KEY, next); } catch { /* 이번 실행에서만 유지 */ }
@@ -79,14 +83,18 @@ const HybridMap = forwardRef<MainMapHandle, MainMapProps>(function HybridMap(pro
 
   return (
     <div className="mm-hybrid" data-map-mode={mode}>
-      {mode === '2d' ? (
-        <MainMap key={`2d-${markerStyle}`} ref={mapRef} {...props} markerStyle={markerStyle} />
+      {!webgl ? (
+        <Suspense fallback={<div className="mm-state" role="status">지도를 불러오는 중…</div>}>
+          <MainMap key={`leaflet-${markerStyle}`} ref={mapRef} {...props} markerStyle={markerStyle} />
+        </Suspense>
+      ) : mode === '2d' ? (
+        <Map2D key={`2d-${markerStyle}`} ref={mapRef} {...props} markerStyle={markerStyle} />
       ) : (
         <Suspense fallback={<div className="mm-state" role="status">3D 지도를 준비하는 중…</div>}>
           <Map3D key={`3d-${markerStyle}`} ref={mapRef} {...props} markerStyle={markerStyle} />
         </Suspense>
       )}
-      <button
+      {webgl && <button
         className="mm-mode-toggle"
         type="button"
         aria-label={mode === '2d' ? '3D 지도 켜기' : '2D 지도 켜기'}
@@ -95,7 +103,7 @@ const HybridMap = forwardRef<MainMapHandle, MainMapProps>(function HybridMap(pro
       >
         <strong>{mode === '2d' ? '3D' : '2D'}</strong>
         <span>{mode === '2d' ? '입체 지도' : '평면 지도'}</span>
-      </button>
+      </button>}
     </div>
   );
 });
