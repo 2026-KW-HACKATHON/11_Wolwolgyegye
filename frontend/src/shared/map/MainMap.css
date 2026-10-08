@@ -781,6 +781,10 @@
 }
 
 /* 층별 가게 목록 팝업 */
+.mm-root .maplibregl-popup.pl-popup {
+  z-index: 5000;
+}
+
 .mm-root .pl-popup .leaflet-popup-content {
   margin: 10px 12px;
 }

@@ -334,20 +334,18 @@ export default function AppShell() {
   // 가게 관리: 내 가게 핀은 늘 함께 (다른 가게를 열어 둔 동안에도). 상가정보 핀에서는 빠진다
   const showMine = activeId === 'owner';
   const mapStores = useMemo(() => {
+    // 가게 상세를 연 동안에는 소유 가게를 추가로 섞지 않고 선택한 가게만 남긴다.
+    if (focusedId) return categoryPins;
     if (!showMine || !myStores.length) return categoryPins;
     const mineIds = new Set(myStores.map((store) => store.id));
     return [...myStores, ...categoryPins.filter((store) => !mineIds.has(store.id))];
-  }, [categoryPins, showMine, myStores]);
+  }, [categoryPins, focusedId, showMine, myStores]);
   // 지도 가게: 그 외 카테고리를 고르면 그 유형만, 아니면 전부. 카테고리 핀으로 이미 나온 가게는 두 번 그리지 않는다
   const places = useMemo(() => {
     if (!mapData) return [];
     const shown = new Set(mapStores.map((s) => s.id));
-    // 동네 지도 성격의 화면에서는 가게를 하나 선택해 상세 창을 열어도 주변 가게를 함께 남긴다.
-    // 선택한 가게는 selectedPlaceId/selectedId 로 강조하므로, 다른 핀을 숨길 필요가 없다.
-    // 기능 전용 화면은 기존처럼 해당 기능 가게에 집중한다.
-    if (focusedId && !PLACE_PIN_PANEL_IDS.has(activeId ?? '')) {
-      return mapData.stores.filter((p) => p.id === focusedId && !shown.has(p.id));
-    }
+    // 상세창을 연 동안에는 다른 핀과 이름표를 모두 숨겨 선택한 가게에만 집중한다.
+    if (focusedId) return mapData.stores.filter((p) => p.id === focusedId && !shown.has(p.id));
     if (FEATURE_PANEL_IDS.has(activeId ?? '')) return [];
     return mapData.stores.filter((p) => !shown.has(p.id) && matchesSearch(placeSearchText(p), storeTerm) && (!subCategory || (p.typeId !== null && subCategory.typeIds.includes(p.typeId))));
   }, [mapData, subCategory, mapStores, focusedId, storeTerm, activeId]);
