@@ -229,6 +229,8 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
           brand: cssColor(root, '--color-brand', '#8f2635'),
           place: cssColor(root, '--place-pin', '#ed7c31'),
           me: cssColor(root, '--map-me', '#1a73e8'),
+          text: cssColor(root, '--color-text', '#211a16'),
+          surface: cssColor(root, '--color-surface', '#fffdf8'),
         };
         map.setPaintProperty('background', 'background-color', colors.background);
 
@@ -285,6 +287,27 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
             'circle-stroke-color': '#fff', 'circle-stroke-width': 2,
           },
         });
+        // 네이버 지도처럼 멀리서는 랜드마크만, 충분히 확대하면 개별 가게 이름을 보여 준다.
+        // symbol 레이어의 충돌 회피를 사용해 화면이 좁은 모바일에서도 이름표가 서로 겹치지 않는다.
+        map.addLayer({
+          id: 'place-labels', source: 'places', type: 'symbol', minzoom: 17.2, filter: ['!', ['has', 'point_count']],
+          layout: {
+            'text-field': ['get', 'name'],
+            'text-size': ['interpolate', ['linear'], ['zoom'], 17.2, 10, 19, 12],
+            'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+            'text-radial-offset': 1.15,
+            'text-max-width': 11,
+            'text-padding': 4,
+            'text-allow-overlap': false,
+            'text-ignore-placement': false,
+          },
+          paint: {
+            'text-color': ['case', ['boolean', ['get', 'selected'], false], colors.brand, colors.text],
+            'text-halo-color': colors.surface,
+            'text-halo-width': 1.6,
+            'text-halo-blur': 0.4,
+          },
+        });
 
         map.addSource('feature-stores', { type: 'geojson', data: storesToGeoJSON(storesRef.current, selectedId, myStoreIds) });
         map.addLayer({
@@ -293,6 +316,26 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
             'circle-color': ['case', ['boolean', ['get', 'mine'], false], '#2563eb', ['boolean', ['get', 'selected'], false], colors.brand, '#157a5b'],
             'circle-radius': ['case', ['any', ['boolean', ['get', 'mine'], false], ['boolean', ['get', 'selected'], false]], 12, 9],
             'circle-stroke-color': '#fff', 'circle-stroke-width': 3,
+          },
+        });
+        map.addLayer({
+          id: 'feature-store-labels', source: 'feature-stores', type: 'symbol', minzoom: 16.8,
+          layout: {
+            'text-field': ['get', 'name'],
+            'text-size': ['interpolate', ['linear'], ['zoom'], 16.8, 10.5, 19, 12.5],
+            'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+            'text-radial-offset': 1.2,
+            'text-max-width': 12,
+            'text-padding': 5,
+            'text-allow-overlap': false,
+            'text-ignore-placement': false,
+            'symbol-sort-key': ['case', ['boolean', ['get', 'selected'], false], 0, ['boolean', ['get', 'mine'], false], 1, 2],
+          },
+          paint: {
+            'text-color': ['case', ['boolean', ['get', 'mine'], false], '#1d4ed8', ['boolean', ['get', 'selected'], false], colors.brand, '#0f6248'],
+            'text-halo-color': colors.surface,
+            'text-halo-width': 1.8,
+            'text-halo-blur': 0.4,
           },
         });
         map.addSource('my-location', { type: 'geojson', data: EMPTY_POINTS });
@@ -304,15 +347,19 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
           (map.getSource('my-location') as GeoJSONSource).setData({ type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [point.lng, point.lat] } }] });
         }
 
-        map.on('click', 'feature-stores', (event: MapLayerMouseEvent) => {
+        const selectFeatureStore = (event: MapLayerMouseEvent) => {
           const id = event.features?.[0]?.properties?.id;
           if (typeof id === 'string') onSelectRef.current(id);
-        });
-        map.on('click', 'place-points', (event: MapLayerMouseEvent) => {
+        };
+        const selectPlace = (event: MapLayerMouseEvent) => {
           const id = event.features?.[0]?.properties?.id;
           const place = placesRef.current.find((item) => item.id === id);
           if (place) onPlaceSelectRef.current(place);
-        });
+        };
+        map.on('click', 'feature-stores', selectFeatureStore);
+        map.on('click', 'feature-store-labels', selectFeatureStore);
+        map.on('click', 'place-points', selectPlace);
+        map.on('click', 'place-labels', selectPlace);
         map.on('click', 'place-clusters', async (event: MapLayerMouseEvent) => {
           const feature = event.features?.[0];
           const clusterId = Number(feature?.properties?.cluster_id);
@@ -321,7 +368,7 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
           const zoom = await source.getClusterExpansionZoom(clusterId);
           map.easeTo({ center: feature.geometry.coordinates as [number, number], zoom, duration: 360 });
         });
-        for (const layer of ['feature-stores', 'place-points', 'place-clusters']) {
+        for (const layer of ['feature-stores', 'feature-store-labels', 'place-points', 'place-labels', 'place-clusters']) {
           map.on('mouseenter', layer, setPointer);
           map.on('mouseleave', layer, clearPointer);
         }
