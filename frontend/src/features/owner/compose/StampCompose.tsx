@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../../shared/Icon';
-import { fetchOwnerStampPolicy, saveStampPolicy, validateStampPolicy } from '../ownerApi';
+import { deleteStampPolicy, fetchOwnerStampPolicy, saveStampPolicy, validateStampPolicy } from '../ownerApi';
 import ComposeShell from './ComposeShell';
 import { Card, ChoiceChips, DoneStep, Field, FormError, Stepper, WonInput } from './parts';
 
@@ -17,6 +17,7 @@ const unitText = (basis: Basis, amount: number | null) => (basis === '1회 방�
 /**
  * 스탬프 혜택 등록·수정 (2단계)  1. 적립 설정 · 완성 혜택  2. 완료
  * 가게당 규칙이 하나라서 이미 있으면 그 값을 채워서 고치기로 연다. 유효 기간은 조건(condition)에 적는다.
+ * 고치기로 열었을 때는 맨 아래에서 스탬프판을 없앨 수 있다 (한 번 더 확인한다).
  */
 export default function StampCompose({ storeId, onClose }: { storeId: string; onClose: () => void }) {
   const navigate = useNavigate();
@@ -30,6 +31,9 @@ export default function StampCompose({ storeId, onClose }: { storeId: string; on
   const [validity, setValidity] = useState(12);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  /** 없애기 확인 중 / 없앴음 */
+  const [removing, setRemoving] = useState(false);
+  const [removed, setRemoved] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,6 +66,13 @@ export default function StampCompose({ storeId, onClose }: { storeId: string; on
     setBusy(true); setError('');
     try { await saveStampPolicy(storeId, input, exists); setStep(2); }
     catch (cause) { setError(cause instanceof Error ? cause.message : '저장하지 못했어요. 다시 시도해 주세요.'); }
+    finally { setBusy(false); }
+  }
+
+  async function remove() {
+    setBusy(true); setError('');
+    try { await deleteStampPolicy(storeId); setRemoved(true); setStep(2); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : '스탬프 혜택을 없애지 못했어요.'); }
     finally { setBusy(false); }
   }
 
@@ -118,9 +129,32 @@ export default function StampCompose({ storeId, onClose }: { storeId: string; on
             </span>
           </Field>
         </Card>
+
+        {exists && (
+          <Card title="스탬프판 없애기">
+            {!removing ? (
+              <div className="opd-actions">
+                <button type="button" className="opd-danger" onClick={() => setRemoving(true)}>스탬프판 없애기</button>
+              </div>
+            ) : (
+              <>
+                <p className="opd-warn">없애면 손님 화면에서 바로 사라지고, 손님들이 모은 스탬프도 모두 지워져요. 되돌릴 수 없어요.</p>
+                <div className="opd-actions">
+                  <button type="button" className="op-secondary" disabled={busy} onClick={() => setRemoving(false)}>돌아가기</button>
+                  <button type="button" className="opd-danger is-solid" disabled={busy} onClick={() => void remove()}>{busy ? '없애는 중…' : '없애기'}</button>
+                </div>
+              </>
+            )}
+          </Card>
+        )}
       </>}
 
-      {step === 2 && (
+      {step === 2 && removed && (
+        <DoneStep icon="gift" title="스탬프판을 없앴어요" desc="필요하면 가게 관리에서 언제든 다시 만들 수 있어요."
+          actions={[{ label: '가게 관리로', onClick: onClose, primary: true }]} />
+      )}
+
+      {step === 2 && !removed && (
         <DoneStep icon="gift" title={exists ? '스탬프판을 고쳤어요' : '스탬프판을 만들었어요'} desc={`스탬프 ${required}개를 모으면 ${reward.trim()}을(를) 드려요.`}
           actions={[
             { label: '스탬프 화면 보기', onClick: () => navigate('/coupon') },
