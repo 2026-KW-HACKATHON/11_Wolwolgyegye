@@ -91,16 +91,17 @@ export async function createSale(storeId: string, input: SaleInput): Promise<voi
   forgetStores();
 }
 
-/** 진행 중인 세일을 지금 끝낸다 (ends_at = 지금). 아직 시작 전인 세일은 deleteSale 로 지운다 */
+/** 진행 중인 세일을 지금 끝낸다 (ends_at = 지금). 기록까지 지우려면 deleteSale */
 export async function endSale(id: string): Promise<void> {
   const { error } = await getSupabaseClient().from('closing_sales').update({ ends_at: new Date().toISOString() }).eq('id', id);
   if (error) throw new Error('세일을 종료하지 못했어요.');
   forgetStores();
 }
 
+/** 세일을 지운다. 손님 화면에서 바로 사라지고, 손님들이 누른 찜(sale_likes)도 함께 지워진다 */
 export async function deleteSale(id: string): Promise<void> {
-  const { error } = await getSupabaseClient().from('closing_sales').delete().eq('id', id);
-  if (error) throw new Error('세일을 삭제하지 못했어요.');
+  const { data, error } = await getSupabaseClient().from('closing_sales').delete().eq('id', id).select('id');
+  if (error || !data?.length) throw new Error('세일을 삭제하지 못했어요.');
   forgetStores();
 }
 
