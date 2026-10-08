@@ -366,7 +366,8 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
       const zoom = map.getZoom();
       for (const cluster of clusterGroups((lat, lng) => map.project([lat, lng], zoom), zoom, visibleGroups)) {
         const selected = selectedPlaceId !== null && cluster.groups.some((g) => g.places.some((p) => p.id === selectedPlaceId));
-        const marker = L.marker([cluster.lat, cluster.lng], { icon: divIcon(clusterIcon(cluster, selected)), zIndexOffset: selected ? 500 : 0, keyboard: true });
+        const muted = (selectedPlaceId !== null || selectedId !== null) && !selected;
+        const marker = L.marker([cluster.lat, cluster.lng], { icon: divIcon(clusterIcon(cluster, selected, muted)), zIndexOffset: selected ? 500 : 0, keyboard: true });
         const [group] = cluster.groups;
         if (map.getZoom() >= STORE_DETAIL_LABEL_MIN_ZOOM) {
           const label = storeDetailLabel(cluster.groups.flatMap((building) => building.places.map((place) => place.name)));
@@ -435,7 +436,7 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
       map.off('zoomend', renderAfterZoom);
       if (renderFrame !== null) cancelAnimationFrame(renderFrame);
     };
-  }, [buildingGroups, selectedPlaceId, status]);
+  }, [buildingGroups, selectedPlaceId, selectedId, status]);
 
   // 3) 가게 핀 — 월계1동 안의 가게만
   useEffect(() => {
@@ -456,7 +457,8 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
         if (!mine && !allowOutsideWolgye && !isInWolgye1(lat, lng, adminDongRef.current)) continue;
         const selected = store.id === selectedId;
         if (!selected && !mine && !visibleBounds.contains([lat, lng])) continue;
-        const marker = L.marker([lat, lng], { icon: divIcon(storeIcon(store, selected, smallPins, mine)), title: mine ? `내 가게: ${store.name}` : store.name, zIndexOffset: mine ? 2000 : selected ? 1000 : 0 });
+        const muted = (selectedId !== null || selectedPlaceId !== null) && !selected && !mine;
+        const marker = L.marker([lat, lng], { icon: divIcon(storeIcon(store, selected, smallPins, mine, muted)), title: mine ? `내 가게: ${store.name}` : store.name, zIndexOffset: mine ? 2000 : selected ? 1000 : 0 });
         if (map.getZoom() >= STORE_DETAIL_LABEL_MIN_ZOOM) marker.bindTooltip(storeDetailLabel([store.name]), {
           permanent: true,
           direction: 'top',
@@ -484,12 +486,12 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
       map.off('zoomend', renderAfterZoom);
       if (renderFrame !== null) cancelAnimationFrame(renderFrame);
     };
-  }, [stores, selectedId, status, allowOutsideWolgye, smallPins, myStoreKey]);
+  }, [stores, selectedId, selectedPlaceId, status, allowOutsideWolgye, smallPins, myStoreKey]);
 
   // 선택한 가게를 가운데로 옮기는 건 AppShell 이 한다 (가게 창 크기가 정해진 뒤에, centerOn)
 
   return (
-    <div className="mm-root" data-marker-style={markerStyle}>
+    <div className="mm-root" data-marker-style={markerStyle} data-has-selection={Boolean(selectedId || selectedPlaceId)}>
       <div ref={containerRef} className="mm-canvas" role="region" aria-label="월계1동 지도" />
       <p className="mm-source">
         © 브이월드 · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>

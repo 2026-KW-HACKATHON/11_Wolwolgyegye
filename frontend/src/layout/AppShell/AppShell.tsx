@@ -342,7 +342,12 @@ export default function AppShell() {
   const places = useMemo(() => {
     if (!mapData) return [];
     const shown = new Set(mapStores.map((s) => s.id));
-    if (focusedId) return mapData.stores.filter((p) => p.id === focusedId && !shown.has(p.id));
+    // 동네 지도 성격의 화면에서는 가게를 하나 선택해 상세 창을 열어도 주변 가게를 함께 남긴다.
+    // 선택한 가게는 selectedPlaceId/selectedId 로 강조하므로, 다른 핀을 숨길 필요가 없다.
+    // 기능 전용 화면은 기존처럼 해당 기능 가게에 집중한다.
+    if (focusedId && !PLACE_PIN_PANEL_IDS.has(activeId ?? '')) {
+      return mapData.stores.filter((p) => p.id === focusedId && !shown.has(p.id));
+    }
     if (FEATURE_PANEL_IDS.has(activeId ?? '')) return [];
     return mapData.stores.filter((p) => !shown.has(p.id) && matchesSearch(placeSearchText(p), storeTerm) && (!subCategory || (p.typeId !== null && subCategory.typeIds.includes(p.typeId))));
   }, [mapData, subCategory, mapStores, focusedId, storeTerm, activeId]);

@@ -561,7 +561,8 @@ const Map2D = forwardRef<MainMapHandle, MainMapProps>(function Map2D({ stores, s
         const detail = zoom >= STORE_DETAIL_LABEL_MIN_ZOOM
           ? storeDetailLabelHtml(cluster.groups.flatMap((building) => building.places.map((place) => place.name)))
           : '';
-        markers.push(iconMarker(clusterIcon(cluster, selected), cluster.lng, cluster.lat, selected ? Z.placeSelected : Z.place, onClick, undefined, detail).addTo(map));
+        const muted = (selectedPlaceId !== null || selectedId !== null) && !selected;
+        markers.push(iconMarker(clusterIcon(cluster, selected, muted), cluster.lng, cluster.lat, selected ? Z.placeSelected : Z.place, onClick, undefined, detail).addTo(map));
       }
     };
     const scheduleRender = (force: boolean) => {
@@ -583,7 +584,7 @@ const Map2D = forwardRef<MainMapHandle, MainMapProps>(function Map2D({ stores, s
       if (renderFrame !== null) cancelAnimationFrame(renderFrame);
       markers.forEach((marker) => marker.remove());
     };
-  }, [buildingGroups, selectedPlaceId, status]);
+  }, [buildingGroups, selectedPlaceId, selectedId, status]);
 
   // 3) 가게 핀 — 월계1동 안의 가게만 (내 가게는 밖이어도)
   useEffect(() => {
@@ -608,7 +609,8 @@ const Map2D = forwardRef<MainMapHandle, MainMapProps>(function Map2D({ stores, s
         if (!selected && !mine && !boxContains(visible, lat, lng)) continue;
         const z = mine ? Z.mine : selected ? Z.storeSelected : Z.store;
         const detail = zoom >= STORE_DETAIL_LABEL_MIN_ZOOM ? storeDetailLabelHtml([store.name]) : '';
-        markers.push(iconMarker(storeIcon(store, selected, smallPins, mine), lng, lat, z, () => onSelectRef.current(store.id), mine ? `내 가게: ${store.name}` : store.name, detail).addTo(map));
+        const muted = (selectedId !== null || selectedPlaceId !== null) && !selected && !mine;
+        markers.push(iconMarker(storeIcon(store, selected, smallPins, mine, muted), lng, lat, z, () => onSelectRef.current(store.id), mine ? `내 가게: ${store.name}` : store.name, detail).addTo(map));
       }
     };
     const scheduleRender = (force: boolean) => {
@@ -629,12 +631,12 @@ const Map2D = forwardRef<MainMapHandle, MainMapProps>(function Map2D({ stores, s
       if (renderFrame !== null) cancelAnimationFrame(renderFrame);
       markers.forEach((marker) => marker.remove());
     };
-  }, [stores, selectedId, status, allowOutsideWolgye, smallPins, myStoreKey]);
+  }, [stores, selectedId, selectedPlaceId, status, allowOutsideWolgye, smallPins, myStoreKey]);
 
   // 선택한 가게를 가운데로 옮기는 건 AppShell 이 한다 (가게 창 크기가 정해진 뒤에, centerOn)
 
   return (
-    <div ref={rootRef} className="mm-root mm-root--gl2d" data-marker-style={markerStyle}>
+    <div ref={rootRef} className="mm-root mm-root--gl2d" data-marker-style={markerStyle} data-has-selection={Boolean(selectedId || selectedPlaceId)}>
       <div ref={containerRef} className="mm-canvas mm-maplibre" role="region" aria-label="월계1동 지도" />
       <p className="mm-source">
         © 브이월드 · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>

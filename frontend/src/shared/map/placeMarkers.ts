@@ -118,19 +118,20 @@ function pinHtml(className: string, label: string): string {
 }
 
 /** 가게 1곳 = 작은 핀 / 건물에 여럿 = 숫자 핀 / 건물 여럿 묶음 = 큰 숫자 원. 색은 모두 pinGroup 우선순위 */
-export function clusterIcon(cluster: PlaceCluster, selected: boolean): IconSpec {
+export function clusterIcon(cluster: PlaceCluster, selected: boolean, muted = false): IconSpec {
   const sel = selected ? ' is-selected' : '';
+  const dim = muted ? ' is-muted' : '';
   if (cluster.groups.length > 1) {
     // 묶음 색도 같은 우선순위: 묶인 가게 중 음식점이 하나라도 있으면 음식점 색
     const color = `pl--${pinGroup(cluster.groups.flatMap((g) => g.places))}`;
-    return { className: 'pl-wrap', html: `<span class="pl-cluster ${color}${sel}">${cluster.count}</span>`, size: [36, 36], anchor: [18, 18] };
+    return { className: 'pl-wrap', html: `<span class="pl-cluster ${color}${sel}${dim}">${cluster.count}</span>`, size: [36, 36], anchor: [18, 18] };
   }
   const group = cluster.groups[0];
   const color = `pl--${pinGroup(group.places)}`;
   if (group.places.length === 1) {
-    return { className: 'pl-wrap', html: pinHtml(`pl-pin--single ${color}${sel}`, ''), size: PIN_SINGLE, anchor: [PIN_SINGLE[0] / 2, PIN_SINGLE[1]] };
+    return { className: 'pl-wrap', html: pinHtml(`pl-pin--single ${color}${sel}${dim}`, ''), size: PIN_SINGLE, anchor: [PIN_SINGLE[0] / 2, PIN_SINGLE[1]] };
   }
-  return { className: 'pl-wrap', html: pinHtml(`${color}${sel}`, String(group.places.length)), size: PIN_BUILDING, anchor: [PIN_BUILDING[0] / 2, PIN_BUILDING[1]] };
+  return { className: 'pl-wrap', html: pinHtml(`${color}${sel}${dim}`, String(group.places.length)), size: PIN_BUILDING, anchor: [PIN_BUILDING[0] / 2, PIN_BUILDING[1]] };
 }
 
 /**
@@ -212,7 +213,8 @@ export function buildingGroupsListElement(groups: BuildingGroup[], onPick: (plac
 }
 
 /** 추천 가게 핀. 원데이클래스는 자주(동네 소식·원데이클래스 색), 그 밖은 초록(공간대여 색) */
-export function storeIcon(store: Store, selected: boolean, small: boolean, mine: boolean): IconSpec {
+export function storeIcon(store: Store, selected: boolean, small: boolean, mine: boolean, muted = false): IconSpec {
+  const dim = muted ? ' is-muted' : '';
   if (mine) {
     return {
       className: 'mm-pin-wrap',
@@ -224,7 +226,7 @@ export function storeIcon(store: Store, selected: boolean, small: boolean, mine:
   if (small) {
     return {
       className: 'mm-pin-wrap',
-      html: `<span class="pl-pin pl-pin--single${selected ? ' is-selected' : ''}"><span class="pl-pin__shape"></span><span class="pl-pin__label">${ICONS.storefront}</span></span>${selected ? `<strong class="mm-pin-name">${escapeHtml(store.name)}</strong>` : ''}`,
+      html: `<span class="pl-pin pl-pin--single${selected ? ' is-selected' : ''}${dim}"><span class="pl-pin__shape"></span><span class="pl-pin__label">${ICONS.storefront}</span></span>${selected ? `<strong class="mm-pin-name">${escapeHtml(store.name)}</strong>` : ''}`,
       size: [22, 28],
       anchor: [11, 28],
     };
@@ -233,7 +235,7 @@ export function storeIcon(store: Store, selected: boolean, small: boolean, mine:
   const glyph = ICONS[kind === 'class' ? 'palette' : kind === 'space' ? 'house' : 'storefront'];
   return {
     className: 'mm-pin-wrap',
-    html: `<span class="mm-pin mm-pin--${kind}${selected ? ' is-selected' : ''}">${glyph}</span>${selected ? `<strong class="mm-pin-name">${escapeHtml(store.name)}</strong>` : ''}`,
+    html: `<span class="mm-pin mm-pin--${kind}${selected ? ' is-selected' : ''}${dim}">${glyph}</span>${selected ? `<strong class="mm-pin-name">${escapeHtml(store.name)}</strong>` : ''}`,
     size: [40, 40],
     anchor: [20, 40],
   };
