@@ -20,7 +20,10 @@ function defaultRange() {
 
 const TYPE_LABELS: Record<SaleDiscountType, string> = { rate: '% 할인', amount: '금액 할인', free: '무료 제공' };
 
-/** 사장님 화면 > 마감세일: 진행 중·예정 세일 목록과 새 세일 등록 */
+/**
+ * 사장님 화면 > 마감세일: 진행 중·예정 세일 목록과 새 세일 등록.
+ * 진행 중인 세일은 지금 종료(기록은 남김)하거나 삭제(기록까지 지움)하고, 예정 세일은 삭제한다. 삭제는 한 번 더 확인한다.
+ */
 export default function OwnerSalePanel({ storeId }: { storeId: string }) {
   const showToast = useToast();
   const [sales, setSales] = useState<OwnerSale[] | null>(null);
@@ -32,6 +35,8 @@ export default function OwnerSalePanel({ storeId }: { storeId: string }) {
   const [range, setRange] = useState(defaultRange);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  /** 삭제 확인 중인 세일 */
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     try { setSales(await fetchOwnerSales(storeId)); setLoadError(''); }
@@ -61,9 +66,10 @@ export default function OwnerSalePanel({ storeId }: { storeId: string }) {
     finally { setBusy(false); }
   }
 
-  async function act(sale: OwnerSale, started: boolean) {
+  async function act(sale: OwnerSale, action: 'end' | 'delete') {
+    setConfirmId(null);
     try {
-      if (started) { await endSale(sale.id); showToast('세일을 종료했어요'); }
+      if (action === 'end') { await endSale(sale.id); showToast('세일을 종료했어요'); }
       else { await deleteSale(sale.id); showToast('세일을 삭제했어요'); }
       await reload();
     } catch (cause) { showToast(cause instanceof Error ? cause.message : '처리하지 못했어요.'); }
@@ -88,7 +94,17 @@ export default function OwnerSalePanel({ storeId }: { storeId: string }) {
                     <span className="op-muted">{started ? '진행 중' : '예정'} · {hhmm(sale.startsAt)} ~ {hhmm(sale.endsAt)}</span>
                     {(sale.offer || sale.condition) && <span className="op-muted">{[sale.offer, sale.condition].filter(Boolean).join(' · ')}</span>}
                   </div>
-                  <button type="button" className="op-text-btn" onClick={() => void act(sale, started)}>{started ? '지금 종료' : '삭제'}</button>
+                  {confirmId === sale.id ? (
+                    <span className="op-row-actions">
+                      <button type="button" className="op-text-btn" onClick={() => setConfirmId(null)}>취소</button>
+                      <button type="button" className="op-text-btn is-danger" onClick={() => void act(sale, 'delete')}>정말 삭제</button>
+                    </span>
+                  ) : (
+                    <span className="op-row-actions">
+                      {started && <button type="button" className="op-text-btn" onClick={() => void act(sale, 'end')}>지금 종료</button>}
+                      <button type="button" className="op-text-btn is-danger" onClick={() => setConfirmId(sale.id)}>삭제</button>
+                    </span>
+                  )}
                 </li>
               );
             })}
