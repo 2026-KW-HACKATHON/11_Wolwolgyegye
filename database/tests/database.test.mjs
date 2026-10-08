@@ -60,7 +60,7 @@ after(async () => { await db.close(); });
 
 test('모든 앱 표에 RLS 적용', async () => {
   const tables = (await db.query("select relname,relrowsecurity from pg_class c join pg_namespace n on c.relnamespace=n.oid where n.nspname='public' and c.relkind='r'")).rows;
-  assert.equal(tables.length, 24);
+  assert.equal(tables.length, 25);
   assert.deepEqual(tables.filter((t) => !t.relrowsecurity).map((t) => t.relname), []);
 });
 
@@ -257,6 +257,35 @@ test('스탬프: 직접 수정 금지, 서버 적립의 중복 방지와 잔액 
   await rejectsCode(as('service_role', null, change, [owner, shopB, -4, 'b0000000-0000-4000-8000-000000000002', '사용']), '23514');
   assert.equal(await scalar('select count from public.user_stamps where user_id=$1 and store_id=$2', [owner, shopB]), 3);
   assert.equal((await rows('authenticated', neighbor, 'select * from public.user_stamps')).length, 0);
+});
+
+test('스탬프 적립 코드: 손님이 받은 6자리 코드를 그 가게 사장님만 한 번 입력해 적립한다', async () => {
+  await rejectsCode(as('anon', null, 'select * from public.issue_stamp_code($1)', [shopB]), '42501');
+  await rejectsCode(as('authenticated', neighbor, 'select * from public.issue_stamp_code($1)', [shopB]), '42501'); // 자기 가게
+  await rejectsCode(as('authenticated', owner, 'select * from public.issue_stamp_code($1)', [shopA]), 'P0002'); // 스탬프판 없음
+  const issued = (await rows('authenticated', owner, 'select * from public.issue_stamp_code($1)', [shopB]))[0];
+  assert.match(issued.code, /^\d{6}$/);
+  assert.equal((await rows('authenticated', neighbor, 'select * from public.stamp_codes')).length, 0);
+  await rejectsCode(as('authenticated', owner, 'insert into public.stamp_codes(user_id,store_id,code,expires_at) values ($1,$2,$3,now())', [owner, shopB, '123456']), '42501');
+
+  const redeem = 'select * from public.redeem_stamp_code($1,$2,$3)';
+  await rejectsCode(as('authenticated', hiddenOwner, redeem, [shopB, issued.code, 1]), '42501'); // 다른 가게 사장님
+  const wrong = issued.code === '000000' ? '000001' : '000000';
+  await rejectsCode(as('authenticated', neighbor, redeem, [shopB, wrong, 1]), 'P0002');
+  await rejectsCode(as('authenticated', neighbor, redeem, [shopB, issued.code, 0]), '22023');
+  const before = await scalar('select count from public.user_stamps where user_id=$1 and store_id=$2', [owner, shopB]);
+  const done = (await rows('authenticated', neighbor, redeem, [shopB, issued.code, 2]))[0];
+  assert.deepEqual(done, { balance: before + 2, required_stamps: 10 });
+  await rejectsCode(as('authenticated', neighbor, redeem, [shopB, issued.code, 1]), 'P0002'); // 한 번만
+  const mine = (await rows('authenticated', owner, 'select used_count, used_at from public.stamp_codes where store_id=$1', [shopB]))[0];
+  assert.equal(mine.used_count, 2);
+  assert.ok(mine.used_at);
+
+  // 새 코드를 받으면 이전 코드는 못 쓰고, 만료된 코드도 못 쓴다
+  const next = (await rows('authenticated', owner, 'select * from public.issue_stamp_code($1)', [shopB]))[0];
+  await db.query("update public.stamp_codes set expires_at = now() - interval '1 second' where user_id=$1 and store_id=$2", [owner, shopB]);
+  await rejectsCode(as('authenticated', neighbor, redeem, [shopB, next.code, 1]), 'P0002');
+  assert.equal(await scalar('select count from public.user_stamps where user_id=$1 and store_id=$2', [owner, shopB]), before + 2);
 });
 
 test('스탬프: 사장님은 자기 가게 스탬프판만 없앨 수 있고, 손님 스탬프도 함께 지워진다', async () => {
