@@ -33,7 +33,7 @@ export interface IconSpec {
   anchor: [number, number];
 }
 
-interface BuildingGroup {
+export interface BuildingGroup {
   key: string;
   lat: number;
   lng: number;
@@ -113,7 +113,8 @@ export function pinGroup(places: MapStore[]): SubCategory['group'] {
  * 가운데 흰 구멍에 가게 수, 1곳이면 빈 구멍
  */
 function pinHtml(className: string, label: string): string {
-  return `<span class="pl-pin ${className}"><span class="pl-pin__shape"></span><span class="pl-pin__label">${label}</span></span>`;
+  const content = label || ICONS.storefront;
+  return `<span class="pl-pin ${className}"><span class="pl-pin__shape"></span><span class="pl-pin__label">${content}</span></span>`;
 }
 
 /** 가게 1곳 = 작은 핀 / 건물에 여럿 = 숫자 핀 / 건물 여럿 묶음 = 큰 숫자 원. 색은 모두 pinGroup 우선순위 */
@@ -137,46 +138,74 @@ export function clusterIcon(cluster: PlaceCluster, selected: boolean): IconSpec 
  * textContent 로 넣어서 가게 이름이 HTML 로 해석되지 않는다.
  */
 export function buildingListElement(group: BuildingGroup, onPick: (place: MapStore) => void): HTMLElement {
+  return buildingGroupsListElement([group], onPick);
+}
+
+/**
+ * 숫자 핀에 여러 건물이 함께 묶였을 때도 건물 → 층 → 가게 순서로 확인할 수 있는 목록.
+ * 목록은 클릭할 때만 만들어 지도 이동 중의 렌더링 비용을 늘리지 않는다.
+ */
+export function buildingGroupsListElement(groups: BuildingGroup[], onPick: (place: MapStore) => void): HTMLElement {
   const root = document.createElement('div');
   root.className = 'pl-list';
+
+  const places = groups.flatMap((group) => group.places);
+  const singleBuilding = groups.length === 1;
 
   const head = document.createElement('div');
   head.className = 'pl-list__head';
   const title = document.createElement('strong');
-  title.textContent = group.name;
+  title.textContent = singleBuilding ? groups[0].name : '이 주변 건물별 가게';
   const count = document.createElement('span');
-  count.textContent = `가게 ${group.places.length}곳`;
+  count.textContent = singleBuilding ? `가게 ${places.length}곳` : `${groups.length}개 건물 · ${places.length}곳`;
   head.append(title, count);
   root.append(head);
 
-  const byFloor = new Map<number | null, MapStore[]>();
-  for (const p of group.places) {
-    const list = byFloor.get(p.floor);
-    if (list) list.push(p);
-    else byFloor.set(p.floor, [p]);
-  }
-  const floors = [...byFloor.keys()].sort((a, b) => (a === null ? 1 : b === null ? -1 : a - b));
-
   const body = document.createElement('div');
   body.className = 'pl-list__body';
-  for (const floor of floors) {
-    const section = document.createElement('section');
-    const label = document.createElement('h4');
-    label.textContent = floor === null ? '층 정보 없음' : floorLabel(floor);
-    section.append(label);
-    for (const place of byFloor.get(floor)!.sort((a, b) => a.name.localeCompare(b.name, 'ko'))) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = `pl-list__item pl--${subCategoryById(place.typeId)?.group ?? 'etc'}`;
-      const name = document.createElement('span');
-      name.textContent = place.name;
-      const kind = document.createElement('small');
-      kind.textContent = place.industry;
-      button.append(name, kind);
-      button.addEventListener('click', () => onPick(place));
-      section.append(button);
+
+  for (const group of [...groups].sort((a, b) => a.name.localeCompare(b.name, 'ko'))) {
+    const building = document.createElement('section');
+    building.className = 'pl-list__building';
+    if (!singleBuilding) {
+      const buildingHead = document.createElement('div');
+      buildingHead.className = 'pl-list__building-head';
+      const buildingName = document.createElement('strong');
+      buildingName.textContent = group.name;
+      const buildingCount = document.createElement('span');
+      buildingCount.textContent = `${group.places.length}곳`;
+      buildingHead.append(buildingName, buildingCount);
+      building.append(buildingHead);
     }
-    body.append(section);
+
+    const byFloor = new Map<number | null, MapStore[]>();
+    for (const place of group.places) {
+      const list = byFloor.get(place.floor);
+      if (list) list.push(place);
+      else byFloor.set(place.floor, [place]);
+    }
+    const floors = [...byFloor.keys()].sort((a, b) => (a === null ? 1 : b === null ? -1 : a - b));
+    for (const floor of floors) {
+      const floorSection = document.createElement('div');
+      floorSection.className = 'pl-list__floor';
+      const label = document.createElement('h4');
+      label.textContent = floor === null ? '층 정보 없음' : floorLabel(floor);
+      floorSection.append(label);
+      for (const place of byFloor.get(floor)!.sort((a, b) => a.name.localeCompare(b.name, 'ko'))) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `pl-list__item pl--${subCategoryById(place.typeId)?.group ?? 'etc'}`;
+        const name = document.createElement('span');
+        name.textContent = place.name;
+        const kind = document.createElement('small');
+        kind.textContent = place.industry;
+        button.append(name, kind);
+        button.addEventListener('click', () => onPick(place));
+        floorSection.append(button);
+      }
+      building.append(floorSection);
+    }
+    body.append(building);
   }
   root.append(body);
   return root;
@@ -195,7 +224,7 @@ export function storeIcon(store: Store, selected: boolean, small: boolean, mine:
   if (small) {
     return {
       className: 'mm-pin-wrap',
-      html: `<span class="pl-pin pl-pin--single${selected ? ' is-selected' : ''}"><span class="pl-pin__shape"></span><span class="pl-pin__label"></span></span>${selected ? `<strong class="mm-pin-name">${escapeHtml(store.name)}</strong>` : ''}`,
+      html: `<span class="pl-pin pl-pin--single${selected ? ' is-selected' : ''}"><span class="pl-pin__shape"></span><span class="pl-pin__label">${ICONS.storefront}</span></span>${selected ? `<strong class="mm-pin-name">${escapeHtml(store.name)}</strong>` : ''}`,
       size: [22, 28],
       anchor: [11, 28],
     };

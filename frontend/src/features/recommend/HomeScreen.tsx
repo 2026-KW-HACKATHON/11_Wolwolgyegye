@@ -57,8 +57,19 @@ export default function HomeScreen({ onShowNearby, onShowStore }: { onShowNearby
 
   return <div className="rp-home">
     <section className="rp-welcome">
-      <div><p>{userName ? userName + '님, 반가워요' : '월계1동의 작은 발견'}</p><h1>오늘도, 동네 한 바퀴</h1><span>익숙한 골목에서 새로운 즐거움을 만나세요.</span></div>
+      <div>
+        <p className="rp-neighborhood-badge"><Icon name="pin" /> 월계1동 주민 생활지도</p>
+        {userName && <small className="rp-welcome-user">{userName}님, 반가워요</small>}
+        <h1>월계1동에서 오늘을 발견해요</h1>
+        <span>가까운 가게와 동네 소식을 둘러보세요.</span>
+      </div>
     </section>
+    <nav className="rp-neighborhood-links" aria-label="월계1동 생활 바로가기">
+      <button type="button" onClick={onShowNearby}><Icon name="compass" /><span><b>동네 지도</b><small>내 주변 둘러보기</small></span></button>
+      <Link to="/space-rental"><Icon name="house" /><span><b>공간 대여</b><small>가까운 공간 찾기</small></span></Link>
+      <Link to="/oneday-class"><Icon name="palette" /><span><b>동네 배움</b><small>원데이클래스</small></span></Link>
+      <Link to="/coupon"><Icon name="stamp" /><span><b>단골 혜택</b><small>우리 동네 스탬프</small></span></Link>
+    </nav>
     <section className="rp-feed" aria-labelledby="rp-feed-title">
       <div className="rp-section-heading"><h2 id="rp-feed-title">사장님이 전하는 소식</h2>{ownedStores.length > 0 && <Link className="rp-owner-link" to="/owner">글쓰기 <Icon name="chevronRight" /></Link>}</div>
       <div className="rp-search"><Icon name="search" /><input type="search" aria-label="동네 소식 검색" placeholder="가게 이름이나 궁금한 수업을 검색해요" value={query} onChange={(event) => setQuery(event.target.value)} />{query && <button type="button" aria-label="검색어 지우기" onClick={() => setQuery('')}>×</button>}</div>

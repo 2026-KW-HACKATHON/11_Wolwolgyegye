@@ -7,7 +7,7 @@ import type { Feature, FeatureCollection, Point } from 'geojson';
 import type { PathOptions } from 'leaflet';
 import type { GeoPoint } from '../../core/types/place';
 import type { MainMapHandle, MainMapProps, MapInsets } from './MainMap';
-import { buildingListElement, clusterGroups, clusterIcon, CLUSTER_MAX_ZOOM, groupByBuilding, pinGroup, PIN_POPUP_OFFSET, storeIcon, type IconSpec } from './placeMarkers';
+import { buildingGroupsListElement, buildingListElement, clusterGroups, clusterIcon, groupByBuilding, pinGroup, PIN_POPUP_OFFSET, storeIcon, type IconSpec } from './placeMarkers';
 import { areaPopupHtml, buildingPopupHtml, escapeHtml, railwayPopupHtml, roadPopupHtml, schoolFacilityPopupHtml, stationLabelHtml, stationPopupHtml, subwayLinePopupHtml } from './popups';
 import { EXIT_MIN_ZOOM, longestSubwayLines, normalizeOsmRoad, normalizeRailway, normalizeStationExit, normalizeSubwayLine, type RoadGrade } from './osm/normalize';
 import { CAMPUS_LABEL_MIN_ZOOM, campusLabelPoints, ringCentroid } from './vworld/campusLabels';
@@ -173,7 +173,7 @@ const Z = { label: 1, station: 2, place: 10, placeSelected: 510, store: 20, stor
  * 그리는 순서 (아래 → 위): 영역 → 도로 → 철도 → 건물 → 학교 건물 → 가게 있는 건물 테두리 → 지하철 노선 → 월계1동 경계 점선 → 내 위치
  * DOM 마커: 경계·캠퍼스 이름표 → 역·출구 → 상가정보 핀 → 추천 가게 핀
  */
-const Map2D = forwardRef<MainMapHandle, MainMapProps>(function Map2D({ stores, selectedId, onSelect, getInsets, showZoomControl, portrait, places, selectedPlaceId, onPlaceSelect, placesMonth, allowOutsideWolgye = false, smallPins = false, myStoreIds }, ref) {
+const Map2D = forwardRef<MainMapHandle, MainMapProps>(function Map2D({ stores, selectedId, onSelect, getInsets, showZoomControl, portrait, places, selectedPlaceId, onPlaceSelect, placesMonth, allowOutsideWolgye = false, smallPins = false, myStoreIds, markerStyle = 'signboard' }, ref) {
   // 배열은 렌더마다 새로 만들어지므로 내용(id 목록)이 바뀔 때만 핀을 다시 그린다
   const myStoreKey = (myStoreIds ?? []).join(',');
   const rootRef = useRef<HTMLDivElement>(null);
@@ -520,23 +520,11 @@ const Map2D = forwardRef<MainMapHandle, MainMapProps>(function Map2D({ stores, s
         const selected = selectedPlaceId !== null && cluster.groups.some((g) => g.places.some((p) => p.id === selectedPlaceId));
         const [group] = cluster.groups;
         let onClick: () => void;
-        if (cluster.groups.length > 1 && zoom >= CLUSTER_MAX_ZOOM) {
-          // 확대해도 겹치는 건물 묶음: 묶인 가게 전체를 층별 목록으로 띄운다
+        if (cluster.groups.length > 1) {
+          // 축소 상태의 숫자 핀도 바로 건물 → 층 → 가게 순서로 확인한다.
           onClick = () => {
-            const merged = { key: 'overlap', lat: cluster.lat, lng: cluster.lng, name: '이 근처 가게', places: cluster.groups.flatMap((g) => g.places) };
-            const list = buildingListElement(merged, (place) => { closePopup(); onPlaceSelectRef.current(place); });
-            openPopup(new maplibregl.Popup({ className: 'pl-popup', maxWidth: '280px', offset: 18 }).setLngLat([cluster.lng, cluster.lat]).setDOMContent(list));
-          };
-        } else if (cluster.groups.length > 1) {
-          // 여러 건물 묶음: 그 건물들이 보이게 확대 (탭에 가려지지 않은 영역 기준)
-          onClick = () => {
-            const insets = getInsetsRef.current();
-            const bounds = new maplibregl.LngLatBounds();
-            for (const g of cluster.groups) bounds.extend([g.lng, g.lat]);
-            map.fitBounds(bounds, {
-              padding: { top: insets.top + 48, right: insets.right + 48, bottom: insets.bottom + 48, left: insets.left + 48 },
-              maxZoom: glZoom(CLUSTER_MAX_ZOOM),
-            });
+            const list = buildingGroupsListElement(cluster.groups, (place) => { closePopup(); onPlaceSelectRef.current(place); });
+            openPopup(new maplibregl.Popup({ className: 'pl-popup', maxWidth: '320px', offset: 18 }).setLngLat([cluster.lng, cluster.lat]).setDOMContent(list));
           };
         } else if (group.places.length === 1) {
           // 가게 1곳: 바로 그 가게
@@ -613,7 +601,7 @@ const Map2D = forwardRef<MainMapHandle, MainMapProps>(function Map2D({ stores, s
   // 선택한 가게를 가운데로 옮기는 건 AppShell 이 한다 (가게 창 크기가 정해진 뒤에, centerOn)
 
   return (
-    <div ref={rootRef} className="mm-root mm-root--gl2d">
+    <div ref={rootRef} className="mm-root mm-root--gl2d" data-marker-style={markerStyle}>
       <div ref={containerRef} className="mm-canvas mm-maplibre" role="region" aria-label="월계1동 지도" />
       <p className="mm-source">
         © 브이월드 · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>

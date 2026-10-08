@@ -99,7 +99,9 @@
 
 /* 3D 건물 이름표: 전체 건물이 아니라 선별된 랜드마크만, 겹치지 않을 때 표시한다. */
 .mm-landmark-label {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   max-width: 132px;
   padding: 3px 7px;
   overflow: hidden;
@@ -118,6 +120,20 @@
   pointer-events: none;
   backdrop-filter: blur(4px);
 }
+
+.mm-landmark-label::before {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border: 1px solid color-mix(in srgb, currentColor 55%, transparent);
+  background: color-mix(in srgb, currentColor 18%, var(--color-surface));
+  content: '';
+}
+
+.mm-landmark-label--campus::before { transform: rotate(45deg); }
+.mm-landmark-label--public::before { border-radius: 2px; }
+.mm-landmark-label--school::before { border-radius: 50%; }
+.mm-landmark-label--residence::before { clip-path: polygon(50% 0, 100% 42%, 86% 42%, 86% 100%, 14% 100%, 14% 42%, 0 42%); }
 
 .mm-landmark-label--campus {
   border-color: color-mix(in srgb, var(--color-brand) 45%, transparent);
@@ -537,6 +553,96 @@
   outline-offset: 2px;
 }
 
+/* 설정 > 지도 가게 핀. 기본은 작은 가게 마크를 품은 와인색 원형이다. */
+.mm-root[data-marker-style='signboard'] {
+  --pin-gradient: #790d16;
+  --pin-shape: none;
+}
+
+.mm-root[data-marker-style='signboard'] .pl-pin__shape {
+  inset: auto 0 0;
+  aspect-ratio: 1;
+  border: 2px solid rgb(255 255 255 / 0.94);
+  border-radius: 50%;
+  background: #790d16;
+  -webkit-mask: none;
+  mask: none;
+}
+
+.mm-root[data-marker-style='signboard'] .pl-pin__label {
+  top: auto;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  background: transparent;
+  color: white;
+  transform: none;
+}
+
+.mm-root[data-marker-style='signboard'] .pl-pin__label .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.mm-root[data-marker-style='signboard'] .pl-cluster {
+  border-radius: 50%;
+  background: #790d16;
+}
+
+.mm-root[data-marker-style='signboard'] .mm-pin:not(.mm-pin--mine) {
+  border-radius: 50%;
+  background: #790d16;
+  color: white;
+  font-size: 16px;
+}
+
+.mm-root[data-marker-style='signboard'] .mm-pin:not(.mm-pin--mine) .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.mm-root[data-marker-style='classic'] .mm-pin:not(.mm-pin--mine) {
+  border-radius: 50% 50% 50% 8px;
+  background: linear-gradient(145deg, #f2361a, #f4b847);
+  transform: rotate(-45deg);
+}
+
+.mm-root[data-marker-style='classic'] .mm-pin:not(.mm-pin--mine) .icon {
+  transform: rotate(45deg);
+}
+
+.mm-root[data-marker-style='classic'] .mm-pin.is-selected:not(.mm-pin--mine) {
+  transform: rotate(-45deg) scale(1.15);
+}
+
+.mm-root[data-marker-style='diamond'] {
+  --pin-gradient: linear-gradient(145deg, #0f766e, #14b8a6);
+  --pin-shape: none;
+}
+
+.mm-root[data-marker-style='diamond'] .pl-pin__shape {
+  background: var(--pin-gradient);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  -webkit-mask: none;
+  mask: none;
+}
+
+.mm-root[data-marker-style='diamond'] .pl-cluster {
+  border: 3px solid #f1c75b;
+  border-radius: 3px;
+  background: linear-gradient(145deg, #0f766e, #14b8a6);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+
+.mm-root[data-marker-style='diamond'] .mm-pin:not(.mm-pin--mine) {
+  border-color: #f1c75b;
+  border-radius: 3px;
+  background: linear-gradient(145deg, #0f766e, #14b8a6);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+
 /* 층별 가게 목록 팝업 */
 .mm-root .pl-popup .leaflet-popup-content {
   margin: 10px 12px;
@@ -544,7 +650,28 @@
 
 .mm-root .pl-popup .maplibregl-popup-content {
   min-width: 220px;
-  padding: 10px 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-float);
+}
+
+.mm-root .pl-popup .maplibregl-popup-close-button {
+  top: 4px;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+  font-size: 20px;
+}
+
+.mm-root .pl-popup .maplibregl-popup-close-button:hover {
+  background: var(--color-surface-alt);
 }
 
 .pl-list__head {
@@ -569,6 +696,39 @@
 .pl-list__body {
   max-height: 260px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.pl-list__building + .pl-list__building {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+.pl-list__building-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 2px 4px;
+  background: var(--color-surface);
+}
+
+.pl-list__building-head strong {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pl-list__building-head span {
+  flex: none;
+  color: var(--color-brand);
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .pl-list__body h4 {
