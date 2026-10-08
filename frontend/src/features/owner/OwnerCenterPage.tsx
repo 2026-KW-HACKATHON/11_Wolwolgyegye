@@ -9,6 +9,7 @@ import { FEED_CHANGE_EVENT } from '../store-feed/feedSource';
 import OwnerInfoPanel from './OwnerInfoPanel';
 import OwnerPostSheet from './OwnerPostSheet';
 import OwnerSalePanel from './OwnerSalePanel';
+import OwnerStampPanel from './OwnerStampPanel';
 import ClassCompose from './compose/ClassCompose';
 import SaleCompose from './compose/SaleCompose';
 import SpaceCompose from './compose/SpaceCompose';
@@ -33,7 +34,7 @@ const COMPOSE: { kind: OwnerNewsKind; title: string; desc: string }[] = [
 ];
 
 type Sort = 'latest' | 'schedule';
-type SheetKey = 'sale' | 'info';
+type SheetKey = 'sale' | 'info' | 'stamp';
 
 /** ?new=<종류> 로 여는 등록 화면 */
 const COMPOSERS = {
@@ -130,6 +131,21 @@ export default function OwnerCenterPage() {
         <button type="button" className="oc-store-edit" onClick={() => setSheet('info')}>가게 정보 관리 <Icon name="chevronRight" /></button>
       </div>
 
+      {data?.news.some((n) => n.kind === 'coupon') && (
+        <section className="oc-section" aria-label="스탬프 찍기">
+          <div className="oc-compose">
+            <button type="button" className="oc-compose-card" onClick={() => setSheet('stamp')}>
+              <span className="oc-compose-icon" aria-hidden="true"><Icon name="stamp" /></span>
+              <span className="oc-compose-text">
+                <strong>손님 스탬프 찍기</strong>
+                <span>손님이 보여준 6자리 적립 코드를 입력하세요.</span>
+              </span>
+              <Icon name="chevronRight" className="oc-chevron" />
+            </button>
+          </div>
+        </section>
+      )}
+
       <section className="oc-section" aria-labelledby="oc-compose-title">
         <h2 id="oc-compose-title" className="oc-title">새 소식 등록</h2>
         <p className="oc-sub">우리 가게의 공간과 시간을 이웃에게 공유해보세요.</p>
@@ -191,6 +207,9 @@ export default function OwnerCenterPage() {
 
       <Sheet open={sheet === 'sale'} title={`마감세일 · ${store.name}`} onClose={closeSheet}>
         {sheet === 'sale' && <OwnerSalePanel storeId={store.id} />}
+      </Sheet>
+      <Sheet open={sheet === 'stamp' && active} title={`스탬프 찍기 · ${store.name}`} onClose={() => setSheet(null)}>
+        {sheet === 'stamp' && <OwnerStampPanel storeId={store.id} />}
       </Sheet>
       <Sheet open={sheet === 'info'} title={`가게 정보 · ${store.name}`} onClose={closeSheet}>
         {sheet === 'info' && <OwnerInfoPanel storeId={store.id} onRenamed={() => void refresh()} />}

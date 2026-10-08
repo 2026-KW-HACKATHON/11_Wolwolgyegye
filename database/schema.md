@@ -109,8 +109,9 @@ stores                             가게
    ├─ reward                       받는 선물
    ├─ unit                         1개가 찍히는 기준
    ├─ condition                    조건
-   └─ user_stamps                  사용자별 스탬프 수 (사용자 + 가게)
-      └─ stamp_transactions        적립·사용 기록 (서버에서만 기록)
+   ├─ user_stamps                  사용자별 스탬프 수 (사용자 + 가게)
+   │  └─ stamp_transactions        적립·사용 기록 (서버에서만 기록)
+   └─ stamp_codes                  6자리 적립 코드 (사용자 + 가게당 하나, 3분·1회용, 서버 함수로만 발급·사용)
 
 partners                           제휴사 (광운대 단과대학 7곳)
 └─ name                            제휴사 이름

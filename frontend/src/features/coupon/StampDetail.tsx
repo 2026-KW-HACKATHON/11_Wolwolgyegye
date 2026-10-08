@@ -6,16 +6,18 @@ import Icon from '../../shared/Icon';
 import { useFavoriteStores } from '../../shared/favorites/useFavoriteStores';
 import Sheet from '../../shared/sheet/Sheet';
 import { HISTORY_PREVIEW, currentCycleDates, initialOf, isReady, kindOf, longDate, remainingOf, shortDate, tiltOf, rewardsOf, progressOf, MAX_STAMP_SLOTS } from './constants';
-import { STAMP_CODE_TTL_SECONDS, issueStampCode } from './source';
+import { STAMP_CODE_TTL_SECONDS, fetchStampCodeUse, issueStampCode, type StampCode } from './source';
 import StampSeal from './StampSeal';
 import type { StampView } from './types';
 
 interface Props {
   view: StampView;
   onBack: () => void;
+  /** 사장님이 코드를 입력해 적립이 끝났을 때 (잔액·이력을 다시 읽는다) */
+  onStamped: () => void;
 }
 
-export default function StampDetail({ view: v, onBack }: Props) {
+export default function StampDetail({ view: v, onBack, onStamped }: Props) {
   const active = usePageActive();
   const { isFavorite, toggle } = useFavoriteStores();
   const [sheet, setSheet] = useState<'code' | 'reward' | null>(null);
@@ -150,7 +152,7 @@ export default function StampDetail({ view: v, onBack }: Props) {
       </div>
 
       <Sheet open={sheet === 'code' && active} title="적립 코드" onClose={() => setSheet(null)}>
-        {sheet === 'code' && <CodePanel view={v} />}
+        {sheet === 'code' && <CodePanel view={v} onStamped={onStamped} />}
       </Sheet>
 
       <Sheet open={sheet === 'reward' && active} title="선물 교환권" onClose={() => setSheet(null)}>
@@ -171,30 +173,80 @@ export default function StampDetail({ view: v, onBack }: Props) {
   );
 }
 
-/* 직원에게 보여주는 적립 코드 (3분마다 새 번호) */
-function CodePanel({ view }: { view: StampView }) {
-  const [code, setCode] = useState(issueStampCode);
+/* 직원에게 보여주는 적립 코드 (서버가 발급, 3분마다 새 번호). 사장님이 입력하면 적립 완료로 바뀐다 */
+const POLL_MS = 2500;
+function CodePanel({ view, onStamped }: { view: StampView; onStamped: () => void }) {
+  const [code, setCode] = useState<StampCode | null>(null);
+  const [error, setError] = useState('');
+  const [stamped, setStamped] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
+  const [attempt, setAttempt] = useState(0);
+
+  // 코드 받기 (처음, 만료될 때, 다시 시도할 때)
   useEffect(() => {
+    let cancelled = false;
+    setError('');
+    issueStampCode(view.storeId)
+      .then((next) => { if (!cancelled) { setCode(next); setNow(Date.now()); } })
+      .catch((cause) => { if (!cancelled) { setCode(null); setError(cause instanceof Error ? cause.message : '적립 코드를 받지 못했어요.'); } });
+    return () => { cancelled = true; };
+  }, [view.storeId, attempt]);
+
+  useEffect(() => {
+    if (stamped !== null) return;
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
-  }, []);
-  useEffect(() => { if (now >= code.expiresAt) setCode(issueStampCode()); }, [now, code.expiresAt]);
-  const left = Math.max(0, Math.ceil((code.expiresAt - now) / 1000));
+  }, [stamped]);
+  useEffect(() => { if (code && stamped === null && now >= code.expiresAt) { setCode(null); setAttempt((n) => n + 1); } }, [now, code, stamped]);
+
+  // 사장님이 입력했는지 확인
+  useEffect(() => {
+    if (!code || stamped !== null) return;
+    let cancelled = false;
+    const timer = window.setInterval(() => {
+      void fetchStampCodeUse(view.storeId, code.code).then((count) => {
+        if (cancelled || count === null) return;
+        setStamped(count);
+        onStamped();
+      });
+    }, POLL_MS);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [code, stamped, view.storeId, onStamped]);
+
+  if (stamped !== null) {
+    return (
+      <div className="st-sheet">
+        <p className="st-sheet-lead" role="status">스탬프 {stamped}개가 찍혔어요!</p>
+        <p className="st-sheet-copy">적립판과 적립 내역에 바로 반영됐어요.</p>
+        <button type="button" className="st-btn st-btn--line st-btn--block" onClick={() => { setStamped(null); setCode(null); setAttempt((n) => n + 1); }}>새 코드 받기</button>
+      </div>
+    );
+  }
+
+  const left = code ? Math.max(0, Math.ceil((code.expiresAt - now) / 1000)) : 0;
   const mm = Math.floor(left / 60);
   const ss = String(left % 60).padStart(2, '0');
-  const ratio = left / STAMP_CODE_TTL_SECONDS;
+  const ratio = Math.min(1, left / STAMP_CODE_TTL_SECONDS);
 
   return (
     <div className="st-sheet">
       <p className="st-sheet-lead">결제할 때 직원에게 이 화면을 보여주세요</p>
-      <div className="st-code" aria-label={`적립 코드 ${code.code.split('').join(' ')}`}>
-        <span>{code.code.slice(0, 3)}</span><span>{code.code.slice(3)}</span>
-      </div>
-      <div className="st-code-timer">
-        <div className="st-code-bar"><span style={{ width: `${ratio * 100}%` }} /></div>
-        <span>{mm}:{ss} 후 새 번호로 바뀌어요</span>
-      </div>
+      {error ? (
+        <>
+          <p className="st-sheet-copy" role="alert">{error}</p>
+          <button type="button" className="st-btn st-btn--line st-btn--block" onClick={() => setAttempt((n) => n + 1)}>다시 시도</button>
+        </>
+      ) : code ? (
+        <>
+          <div className="st-code" aria-label={`적립 코드 ${code.code.split('').join(' ')}`}>
+            <span>{code.code.slice(0, 3)}</span><span>{code.code.slice(3)}</span>
+          </div>
+          <div className="st-code-timer">
+            <div className="st-code-bar"><span style={{ width: `${ratio * 100}%` }} /></div>
+            <span>{mm}:{ss} 후 새 번호로 바뀌어요</span>
+          </div>
+        </>
+      ) : <p className="st-sheet-copy">코드를 받는 중…</p>}
       <ol className="st-steps">
         <li><b>1</b>{view.unit} 후 코드를 보여줘요</li>
         <li><b>2</b>직원이 사장님 화면에 번호를 입력해요</li>
