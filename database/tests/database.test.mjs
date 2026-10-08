@@ -259,6 +259,15 @@ test('스탬프: 직접 수정 금지, 서버 적립의 중복 방지와 잔액 
   assert.equal((await rows('authenticated', neighbor, 'select * from public.user_stamps')).length, 0);
 });
 
+test('스탬프: 사장님은 자기 가게 스탬프판만 없앨 수 있고, 손님 스탬프도 함께 지워진다', async () => {
+  await as('authenticated', owner, 'delete from public.stamp_policies where store_id=$1', [shopB]);
+  assert.equal(await scalar('select count(*)::int from public.stamp_policies where store_id=$1', [shopB]), 1);
+  await as('authenticated', neighbor, 'delete from public.stamp_policies where store_id=$1', [shopB]);
+  assert.equal(await scalar('select count(*)::int from public.stamp_policies where store_id=$1', [shopB]), 0);
+  assert.equal(await scalar('select count(*)::int from public.user_stamps where store_id=$1', [shopB]), 0);
+  assert.equal(await scalar('select count(*)::int from public.stamp_transactions where store_id=$1', [shopB]), 0);
+});
+
 test('사진 저장소: 자기 가게 폴더만 쓰고, 다른 가게 폴더로 옮길 수 없다', async () => {
   const path = shopA + '/test.webp';
   await as('authenticated', owner, "insert into storage.objects(bucket_id,name) values ('store-media',$1)", [path]);
