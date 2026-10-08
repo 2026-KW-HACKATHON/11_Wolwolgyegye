@@ -8,6 +8,7 @@ import type { GeoPoint, Store } from '../../core/types/place';
 import type { MarkerStyleId } from '../../core/map/markerStyle';
 import type { MapStore } from '../../core/supabase/stores';
 import type { MainMapHandle, MainMapProps, MapInsets } from './MainMap';
+import { buildingGroupsListElement, buildingListElement, groupByBuilding } from './placeMarkers';
 import { MAP_CENTER, MAP_EXTENT } from './vworld/mapExtent';
 
 type PointCollection = FeatureCollection<Point, GeoJsonProperties>;
@@ -402,10 +403,29 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
           const id = event.features?.[0]?.properties?.id;
           if (typeof id === 'string') onSelectRef.current(id);
         };
+        let activePlacePopup: maplibregl.Popup | null = null;
+        const openPlacePopup = (groups: ReturnType<typeof groupByBuilding>, coordinates: [number, number]) => {
+          activePlacePopup?.remove();
+          const popup = new maplibregl.Popup({ className: 'pl-popup', maxWidth: '320px', offset: 18 });
+          activePlacePopup = popup;
+          const list = groups.length === 1
+            ? buildingListElement(groups[0], (place) => {
+              popup.remove();
+              onPlaceSelectRef.current(place);
+            })
+            : buildingGroupsListElement(groups, (place) => {
+              popup.remove();
+              onPlaceSelectRef.current(place);
+            });
+          popup.setLngLat(coordinates).setDOMContent(list).addTo(map);
+        };
         const selectPlace = (event: MapLayerMouseEvent) => {
           const id = event.features?.[0]?.properties?.id;
           const place = placesRef.current.find((item) => item.id === id);
-          if (place) onPlaceSelectRef.current(place);
+          if (!place) return;
+          const group = groupByBuilding(placesRef.current).find((item) => item.places.some((candidate) => candidate.id === place.id));
+          if (group && group.places.length > 1) openPlacePopup([group], [group.lng, group.lat]);
+          else onPlaceSelectRef.current(place);
         };
         map.on('click', 'feature-stores', selectFeatureStore);
         map.on('click', 'feature-store-labels', selectFeatureStore);
@@ -416,6 +436,14 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
           const clusterId = Number(feature?.properties?.cluster_id);
           if (!feature || !Number.isFinite(clusterId) || feature.geometry.type !== 'Point') return;
           const source = map.getSource('places') as GeoJSONSource;
+          const count = Number(feature.properties?.point_count);
+          const leaves = await source.getClusterLeaves(clusterId, Number.isFinite(count) ? count : 1000, 0);
+          const ids = new Set(leaves.map((leaf) => leaf.properties?.id).filter((id): id is string => typeof id === 'string'));
+          const groups = groupByBuilding(placesRef.current.filter((place) => ids.has(place.id)));
+          if (groups.length > 0) {
+            openPlacePopup(groups, feature.geometry.coordinates as [number, number]);
+            return;
+          }
           const zoom = await source.getClusterExpansionZoom(clusterId);
           map.easeTo({ center: feature.geometry.coordinates as [number, number], zoom, duration: 360 });
         });

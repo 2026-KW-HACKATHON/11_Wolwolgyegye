@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import type { FeatureCollection } from 'geojson';
 import type { GeoPoint, Store } from '../../core/types/place';
 import { ICONS } from '../icons';
-import { buildingListElement, clusterGroups, clusterIcon, CLUSTER_MAX_ZOOM, groupByBuilding, pinGroup, PIN_POPUP_OFFSET } from './placeMarkers';
+import { buildingGroupsListElement, buildingListElement, clusterGroups, clusterIcon, groupByBuilding, pinGroup, PIN_POPUP_OFFSET } from './placeMarkers';
 import type { MapStore } from '../../core/supabase/stores';
 import type { MarkerStyleId } from '../../core/map/markerStyle';
 import { ADMIN_DONG_LABEL, AREA_LAYERS, createStyles } from './vworld/config';
@@ -383,29 +383,22 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
         const selected = selectedPlaceId !== null && cluster.groups.some((g) => g.places.some((p) => p.id === selectedPlaceId));
         const marker = L.marker([cluster.lat, cluster.lng], { icon: clusterIcon(cluster, selected), zIndexOffset: selected ? 500 : 0, keyboard: true });
         const [group] = cluster.groups;
-        if (cluster.groups.length > 1 && map.getZoom() >= CLUSTER_MAX_ZOOM) {
-          // 확대해도 겹치는 건물 묶음: 묶인 가게 전체를 층별 목록으로 띄운다
+        if (cluster.groups.length > 1) {
+          // 축소 상태의 숫자 핀도 바로 건물 → 층 → 가게 순서로 확인한다.
           marker.on('click', () => {
-            const merged = { key: 'overlap', lat: cluster.lat, lng: cluster.lng, name: '이 근처 가게', places: cluster.groups.flatMap((g) => g.places) };
-            const list = buildingListElement(merged, (place) => {
+            const insets = getInsetsRef.current();
+            const list = buildingGroupsListElement(cluster.groups, (place) => {
               map.closePopup();
               onPlaceSelectRef.current(place);
             });
-            L.popup({ className: 'pl-popup', maxWidth: 280, minWidth: 220, autoPanPadding: [24, 24], offset: [0, -18] })
+            L.popup({
+              className: 'pl-popup', maxWidth: 320, minWidth: 240, offset: [0, -18],
+              autoPanPaddingTopLeft: [insets.left + 24, insets.top + 72],
+              autoPanPaddingBottomRight: [insets.right + 24, insets.bottom + 24],
+            })
               .setLatLng([cluster.lat, cluster.lng])
               .setContent(list)
               .openOn(map);
-          });
-        } else if (cluster.groups.length > 1) {
-          // 여러 건물 묶음: 그 건물들이 보이게 확대 (탭에 가려지지 않은 영역 기준)
-          marker.on('click', () => {
-            const insets = getInsetsRef.current();
-            const bounds = L.latLngBounds(cluster.groups.map((g) => [g.lat, g.lng] as [number, number]));
-            map.fitBounds(bounds, {
-              paddingTopLeft: [insets.left + 48, insets.top + 48],
-              paddingBottomRight: [insets.right + 48, insets.bottom + 48],
-              maxZoom: CLUSTER_MAX_ZOOM,
-            });
           });
         } else if (group.places.length === 1) {
           // 가게 1곳: 바로 그 가게
@@ -413,11 +406,16 @@ const MainMap = forwardRef<MainMapHandle, MainMapProps>(function MainMap({ store
         } else {
           // 한 건물에 여럿: 층별 목록을 먼저 띄우고, 목록에서 고른 가게만 연다
           marker.on('click', () => {
+            const insets = getInsetsRef.current();
             const list = buildingListElement(group, (place) => {
               map.closePopup();
               onPlaceSelectRef.current(place);
             });
-            L.popup({ className: 'pl-popup', maxWidth: 280, minWidth: 220, autoPanPadding: [24, 24], offset: [0, -PIN_POPUP_OFFSET] })
+            L.popup({
+              className: 'pl-popup', maxWidth: 280, minWidth: 220, offset: [0, -PIN_POPUP_OFFSET],
+              autoPanPaddingTopLeft: [insets.left + 24, insets.top + 72],
+              autoPanPaddingBottomRight: [insets.right + 24, insets.bottom + 24],
+            })
               .setLatLng([group.lat, group.lng])
               .setContent(list)
               .openOn(map);
