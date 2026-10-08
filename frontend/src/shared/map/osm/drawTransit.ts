@@ -5,34 +5,16 @@
 import L from 'leaflet';
 import type { Feature, FeatureCollection, Point } from 'geojson';
 import type { DrawContext } from '../vworld/draw';
-import { normalizeStation, normalizeStationExit, normalizeSubwayLine, shortLineLabel, subwayLineBase } from './normalize';
-
-/** 이 줌부터 출구와 역-출구 연결선을 보여준다 (그 아래에서는 역만) */
-const EXIT_MIN_ZOOM = 17;
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
-}
+import { escapeHtml, stationLabelHtml, stationPopupHtml, subwayLinePopupHtml } from '../popups';
+import { EXIT_MIN_ZOOM, longestSubwayLines, normalizeStationExit, normalizeSubwayLine } from './normalize';
 
 /** 노선마다 선 하나. 클릭하면 노선 이름 */
 export function drawSubwayLines(ctx: DrawContext, linesGeoJSON: FeatureCollection) {
-  // 같은 노선(1호선의 여러 계통 등)이 여러 개 들어 있으면 가장 긴 것 하나만 그린다
-  const pointCount = (f: Feature) => {
-    const g = f.geometry;
-    return g?.type === 'MultiLineString' ? g.coordinates.flat().length : g?.type === 'LineString' ? g.coordinates.length : 0;
-  };
-  const longest = new Map<string, Feature>();
-  for (const feature of linesGeoJSON.features || []) {
-    const base = subwayLineBase(feature);
-    const prev = longest.get(base);
-    if (!prev || pointCount(feature) > pointCount(prev)) longest.set(base, feature);
-  }
-  return L.geoJSON({ type: 'FeatureCollection', features: [...longest.values()] } as FeatureCollection, {
+  return L.geoJSON({ type: 'FeatureCollection', features: longestSubwayLines(linesGeoJSON) } as FeatureCollection, {
     renderer: ctx.featureRenderer,
     style: (feature) => ({ ...ctx.styles.SUBWAY_LINE_STYLE, color: normalizeSubwayLine(feature as Feature).colour || ctx.styles.SUBWAY_LINE_STYLE.color }),
     onEachFeature(feature, sublayer) {
-      const label = subwayLineBase(feature);
-      sublayer.bindPopup(() => `<div class="popup-kind">지하철 노선</div><div class="popup-title">${escapeHtml(label || '이름 없는 노선')}</div>`);
+      sublayer.bindPopup(() => subwayLinePopupHtml(feature));
     },
   } as L.GeoJSONOptions).addTo(ctx.map);
 }
@@ -57,16 +39,13 @@ export function drawStations(ctx: DrawContext, stationsGeoJSON: FeatureCollectio
   for (const feature of stationsGeoJSON.features || []) {
     const at = latLngOf(feature);
     if (!at) continue;
-    const { name, lines } = normalizeStation(feature);
     stationPoints.set(String(feature.id ?? ''), at);
-    const chips = lines.map((l) => `<i style="--line:${l.colour || 'var(--map-line-default)'}" title="${escapeHtml(l.label)}">${escapeHtml(shortLineLabel(l.label))}</i>`).join('');
-    const title = name.endsWith('역') ? name : `${name}역`;
     L.marker(at, {
       pane: 'stations',
-      icon: L.divIcon({ className: 'st-wrap', html: `<span class="st-box">${chips}<b>${escapeHtml(title)}</b></span>`, iconSize: [0, 0], iconAnchor: [0, 0] }),
+      icon: L.divIcon({ className: 'st-wrap', html: stationLabelHtml(feature), iconSize: [0, 0], iconAnchor: [0, 0] }),
       keyboard: false,
     })
-      .bindPopup(`<div class="popup-kind">지하철역</div><div class="popup-title">${escapeHtml(title)}</div><div>${escapeHtml(lines.map((l) => l.label).join(' · '))}</div>`)
+      .bindPopup(stationPopupHtml(feature))
       .addTo(map);
   }
 

@@ -78,7 +78,8 @@
   transition: right 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.mm-root--3d .maplibregl-ctrl-group {
+.mm-root--3d .maplibregl-ctrl-group,
+.mm-root--gl2d .maplibregl-ctrl-group {
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 10px;
@@ -86,11 +87,13 @@
   box-shadow: var(--shadow-card);
 }
 
-.mm-root--3d .maplibregl-ctrl button {
+.mm-root--3d .maplibregl-ctrl button,
+.mm-root--gl2d .maplibregl-ctrl button {
   background-color: var(--color-surface);
 }
 
-.mm-root--3d .maplibregl-ctrl button + button {
+.mm-root--3d .maplibregl-ctrl button + button,
+.mm-root--gl2d .maplibregl-ctrl button + button {
   border-top-color: var(--color-border);
 }
 
@@ -247,7 +250,14 @@
   margin-left: calc(var(--inset-left) + 12px);
 }
 
-.mm-root .leaflet-control-scale-line {
+/* MapLibre 평면 지도(Map2D): 확대·축소 버튼과 축척을 Leaflet 과 같은 자리(왼쪽 아래)에 */
+.mm-root--gl2d .maplibregl-ctrl-bottom-left .maplibregl-ctrl {
+  margin: 0 0 12px calc(var(--inset-left) + 12px);
+  transition: margin-left 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.mm-root .leaflet-control-scale-line,
+.mm-root .maplibregl-ctrl-scale {
   background: color-mix(in srgb, var(--color-surface) 80%, transparent);
   color: var(--color-text-muted);
   border-color: var(--color-text-muted);
@@ -255,10 +265,44 @@
 
 /* 팝업 */
 .mm-root .leaflet-popup-content-wrapper,
-.mm-root .leaflet-popup-tip {
+.mm-root .leaflet-popup-tip,
+.mm-root .maplibregl-popup-content {
   background: var(--color-surface);
   color: var(--color-text);
   box-shadow: var(--shadow-float);
+}
+
+/* MapLibre 팝업을 Leaflet 팝업과 같은 모양으로 */
+.mm-root .maplibregl-popup-content {
+  padding: 13px 24px 13px 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.mm-root .maplibregl-popup-close-button {
+  color: var(--color-text-muted);
+  font-size: 18px;
+}
+
+.mm-root .maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+.mm-root .maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+.mm-root .maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+  border-top-color: var(--color-surface);
+}
+
+.mm-root .maplibregl-popup-anchor-top .maplibregl-popup-tip,
+.mm-root .maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+.mm-root .maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+  border-bottom-color: var(--color-surface);
+}
+
+.mm-root .maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--color-surface);
+}
+
+.mm-root .maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--color-surface);
 }
 
 .mm-root .popup-kind {
@@ -278,8 +322,15 @@
   white-space: nowrap;
 }
 
+/* 경계·캠퍼스 라벨 (MapLibre 평면 지도: 글자만 띄우는 마커) */
+.mm-root .map-label {
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* 경계 라벨 (Leaflet tooltip 을 라벨처럼 사용) */
-.mm-root .boundary-label.leaflet-tooltip {
+.mm-root .boundary-label.leaflet-tooltip,
+.mm-root .boundary-label.map-label {
   background: transparent;
   border: none;
   box-shadow: none;
@@ -294,7 +345,8 @@
 }
 
 /* 광운대 건물 이름 (vworld/campusLabels.ts): 건물 위 글자만, 바탕색 테두리로 선·건물 위에서도 읽히게 */
-.mm-root .campus-label.leaflet-tooltip {
+.mm-root .campus-label.leaflet-tooltip,
+.mm-root .campus-label.map-label {
   padding: 0;
   background: transparent;
   border: none;
@@ -597,6 +649,7 @@
 }
 
 .mm-root .pl-popup .maplibregl-popup-content {
+  min-width: 220px;
   padding: 12px 14px;
   border: 1px solid var(--color-border);
   border-radius: 14px;
@@ -814,7 +867,8 @@
 @media (pointer: coarse) {
   /* 긴 터치에서도 브라우저 선택 메뉴가 뜨지 않아 지도 조작이 끊기지 않게 한다. */
   .mm-canvas,
-  .mm-canvas .leaflet-marker-icon {
+  .mm-canvas .leaflet-marker-icon,
+  .mm-canvas .maplibregl-marker {
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;

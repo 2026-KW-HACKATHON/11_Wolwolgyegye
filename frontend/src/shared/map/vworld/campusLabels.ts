@@ -4,9 +4,7 @@
 // 새빛관 → "중앙도서관"), 건물관리번호(bd_mgt_sn)로 건물을 찾아 지금 부르는 이름을 붙인다.
 // 라벨 위치는 그 건물에서 가장 큰 동의 무게중심. 확대했을 때만 보인다 (LABEL_MIN_ZOOM).
 // ---------------------------------------------------------------------
-import L from 'leaflet';
 import type { FeatureCollection, Position } from 'geojson';
-import type { DrawContext } from './draw';
 
 /**
  * 건물관리번호 → 화면에 쓸 이름. at 이 있으면 계산한 무게중심 대신 그 자리에 쓴다
@@ -27,10 +25,10 @@ const CAMPUS_BUILDINGS: { id: string; name: string; at?: [number, number] }[] = 
 ];
 
 /** 이 줌부터 라벨을 보여준다. 멀리서 볼 때(처음 화면 포함)는 숨기고, 캠퍼스를 확대했을 때만 보인다 */
-const LABEL_MIN_ZOOM = 17;
+export const CAMPUS_LABEL_MIN_ZOOM = 17;
 
 /** 고리(외곽선) 하나의 면적과 무게중심 (경위도 평면 근사, 건물 크기에서는 충분) */
-function ringCentroid(ring: Position[]): { area: number; lat: number; lng: number } {
+export function ringCentroid(ring: Position[]): { area: number; lat: number; lng: number } {
   let area = 0;
   let cx = 0;
   let cy = 0;
@@ -46,8 +44,8 @@ function ringCentroid(ring: Position[]): { area: number; lat: number; lng: numbe
   return { area: Math.abs(area / 2), lat: cy / (3 * area), lng: cx / (3 * area) };
 }
 
-/** 캠퍼스 건물 라벨을 경계 pane(마우스 이벤트 통과)에 붙이고, 줌에 따라 보이거나 숨긴다 */
-export function drawCampusLabels(ctx: DrawContext, buildingsGeoJSON: FeatureCollection) {
+/** 캠퍼스 건물 이름과 라벨 위치 [위도, 경도]. 건물을 데이터에서 찾지 못하고 at 도 없으면 뺀다 */
+export function campusLabelPoints(buildingsGeoJSON: FeatureCollection): { name: string; at: [number, number] }[] {
   const names = new Map(CAMPUS_BUILDINGS.map((b) => [b.id, b.name]));
   // 같은 건물관리번호가 여러 행(여러 동)으로 나뉘어 있을 수 있어서, 모든 동 중 가장 큰 동을 고른다
   const largest = new Map<string, ReturnType<typeof ringCentroid>>();
@@ -60,21 +58,9 @@ export function drawCampusLabels(ctx: DrawContext, buildingsGeoJSON: FeatureColl
       if (part.area > (largest.get(id)?.area ?? 0)) largest.set(id, part);
     }
   }
-  const layer = L.layerGroup();
-  for (const building of CAMPUS_BUILDINGS) {
+  return CAMPUS_BUILDINGS.flatMap((building) => {
     const part = largest.get(building.id);
     const at = building.at ?? (part ? [part.lat, part.lng] as [number, number] : null);
-    if (!at) continue;
-    L.tooltip({ permanent: true, direction: 'center', className: 'campus-label', pane: 'boundary', interactive: false })
-      .setLatLng(at)
-      .setContent(building.name)
-      .addTo(layer);
-  }
-  const update = () => {
-    if (ctx.map.getZoom() >= LABEL_MIN_ZOOM) layer.addTo(ctx.map);
-    else layer.remove();
-  };
-  update();
-  ctx.map.on('zoomend', update);
-  return layer;
+    return at ? [{ name: building.name, at }] : [];
+  });
 }

@@ -2,7 +2,7 @@
 // 속성 정규화 (원본 속성 이름은 여기서만 사용한다)
 // 지도 테스트 워크스페이스 V_World/main.js 의 정규화 함수를 그대로 옮긴 것. 규칙을 바꾸려면 이 파일만 고친다.
 // ---------------------------------------------------------------------
-import type { Feature } from 'geojson';
+import type { Feature, FeatureCollection } from 'geojson';
 
 type Props = Record<string, unknown>;
 const propsOf = (feature: Feature): Props => (feature.properties ?? {}) as Props;
@@ -83,6 +83,11 @@ export function normalizeSchoolFacility(feature: Feature): SchoolFacilityInfo {
   // grnd_flr 는 "4" 처럼 문자열로 온다. 0 이나 빈 값은 정보 없음(null)
   const floors = Number.parseInt(clean(p.grnd_flr), 10) || null;
   return { kind, name: dong || bld, school: clean(p.school_name), floors };
+}
+
+/** 지도에 그리는 학교 건물 (종류를 알 수 있는 건물만) */
+export function visibleSchoolFacilities(geojson: FeatureCollection | null): Feature[] {
+  return (geojson?.features || []).filter((feature) => normalizeSchoolFacility(feature).kind !== null);
 }
 
 // 영역 feature → { title, lines } (팝업 제목, 설명 줄 배열. 빈 줄은 표시하지 않음)
