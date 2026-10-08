@@ -10,6 +10,7 @@
 import L from 'leaflet';
 import { subCategoryById, type SubCategory } from '../../core/categories/subCategories';
 import { floorLabel, type MapStore } from '../../core/supabase/stores';
+import { ICONS } from '../icons';
 
 /** 핀 크기 [가로, 세로] (px). 아래 끝 가운데가 가게 위치. 크기를 바꾸면 MainMap.css 의 .pl-pin 도 같이 */
 const PIN_SINGLE: [number, number] = [22, 28];
@@ -104,7 +105,8 @@ export function pinGroup(places: MapStore[]): SubCategory['group'] {
  * 가운데 흰 구멍에 가게 수, 1곳이면 빈 구멍
  */
 function pinHtml(className: string, label: string): string {
-  return `<span class="pl-pin ${className}"><span class="pl-pin__shape"></span><span class="pl-pin__label">${label}</span></span>`;
+  const content = label || ICONS.storefront;
+  return `<span class="pl-pin ${className}"><span class="pl-pin__shape"></span><span class="pl-pin__label">${content}</span></span>`;
 }
 
 /** 가게 1곳 = 작은 핀 / 건물에 여럿 = 숫자 핀 / 건물 여럿 묶음 = 큰 숫자 원. 색은 모두 pinGroup 우선순위 */

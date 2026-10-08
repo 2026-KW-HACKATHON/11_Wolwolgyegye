@@ -128,7 +128,7 @@ function storeIcon(store: Store, selected: boolean, small: boolean, mine: boolea
   if (small) {
     return L.divIcon({
       className: 'mm-pin-wrap',
-      html: `<span class="pl-pin pl-pin--single${selected ? ' is-selected' : ''}"><span class="pl-pin__shape"></span><span class="pl-pin__label"></span></span>${selected ? `<strong class="mm-pin-name">${escapeHtml(store.name)}</strong>` : ''}`,
+      html: `<span class="pl-pin pl-pin--single${selected ? ' is-selected' : ''}"><span class="pl-pin__shape"></span><span class="pl-pin__label">${ICONS.storefront}</span></span>${selected ? `<strong class="mm-pin-name">${escapeHtml(store.name)}</strong>` : ''}`,
       iconSize: [22, 28],
       iconAnchor: [11, 28],
     });

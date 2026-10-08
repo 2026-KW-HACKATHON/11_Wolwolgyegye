@@ -9,7 +9,7 @@ export interface MarkerStyleOption {
 }
 
 export const MARKER_STYLES: MarkerStyleOption[] = [
-  { id: 'signboard', name: '동네 간판', desc: '아이보리와 자주색의 작은 가게 간판' },
+  { id: 'signboard', name: '와인 원형', desc: '와인색 원 안에 작은 가게 마크' },
   { id: 'classic', name: '클래식 핀', desc: '눈에 잘 띄는 주황색 위치 핀' },
   { id: 'diamond', name: '다이아 핀', desc: '청록색과 금색의 또렷한 마름모' },
 ];

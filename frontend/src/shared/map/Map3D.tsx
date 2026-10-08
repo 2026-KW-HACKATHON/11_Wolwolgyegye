@@ -53,16 +53,17 @@ function markerSvg(style: MarkerStyleId, variant: 'normal' | 'selected' | 'mine'
     ? { fill: '#ef762f', stroke: colors.surface, accent: colors.surface }
     : style === 'diamond'
       ? { fill: '#147d78', stroke: '#f1c75b', accent: '#fff7d6' }
-      : { fill: colors.surface, stroke: colors.brand, accent: colors.brand };
-  if (selected) Object.assign(palette, { fill: colors.brand, stroke: colors.surface, accent: colors.surface });
+      : { fill: '#790d16', stroke: colors.surface, accent: colors.surface };
+  if (selected) Object.assign(palette, { fill: style === 'signboard' ? '#4b080e' : colors.brand, stroke: style === 'signboard' ? '#f4d58d' : colors.surface, accent: colors.surface });
   if (mine) Object.assign(palette, { fill: '#2563eb', stroke: colors.surface, accent: colors.surface });
   const shape = style === 'classic'
     ? `<path d="M32 3A25 25 0 0 0 13 44L29 66Q32 70 35 66L51 44A25 25 0 0 0 32 3Z"/>`
     : style === 'diamond'
       ? `<path d="M32 3 59 31 32 67 5 31Z"/>`
-      : `<path d="M10 5h44a6 6 0 0 1 6 6v39a6 6 0 0 1-6 6H39l-7 12-7-12H10a6 6 0 0 1-6-6V11a6 6 0 0 1 6-6Z"/>`;
+      : `<circle cx="32" cy="32" r="28"/>`;
   const shop = cluster ? '' : `<path d="M20 28h24l-2-8H22l-2 8Zm2 0v16h20V28M27 44V34h10v10M19 28c0 4 6 4 6 0 0 4 7 4 7 0 0 4 7 4 7 0 0 4 6 4 6 0" fill="none" stroke="${palette.accent}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="72" viewBox="0 0 64 72"><g fill="${palette.fill}" stroke="${palette.stroke}" stroke-width="4" stroke-linejoin="round">${shape}</g>${shop}</svg>`;
+  const height = style === 'signboard' ? 64 : 72;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="${height}" viewBox="0 0 64 ${height}"><g fill="${palette.fill}" stroke="${palette.stroke}" stroke-width="4" stroke-linejoin="round">${shape}</g>${shop}</svg>`;
 }
 
 function loadMarkerImage(svg: string): Promise<HTMLImageElement> {
@@ -325,7 +326,7 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
             'text-allow-overlap': true,
             'text-ignore-placement': true,
           },
-          paint: { 'text-color': markerStyle === 'signboard' ? colors.brand : '#fff', 'text-halo-color': colors.surface, 'text-halo-width': markerStyle === 'diamond' ? 0.8 : 0 },
+          paint: { 'text-color': '#fff', 'text-halo-color': colors.surface, 'text-halo-width': markerStyle === 'diamond' ? 0.8 : 0 },
         });
         map.addLayer({
           id: 'place-points', source: 'places', type: 'symbol', filter: ['!', ['has', 'point_count']],

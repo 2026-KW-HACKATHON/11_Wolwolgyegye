@@ -1,5 +1,6 @@
 import { PALETTES, setPalette, usePalette } from '../../core/theme/palette';
 import { MARKER_STYLES, setMarkerStyle, useMarkerStyle } from '../../core/map/markerStyle';
+import Icon from '../../shared/Icon';
 import './settings.css';
 
 /** 미리보기 점에 보여줄 팔레트 색 (각 버튼에 data-palette 를 달아 그 팔레트 값으로 칠한다) */
@@ -47,7 +48,9 @@ export default function SettingsPage() {
             className={`set-marker${markerStyle === option.id ? ' is-on' : ''}`}
             onClick={() => setMarkerStyle(option.id)}
           >
-            <span className={`set-marker__preview is-${option.id}`} aria-hidden="true"><i>12</i></span>
+            <span className={`set-marker__preview is-${option.id}`} aria-hidden="true">
+              {option.id === 'signboard' ? <Icon name="storefront" /> : <i>12</i>}
+            </span>
             <span className="set-palette__text"><b>{option.name}</b><small>{option.desc}</small></span>
             {markerStyle === option.id && <span className="set-palette__check" aria-hidden="true">✓</span>}
           </button>
