@@ -15,6 +15,7 @@ type Status = 'loading' | 'ready' | 'missing';
 const EMPTY_POINTS: PointCollection = { type: 'FeatureCollection', features: [] };
 const EMPTY_IDS: string[] = [];
 const BUILDINGS_URL = '/data/3d/buildings.geojson';
+const LANDMARKS_URL = '/data/3d/landmarks.geojson';
 const ROADS_URL = '/data/osm/roads.geojson';
 const ADMIN_URL = '/data/vworld/admin_dong.geojson';
 const AREA_URLS = {
@@ -68,6 +69,60 @@ function placesToGeoJSON(places: MapStore[], selectedId: string | null): PointCo
 
 function visibleOffset(insets: MapInsets): [number, number] {
   return [(insets.left - insets.right) / 2, (insets.top - insets.bottom) / 2];
+}
+
+interface LandmarkProperties {
+  label: string;
+  minZoom: number;
+  priority: number;
+  kind: 'campus' | 'public' | 'school' | 'residence';
+}
+
+/** 이름표가 겹치면 우선순위가 높은 주요 건물만 남긴다. */
+function mountLandmarkLabels(map: MapLibreMap, data: FeatureCollection): () => void {
+  const labels = data.features.flatMap((feature) => {
+    if (feature.geometry?.type !== 'Point') return [];
+    const properties = feature.properties as unknown as LandmarkProperties;
+    if (!properties?.label) return [];
+    const element = document.createElement('span');
+    element.className = `mm-landmark-label mm-landmark-label--${properties.kind}`;
+    element.textContent = properties.label;
+    element.setAttribute('aria-hidden', 'true');
+    const coordinates = feature.geometry.coordinates as [number, number];
+    const marker = new maplibregl.Marker({ element, anchor: 'center' }).setLngLat(coordinates).addTo(map);
+    return [{ element, marker, coordinates, minZoom: Number(properties.minZoom), priority: Number(properties.priority) }];
+  }).sort((a, b) => a.priority - b.priority);
+
+  let frame = 0;
+  const update = () => {
+    frame = 0;
+    const zoom = map.getZoom();
+    const occupied: Array<{ left: number; right: number; top: number; bottom: number }> = [];
+    for (const label of labels) {
+      if (zoom < label.minZoom) {
+        label.element.hidden = true;
+        continue;
+      }
+      const point = map.project(label.coordinates);
+      const width = label.element.offsetWidth || label.element.textContent!.length * 7 + 16;
+      const height = label.element.offsetHeight || 22;
+      const rect = { left: point.x - width / 2 - 5, right: point.x + width / 2 + 5, top: point.y - height / 2 - 4, bottom: point.y + height / 2 + 4 };
+      const overlaps = occupied.some((other) => rect.left < other.right && rect.right > other.left && rect.top < other.bottom && rect.bottom > other.top);
+      label.element.hidden = overlaps;
+      if (!overlaps) occupied.push(rect);
+    }
+  };
+  const schedule = () => {
+    if (frame) cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(update);
+  };
+  map.on('move', schedule);
+  schedule();
+  return () => {
+    if (frame) cancelAnimationFrame(frame);
+    map.off('move', schedule);
+    labels.forEach(({ marker }) => marker.remove());
+  };
 }
 
 const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
@@ -152,10 +207,11 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
     const setPointer = () => { map.getCanvas().style.cursor = 'pointer'; };
     const clearPointer = () => { map.getCanvas().style.cursor = ''; };
 
+    let disposeLandmarkLabels = () => {};
     map.on('load', async () => {
       try {
-        const [buildings, roads, admin, school, apartment, water, mountain] = await Promise.all([
-          fetchGeoJSON(BUILDINGS_URL), fetchGeoJSON(ROADS_URL), fetchGeoJSON(ADMIN_URL),
+        const [buildings, landmarks, roads, admin, school, apartment, water, mountain] = await Promise.all([
+          fetchGeoJSON(BUILDINGS_URL), fetchGeoJSON(LANDMARKS_URL), fetchGeoJSON(ROADS_URL), fetchGeoJSON(ADMIN_URL),
           fetchGeoJSON(AREA_URLS.school), fetchGeoJSON(AREA_URLS.apartment), fetchGeoJSON(AREA_URLS.water), fetchGeoJSON(AREA_URLS.mountain),
         ]);
         if (mapRef.current !== map) return;
@@ -210,6 +266,7 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
         map.addLayer({ id: 'building-outlines', source: 'buildings', type: 'line', paint: { 'line-color': colors.buildingStroke, 'line-width': 0.45 } });
         map.addSource('admin', { type: 'geojson', data: admin });
         map.addLayer({ id: 'admin', source: 'admin', type: 'line', paint: { 'line-color': colors.boundary, 'line-width': 2, 'line-dasharray': [2, 3] } });
+        disposeLandmarkLabels = mountLandmarkLabels(map, landmarks);
 
         map.addSource('places', { type: 'geojson', data: placesToGeoJSON(placesRef.current, selectedPlaceId), cluster: true, clusterRadius: 34, clusterMaxZoom: 17 });
         map.addLayer({
@@ -278,6 +335,7 @@ const Map3D = forwardRef<MainMapHandle, MainMapProps>(function Map3D({
     return () => {
       cancelAnimationFrame(resizeFrame);
       resizeObserver.disconnect();
+      disposeLandmarkLabels();
       mapRef.current = null;
       map.remove();
     };
